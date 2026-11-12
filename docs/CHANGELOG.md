@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-11-12 — Phase 4 Durable Execution & Recovery Infrastructure Release
+
+### Added
+- **Core Durable Contracts (`packages/atlas-core`)**:
+  - `Checkpoint` schema with cryptographic SHA-256 seal computation (`compute_hash()`, `seal()`, `verify_hash()`), step progress, action lists, environment metadata, and fencing generation.
+  - `WorkerRecord` and `WorkerLease` with monotonic fencing tokens and status tracking (`IDLE`, `BUSY`, `DRAINING`, `DISCONNECTED`, `TERMINATED`).
+  - `ActionExecutionRecord` with tri-state tracking and safe `UNKNOWN` outcome handling.
+  - `FailureClassification`, `RecoveryStrategy`, `ReconciliationDecision`, and `ReconciliationResult`.
+  - Zero third-party dependencies in `atlas-core` (Constitution Rule 3).
+- **Durable Storage & Fencing Persistence (`packages/atlas-storage`)**:
+  - SQLite persistence with WAL mode, foreign keys, and busy timeout for `checkpoints`, `action_ledger`, `worker_registry`, and `worker_leases`.
+  - Atomic commit-time fencing token validation rejecting stale worker writes with `StaleWorkerError`.
+  - Documented PostgreSQL production storage DDL and specifications.
+- **Control Plane Coordination Package (`packages/atlas-coordination`)**:
+  - `CheckpointManager` supporting transactional creation, SHA-256 integrity verification, tamper detection, corruption rollback, and recursive secret sanitization (`redact_secrets`).
+  - `WorkerRegistryManager` with capability discovery, heartbeats, draining, and stale worker sweep.
+  - `WorkerLeaseManager` for exclusive task lease allocation and commit-time fencing token assertion.
+  - `WorkerScheduler` providing capability-aware task assignment without OS coupling.
+  - `ActionLedger` tracking execution lifecycle, deduplicating idempotent actions, and blocking blind retry of non-idempotent actions in `UNKNOWN` state.
+  - `EnvironmentReconciler` comparing live browser URL and DOM against checkpoint expectations before resumption.
+  - `RecoveryCoordinator` orchestrating the 8-stage recovery lifecycle ($\text{DETECT} \to \text{RECORD}$) gated by `ActionFirewall` with bounded retry limits.
+  - `ExecutionReplayEngine` supporting time-travel state reconstruction at sequence $N$, sanitized audit timeline export, and checkpoint divergence detection.
+- **20-Scenario Fault-Injection Test Suite & Demonstration (`tests/integration`, `scripts/`)**:
+  - `tests/integration/test_fault_recovery_e2e.py` verifying recovery from 20 real-world failure modes 100% offline (20/20 PASS).
+  - Standalone executable demonstration script `scripts/demo_durable_recovery.py`.
+  - Architectural ADR: [ADR-0007](adr/0007-durable-execution-and-recovery.md).
+
+---
+
 ## [0.3.0] - 2026-11-12 — Phase 3 Model Provider Adapters & Planning Engine Release
 
 ### Added

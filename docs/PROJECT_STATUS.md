@@ -1,9 +1,9 @@
 # Project Status: ATLAS
 
-**Current Phase:** Phase 4 (Durable Execution & Recovery Infrastructure) — **IN PROGRESS (Plan Complete, Milestone 1 Underway)**  
+**Current Phase:** Phase 4 (Durable Execution & Recovery Infrastructure) — **100% COMPLETE (10/10 ACs)**  
 **Previous Phases:** Phase 1 (Foundation) — **100% COMPLETE (14/14 ACs)**; Phase 2 (Browser Runtime) — **100% COMPLETE (9/9 ACs)**; Phase 3 (Model Adapters & Planning) — **100% COMPLETE (10/10 ACs)**  
 **Date:** 2026-11-12  
-**Overall Status:** GREEN (156/156 Tests Passing)
+**Overall Status:** GREEN (**202/202 Tests Passing across 10 packages**)
 
 ---
 
@@ -11,29 +11,29 @@
 
 | Task | Title | Package / Component | Status |
 | :--- | :--- | :--- | :--- |
-| **Task 4.1** | Phase 4 Architecture, ADR-0007 & Planning | `docs/` | **COMPLETED** |
-| **Task 4.2** | Core Durable Contracts (`Checkpoint`, `WorkerRecord`, `Lease`, `Ledger`) | `packages/atlas-core` | **IN PROGRESS** |
-| **Task 4.3** | Storage Interfaces & SQLite Persistence (`checkpoints`, `ledger`, `leases`) | `packages/atlas-storage` | NOT STARTED |
-| **Task 4.4** | Checkpoint Manager & Tamper-Evident Hashing | `packages/atlas-coordination` | NOT STARTED |
-| **Task 4.5** | Worker Registry, Lease Lifecycle & Scheduler | `packages/atlas-coordination` | NOT STARTED |
-| **Task 4.6** | Durable Action Execution Ledger & Safe Retries | `packages/atlas-coordination` | NOT STARTED |
-| **Task 4.7** | Environment Reconciliation & Crash Recovery Coordinator | `packages/atlas-coordination` | NOT STARTED |
-| **Task 4.8** | Execution Replay Engine & 20-Scenario Fault-Injection Suite | `tests/integration` | NOT STARTED |
+| **Task 4.1** | Phase 4 Architecture, ADR-0007 & Planning | `docs/` | **COMPLETED** (`8d4d804`) |
+| **Task 4.2** | Core Durable Contracts (`Checkpoint`, `WorkerRecord`, `Lease`, `Ledger`) | `packages/atlas-core` | **COMPLETED** (`6cb88b3`) |
+| **Task 4.3** | Storage Interfaces & SQLite Persistence (`checkpoints`, `ledger`, `leases`) | `packages/atlas-storage` | **COMPLETED** (`dbf2a3a`) |
+| **Task 4.4** | Checkpoint Manager & Tamper-Evident Hashing | `packages/atlas-coordination` | **COMPLETED** (`2d20fd2`) |
+| **Task 4.5** | Worker Registry, Lease Lifecycle & Scheduler | `packages/atlas-coordination` | **COMPLETED** (`1670e3d`) |
+| **Task 4.6** | Durable Action Execution Ledger & Safe Retries | `packages/atlas-coordination` | **COMPLETED** (`aeb7ff8`) |
+| **Task 4.7** | Environment Reconciliation & Crash Recovery Coordinator | `packages/atlas-coordination` | **COMPLETED** (`94acc93`) |
+| **Task 4.8** | Execution Replay Engine & 20-Scenario Fault-Injection Suite | `tests/integration` | **COMPLETED** (`9b27fe6`) |
 
 ---
 
-## Phase 4 Acceptance Tracker (0/10 Complete)
+## Phase 4 Acceptance Tracker (10/10 Complete)
 
-- [ ] **P4-01**: Versioned, tamper-evident `Checkpoint` contract and `CheckpointManager` with SHA-256 integrity checks and corruption fallback.
-- [ ] **P4-02**: `WorkerRegistry` with heartbeats, draining, capability discovery, and lease lifecycle.
-- [ ] **P4-03**: Monotonically increasing lease generations (fencing tokens) rejecting stale worker commits at storage write time.
-- [ ] **P4-04**: Durable `ActionLedger` tracking action states (`NOT_STARTED` through `VERIFIED`), handling `UNKNOWN` safely, and enforcing idempotency.
-- [ ] **P4-05**: 8-stage `RecoveryCoordinator` resolving worker crashes, API restarts, and network drops under `ActionFirewall` policy gating.
-- [ ] **P4-06**: `EnvironmentReconciler` verifying actual physical browser/environment state before resuming from a checkpoint.
-- [ ] **P4-07**: `ExecutionReplayEngine` reconstructing task state at sequence $N$ and exporting audit timelines.
-- [ ] **P4-08**: Capability-aware `WorkerScheduler` matching task requirements to workers without OS coupling.
-- [ ] **P4-09**: Complete fault-injection test suite passing all 20 required failure scenarios 100% offline.
-- [ ] **P4-10**: Backwards-compatible SQLite schema migrations and documented PostgreSQL production specification.
+- [x] **P4-01**: Versioned, tamper-evident `Checkpoint` contract and `CheckpointManager` with SHA-256 integrity checks, secret sanitization, and corruption fallback.
+- [x] **P4-02**: `WorkerRegistryManager` with heartbeats, draining, capability discovery, and lease lifecycle.
+- [x] **P4-03**: Monotonically increasing lease generations (fencing tokens) rejecting stale worker commits at storage write time with `StaleWorkerError`.
+- [x] **P4-04**: Durable `ActionLedger` tracking action states (`NOT_STARTED` through `VERIFIED`), handling `UNKNOWN` safely, and enforcing idempotency deduplication.
+- [x] **P4-05**: 8-stage `RecoveryCoordinator` resolving worker crashes, API restarts, and network drops under `ActionFirewall` policy gating.
+- [x] **P4-06**: `EnvironmentReconciler` verifying actual physical browser/environment state before resuming from a checkpoint.
+- [x] **P4-07**: `ExecutionReplayEngine` reconstructing task state at sequence $N$ and exporting audit timelines with secret masking.
+- [x] **P4-08**: Capability-aware `WorkerScheduler` matching task requirements to workers without OS coupling.
+- [x] **P4-09**: Complete fault-injection test suite passing all 20 required failure scenarios 100% offline.
+- [x] **P4-10**: Backwards-compatible SQLite schema migrations and documented PostgreSQL production specification.
 
 ---
 

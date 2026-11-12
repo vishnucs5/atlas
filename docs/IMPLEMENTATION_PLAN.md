@@ -150,10 +150,11 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 
 ---
 
-## Phase 4: Durable Execution & Recovery Infrastructure (IN PROGRESS)
+## Phase 4: Durable Execution & Recovery Infrastructure (COMPLETE)
 
 **Target:** Implement durable execution, versioned checkpoints with tamper-evident hashes, worker leases with monotonic fencing tokens, durable action execution ledger with UNKNOWN state tracking, live physical environment reconciliation, 8-stage crash recovery coordinator under Action Firewall gating, and execution replay engine.  
-**Status:** **IN PROGRESS (Plan Complete, Milestone 1 Underway)**  
+**Status:** **100% COMPLETE (10/10 Acceptance Criteria Verified & Passing)**  
+**Completed Date:** 2026-11-12  
 **Roadmap Documents:** `docs/roadmap/PHASE_4_PLAN.md`, `docs/roadmap/PHASE_4_STATUS.md`, `docs/roadmap/PHASE_4_ACCEPTANCE_REPORT.md`  
 **Architectural ADR:** [ADR-0007](adr/0007-durable-execution-and-recovery.md)
 
@@ -161,33 +162,33 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 
 - [x] **Task 4.1: Architecture, ADR-0007 & Planning**
   - Establish ADR-0007 (`docs/adr/0007-durable-execution-and-recovery.md`).
-  - Establish Phase 4 implementation plan, status tracker, and acceptance report template.
-- [ ] **Task 4.2: Core Durable Contracts (`packages/atlas-core`)**
+  - Establish Phase 4 implementation plan, status tracker, and acceptance report template (`8d4d804`).
+- [x] **Task 4.2: Core Durable Contracts (`packages/atlas-core`)**
   - Versioned `Checkpoint` with fencing tokens, step progress, action lists, environment metadata, and SHA-256 integrity hash.
-  - `WorkerRecord`, `WorkerLease`, `ActionExecutionRecord`, `RecoveryEvent`, `ReconciliationResult`.
-- [ ] **Task 4.3: Storage Interfaces & SQLite Persistence (`packages/atlas-storage`)**
+  - `WorkerRecord`, `WorkerLease`, `ActionExecutionRecord`, `FailureClassification`, `RecoveryStrategy`, `ReconciliationResult` (`6cb88b3`).
+- [x] **Task 4.3: Storage Interfaces & SQLite Persistence (`packages/atlas-storage`)**
   - Storage interfaces: `CheckpointStoreProtocol`, `ActionLedgerStoreProtocol`, `WorkerStoreProtocol`.
   - SQLite tables: `checkpoints`, `action_ledger`, `worker_registry`, `worker_leases`.
   - Commit-time lease fencing token validation and optimistic concurrency.
-  - Updated PostgreSQL production specification.
-- [ ] **Task 4.4: Package Scaffolding & Checkpoint Manager (`packages/atlas-coordination`)**
+  - Updated PostgreSQL production specification (`dbf2a3a`).
+- [x] **Task 4.4: Package Scaffolding & Checkpoint Manager (`packages/atlas-coordination`)**
   - Scaffold `packages/atlas-coordination` package and register in `pyproject.toml`.
-  - Implement `CheckpointManager`: versioning, SHA-256 hash calculation, corruption detection, rollback, and secret masking.
-- [ ] **Task 4.5: Worker Registry, Lease Lifecycle & Scheduler (`packages/atlas-coordination`)**
-  - Implement `WorkerRegistry`: registration, heartbeats, draining, capability discovery.
+  - Implement `CheckpointManager`: versioning, SHA-256 hash calculation, corruption detection, rollback, and secret masking (`2d20fd2`).
+- [x] **Task 4.5: Worker Registry, Lease Lifecycle & Scheduler (`packages/atlas-coordination`)**
+  - Implement `WorkerRegistryManager`: registration, heartbeats, draining, capability discovery.
   - Implement `WorkerScheduler`: capability-aware task assignment.
-  - Implement lease management with monotonically increasing generation numbers (fencing tokens).
-- [ ] **Task 4.6: Durable Action Execution Ledger (`packages/atlas-coordination`)**
+  - Implement lease management with monotonically increasing generation numbers (fencing tokens) (`1670e3d`).
+- [x] **Task 4.6: Durable Action Execution Ledger (`packages/atlas-coordination`)**
   - Implement `ActionLedger`: status tracking (`NOT_STARTED` to `VERIFIED`), idempotency key mapping, attempt counting, and commit-time lease fencing.
-  - Safe retry policy evaluation (idempotent vs non-idempotent vs high-risk).
-- [ ] **Task 4.7: Environment Reconciliation & Crash Recovery Coordinator (`packages/atlas-coordination`)**
+  - Safe retry policy evaluation (idempotent vs non-idempotent vs high-risk) (`aeb7ff8`).
+- [x] **Task 4.7: Environment Reconciliation & Crash Recovery Coordinator (`packages/atlas-coordination`)**
   - Implement `EnvironmentReconciler`: physical environment inspection, URL/DOM verification, comparison against checkpoint.
-  - Implement `RecoveryCoordinator`: 8-stage lifecycle (DETECT $\to$ CLASSIFY $\to$ COLLECT EVIDENCE $\to$ SELECT STRATEGY $\to$ APPLY POLICY $\to$ RECOVER $\to$ VERIFY $\to$ RECORD).
-- [ ] **Task 4.8: Replay Engine, Fault-Injection Suite & Demonstration Script**
+  - Implement `RecoveryCoordinator`: 8-stage lifecycle (DETECT $\to$ CLASSIFY $\to$ COLLECT EVIDENCE $\to$ SELECT STRATEGY $\to$ APPLY POLICY $\to$ RECOVER $\to$ VERIFY $\to$ RECORD) (`94acc93`).
+- [x] **Task 4.8: Replay Engine, Fault-Injection Suite & Demonstration Script**
   - Implement `ExecutionReplayEngine`: time-travel state reconstruction at sequence $N$, event timeline export.
-  - Integration fault-injection test suite covering all 20 required crash/failure scenarios.
+  - Integration fault-injection test suite covering all 20 required crash/failure scenarios (20/20 PASS).
   - Standalone executable demonstration script: `scripts/demo_durable_recovery.py`.
-  - Final acceptance audit and report.
+  - Final acceptance audit and report (`9b27fe6`).
 
 ---
 
