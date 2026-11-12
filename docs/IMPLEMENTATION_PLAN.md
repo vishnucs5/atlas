@@ -105,18 +105,49 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Task 2.7: Acceptance Verification & CLI Diagnostics**
   - Integrate Playwright Chromium checks into `atlas doctor`.
   - Implement `atlas environment test browser` CLI diagnostic.
-  - Complete test matrix (112 tests passing).
+  - Complete test matrix (115 tests passing).
 
 ---
 
-## Next Phase
+## Phase 3: Model Provider Adapters & Planning Engine (IN PROGRESS - GATE VERIFIED)
 
-### Phase 3: Autonomous Planning & Model Adapters (Upcoming)
-- Hierarchical planner (goal decomposition, subtask generation).
-- Multi-agent collaboration protocols (specialized subagents: researcher, executor, verifier).
-- Dynamic error recovery and replanning loops.
+**Target:** Implement provider-agnostic model adapters (OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible), resilient capability router with circuit breakers, structured planner, context manager with prompt injection defense, and the 11-step autonomous agent execution loop.  
+**Status:** **DESIGN & ARCHITECTURE ACCEPTED — AWAITING IMPLEMENTATION AUTHORIZATION**  
+**Roadmap Documents:** `docs/roadmap/PHASE_3_PLAN.md`, `docs/roadmap/PHASE_3_STATUS.md`, `docs/superpowers/plans/2026-11-12-phase-3-model-adapters-and-planning.md`  
+**Architectural ADRs:** [ADR-0005](adr/0005-model-provider-adapter-architecture.md), [ADR-0006](adr/0006-autonomous-planning-and-execution-loop.md)
 
-### Phase 4: Production Hardening & Enterprise Governance
+### Task Breakdown & Progress
+
+- [x] **Task 3.1: Phase Gate Verification, Architectural Specs & ADRs**
+  - Audit and accept Phase 2 final verification report (`docs/roadmap/PHASE_2_ACCEPTANCE_REPORT.md`).
+  - Author ADR-0005 (Model Provider Adapter Architecture) and ADR-0006 (Autonomous Planning and Execution Loop).
+  - Publish architecture specs: `docs/architecture/model-provider-architecture.md` and `docs/architecture/planning-engine.md`.
+  - Establish `docs/roadmap/PHASE_3_PLAN.md` and `docs/roadmap/PHASE_3_STATUS.md`.
+- [ ] **Task 3.2: Core Model Contracts (`packages/atlas-core`)**
+  - Define `ModelMessage`, `TextPart`, `ImagePart`, `ToolDefinition`, `ToolCall`, `TokenUsage`, `ProviderHealth`, `ModelError`.
+  - Unit tests verifying contract immutability and schema versioning.
+- [ ] **Task 3.3: Scaffolding `packages/atlas-models` & `ModelAdapter` Protocol**
+  - Define `ModelAdapter` protocol with async completion, streaming, health check, and capability discovery.
+  - Establish credential sanitization helpers.
+- [ ] **Task 3.4: Concrete Provider Adapters**
+  - Implement `OpenAIAdapter`, `AnthropicAdapter`, `GeminiAdapter`, `OllamaAdapter`, `OpenAICompatibleAdapter`.
+  - Normalize tool calling, vision, and token usage reporting across all adapters.
+  - Unit tests running 100% offline via mock HTTP transports.
+- [ ] **Task 3.5: Model Router, Circuit Breaker & Cost Accounting**
+  - Capability-based routing, health-check probing, circuit breakers, rate-limit retry with jitter, cost tracking.
+- [ ] **Task 3.6: Structured Planner Engine (`packages/atlas-agent`)**
+  - Implement `ExecutionPlan`, `PlanStep`, `PlanBudget`, and `StructuredPlanner` with dynamic replanning.
+- [ ] **Task 3.7: Context Management & Injection Demarcation**
+  - DOM summarization to interactive nodes, screenshot optimization, sliding window pruning, and `<untrusted_external_content>` demarcation.
+- [ ] **Task 3.8: 11-Step Autonomous Agent Loop & Safety Engine**
+  - Enforce the 11-step execution cycle with Action Firewall gating and deterministic post-condition verification.
+  - Enforce action idempotency loop detection and execution budgets.
+- [ ] **Task 3.9: End-to-End Integration Suite & Acceptance Verification**
+  - Synthetic end-to-end integration test with mock LLM and browser driver.
+
+---
+
+## Phase 4: Production Hardening & Enterprise Governance (Upcoming)
 - PostgreSQL and Redis production backend implementations.
 - Distributed task worker queue and lease management.
 - Enterprise role-based access control (RBAC), SSO, and audit export.
