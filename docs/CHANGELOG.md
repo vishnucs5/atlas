@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-11-12 — Phase 3 Model Provider Adapters & Planning Engine Release
+
+### Added
+- **Core Model & Tool Contracts (`packages/atlas-core`)**:
+  - Pydantic v2 domain schemas (`ModelRequest`, `ModelResponse`, `ModelMessage`, `TextPart`, `ImagePart`, `ModelCapabilities`, `ToolDefinition`, `ToolCall`, `TokenUsage`, `ProviderHealth`, `ModelError`).
+  - Zero third-party SDK dependencies in `atlas-core` (Constitution Rule 3 verified via isolated subprocess tests).
+- **Universal Model Adapter Framework (`packages/atlas-models`)**:
+  - `ModelAdapter` abstract base protocol with async `complete()`, `stream()`, `health_check()`, and `get_capabilities()`.
+  - Concrete normalized adapters for:
+    1. OpenAI (`OpenAIAdapter`)
+    2. Anthropic Claude (`AnthropicAdapter`)
+    3. Google Gemini (`GeminiAdapter`)
+    4. Ollama (`OllamaAdapter`)
+    5. OpenAI-Compatible local inference endpoints (`OpenAICompatibleAdapter`)
+  - Normalized multimodal input, tool/function calling, and token usage accounting.
+  - Safe credential masking (`mask_credential`) preventing API key leaks in logs and exceptions.
+- **Resilient Model Router (`packages/atlas-models`)**:
+  - `ModelRouter` with capability-based filtering (`vision`, `tools`, `min_context_window`).
+  - Per-adapter `CircuitBreaker` with 3-state tracking (`CLOSED`, `OPEN`, `HALF_OPEN`).
+  - Exponential backoff with jitter on 429 rate limit responses.
+  - Per-task and global token usage and USD cost tracking via `CostTracker`.
+- **Autonomous Planning & Agent Engine (`packages/atlas-agent`)**:
+  - `StructuredPlanner` producing typed `ExecutionPlan` with `PlanStep` sequence, driver schema validation, and dynamic bounded replanning (`max_replans=3`).
+  - `ContextManager` with sliding window pruning, token budgeting, and compact `DOMSummarizer` generating clean interactive element markup.
+  - Prompt injection defense via strict `<untrusted_external_content>` XML demarcation.
+  - `SafetyEngine` with action idempotency hashing (breaks infinite loops after 3 consecutive identical actions) and hard resource ceilings (`max_steps`, `max_tokens`, `max_cost_usd`, `timeout_seconds`).
+  - `AutonomousAgentLoop` orchestrating the 11-step execution cycle: Observe $\to$ Build Context $\to$ Ask Model $\to$ Validate $\to$ Propose Action $\to$ Check Policy $\to$ Request Approval $\to$ Execute Driver $\to$ Verify Post-Condition $\to$ Record SQLite Events $\to$ Replan/Continue.
+- **Integration Test Suite & Verification (`tests/integration`, `scripts/`)**:
+  - `tests/integration/test_autonomous_agent_e2e.py` verifying multi-turn login workflow and Action Firewall denial recovery.
+  - Standalone executable demonstration script `scripts/demo_autonomous_agent.py`.
+  - Architectural ADRs: [ADR-0005](adr/0005-model-provider-adapter-architecture.md) and [ADR-0006](adr/0006-autonomous-planning-and-execution-loop.md).
+  - Final acceptance report in `docs/roadmap/PHASE_3_ACCEPTANCE_REPORT.md`.
+
+---
+
 ## [0.2.0] - 2026-11-12 — Phase 2 Browser Execution Runtime Release
 
 ### Added
