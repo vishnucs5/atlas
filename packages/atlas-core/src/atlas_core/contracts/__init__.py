@@ -8,6 +8,10 @@ from atlas_core.contracts.action import (
 )
 from atlas_core.contracts.checkpoint import Checkpoint
 from atlas_core.contracts.event import EventType, ExecutionEvent
+from atlas_core.contracts.ledger import (
+    ActionExecutionRecord,
+    ActionExecutionStatus,
+)
 from atlas_core.contracts.model import (
     ContentPart,
     ImagePart,
@@ -30,6 +34,12 @@ from atlas_core.contracts.policy import (
     PolicyDecisionType,
     RiskLevel,
 )
+from atlas_core.contracts.recovery import (
+    FailureClassification,
+    ReconciliationDecision,
+    ReconciliationResult,
+    RecoveryStrategy,
+)
 from atlas_core.contracts.session import Session, SessionStatus
 from atlas_core.contracts.task import (
     Task,
@@ -37,8 +47,16 @@ from atlas_core.contracts.task import (
     TaskRequest,
     TaskStatus,
 )
+from atlas_core.contracts.worker import (
+    LeaseStatus,
+    WorkerLease,
+    WorkerRecord,
+    WorkerStatus,
+)
 
 __all__ = [
+    "ActionExecutionRecord",
+    "ActionExecutionStatus",
     "ActionResult",
     "ActionTarget",
     "ApprovalRequest",
@@ -49,7 +67,9 @@ __all__ = [
     "EventType",
     "ExecutionEvent",
     "ExpectedState",
+    "FailureClassification",
     "ImagePart",
+    "LeaseStatus",
     "ModelCapabilities",
     "ModelError",
     "ModelMessage",
@@ -59,6 +79,9 @@ __all__ = [
     "PolicyDecision",
     "PolicyDecisionType",
     "ProviderHealth",
+    "ReconciliationDecision",
+    "ReconciliationResult",
+    "RecoveryStrategy",
     "RiskLevel",
     "Session",
     "SessionStatus",
@@ -70,4 +93,7 @@ __all__ = [
     "TokenUsage",
     "ToolCall",
     "ToolDefinition",
+    "WorkerLease",
+    "WorkerRecord",
+    "WorkerStatus",
 ]
