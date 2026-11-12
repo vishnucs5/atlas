@@ -1,5 +1,6 @@
 """AutonomousAgentLoop orchestrating the 11-step observe-plan-act-verify cycle."""
 
+import asyncio
 import time
 import uuid
 from datetime import UTC, datetime
@@ -52,6 +53,40 @@ class AutonomousAgentLoop:
             return f"{prefix}.{rest}"
         return tool_name
 
+    async def _transition_task(
+        self,
+        task: Task,
+        target_status: TaskStatus,
+        *,
+        session_id: str | None = None,
+        reason: str | None = None,
+    ) -> ExecutionEvent:
+        """Atomically transition task status with monotonically sequenced event."""
+        seq = 1
+        if hasattr(self._event_store, "get_latest_sequence"):
+            val = self._event_store.get_latest_sequence(task.task_id)
+            if asyncio.iscoroutine(val):
+                val = await val
+            seq = (val or 0) + 1
+        else:
+            seq = int(time.time() * 1000) % 1000000
+
+        evt = self._sm.transition_task(
+            task,
+            target_status,
+            session_id=session_id,
+            sequence=seq,
+            reason=reason,
+        )
+        await self._store_event(evt)
+        return evt
+
+    async def _store_event(self, event: ExecutionEvent) -> None:
+        """Append event to event store supporting both async and sync stores."""
+        res = self._event_store.append_event(event)
+        if asyncio.iscoroutine(res):
+            await res
+
     async def _emit_event(
         self,
         task_id: str,
@@ -61,8 +96,12 @@ class AutonomousAgentLoop:
         correlation_id: str,
     ) -> None:
         """Record an immutable execution event."""
+        seq = 1
         if hasattr(self._event_store, "get_latest_sequence"):
-            seq = await self._event_store.get_latest_sequence(task_id) + 1
+            val = self._event_store.get_latest_sequence(task_id)
+            if asyncio.iscoroutine(val):
+                val = await val
+            seq = (val or 0) + 1
         else:
             seq = int(time.time() * 1000) % 1000000
 
@@ -76,7 +115,7 @@ class AutonomousAgentLoop:
             payload=payload,
             correlation_id=correlation_id,
         )
-        await self._event_store.append_event(event)
+        await self._store_event(event)
 
     async def run(
         self,
@@ -92,8 +131,7 @@ class AutonomousAgentLoop:
         total_cost = 0.0
 
         if task.status in (TaskStatus.CREATED, TaskStatus.READY, TaskStatus.QUEUED):
-            evt = self._sm.transition_task(task, TaskStatus.RUNNING)
-            await self._event_store.append_event(evt)
+            await self._transition_task(task, TaskStatus.RUNNING, session_id=session.session_id)
 
         # Standard tool declarations presented to the model
         declared_tools = [
@@ -156,7 +194,10 @@ class AutonomousAgentLoop:
             )
 
             # Step 1: OBSERVE
-            observation: Observation = await self._driver.observe(session.session_id)
+            try:
+                observation: Observation = await self._driver.observe()
+            except TypeError:
+                observation = await self._driver.observe(session.session_id)
             await self._emit_event(
                 task.task_id,
                 session.session_id,
@@ -219,10 +260,12 @@ class AutonomousAgentLoop:
                     ModelMessage(role="assistant", content=resp.content or "Completed")
                 )
                 # Constitutional Invariant: Must transition through VERIFYING before COMPLETED
-                evt_v = self._sm.transition_task(task, TaskStatus.VERIFYING)
-                await self._event_store.append_event(evt_v)
-                evt_c = self._sm.transition_task(task, TaskStatus.COMPLETED)
-                await self._event_store.append_event(evt_c)
+                await self._transition_task(
+                    task, TaskStatus.VERIFYING, session_id=session.session_id
+                )
+                await self._transition_task(
+                    task, TaskStatus.COMPLETED, session_id=session.session_id
+                )
                 break
 
             # Handle first tool call in turn
@@ -272,7 +315,9 @@ class AutonomousAgentLoop:
             )
 
             # Step 6: CHECK POLICY (Action Firewall)
-            decision = await self._firewall.evaluate(action)
+            decision = self._firewall.evaluate(action)
+            if asyncio.iscoroutine(decision):
+                decision = await decision
             await self._emit_event(
                 task.task_id,
                 session.session_id,
@@ -310,8 +355,9 @@ class AutonomousAgentLoop:
                     {"action_id": action.action_id},
                     step_corr_id,
                 )
-                evt = self._sm.transition_task(task, TaskStatus.WAITING_APPROVAL)
-                await self._event_store.append_event(evt)
+                await self._transition_task(
+                    task, TaskStatus.WAITING_APPROVAL, session_id=session.session_id
+                )
                 return task
 
             # Step 8: EXECUTE THROUGH ATLAS DRIVER
@@ -327,12 +373,17 @@ class AutonomousAgentLoop:
             # Step 9: VERIFY (Deterministic Verification)
             verified = True
             if action.expected_state:
-                verified = await self._verification.verify(action.expected_state)
+                page = getattr(self._driver, "active_page", None)
+                download_dir = getattr(self._driver, "downloads_path", None)
+                v_res = await self._verification.verify(
+                    action.expected_state, page=page, download_dir=download_dir
+                )
+                verified = getattr(v_res, "verified", bool(v_res))
                 await self._emit_event(
                     task.task_id,
                     session.session_id,
                     EventType.VERIFICATION_COMPLETED,
-                    {"verified": verified},
+                    {"verified": verified, "evidence": getattr(v_res, "evidence", {})},
                     step_corr_id,
                 )
 
