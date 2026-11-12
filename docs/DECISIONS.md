@@ -14,6 +14,7 @@ This document tracks Architectural Decision Records (ADRs) adopted in ATLAS. Eve
 | [ADR-0004](adr/0004-browser-runtime-architecture.md) | Browser Runtime & Playwright Separation | Accepted | 2026-11-12 | Isolate Playwright behind ComputerDriver protocol; enforce Action Firewall gating and deterministic verification. |
 | [ADR-0005](adr/0005-model-provider-adapter-architecture.md) | Model Provider Adapter Architecture | Accepted | 2026-11-12 | Decoupled adapter architecture isolating OpenAI, Anthropic, Gemini, Ollama, and vLLM behind normalized contracts. |
 | [ADR-0006](adr/0006-autonomous-planning-and-execution-loop.md) | Autonomous Planning and Execution Loop | Accepted | 2026-11-12 | 11-step observe-plan-act-verify cycle enforcing Action Firewall, deterministic verification, and injection defense. |
+| [ADR-0007](adr/0007-durable-execution-and-recovery.md) | Durable Execution, Worker Leases, and Crash Recovery | Accepted | 2026-11-12 | Native durable checkpoints with SHA-256 hashes, worker lease fencing tokens, action ledger with UNKNOWN state, and live reconciliation. |
 
 ---
 
