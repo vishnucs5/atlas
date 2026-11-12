@@ -1,6 +1,6 @@
 """WorkerScheduler for capability-aware task assignment and lease allocation."""
 
-from atlas_core.contracts.worker import WorkerLease, WorkerRecord
+from atlas_core.contracts.worker import WorkerLease, WorkerRecord, WorkerStatus
 
 from atlas_coordination.lease_manager import WorkerLeaseManager
 from atlas_coordination.worker_registry import WorkerRegistryManager
@@ -46,6 +46,8 @@ class WorkerScheduler:
 
         # Mark worker busy with this task
         self.registry.mark_busy(selected_worker.worker_id, current_task_id=task_id)
+        selected_worker.status = WorkerStatus.BUSY
+        selected_worker.current_task_id = task_id
 
         return selected_worker, lease
 

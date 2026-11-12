@@ -10,6 +10,7 @@ from atlas_coordination.checkpoint_manager import CheckpointManager, redact_secr
 from atlas_coordination.lease_manager import WorkerLeaseManager
 from atlas_coordination.reconciler import EnvironmentReconciler
 from atlas_coordination.recovery_coordinator import RecoveryCoordinator
+from atlas_coordination.replay import ExecutionReplayEngine
 from atlas_coordination.scheduler import NoAvailableWorkerError, WorkerScheduler
 from atlas_coordination.worker_registry import WorkerRegistryManager
 
@@ -17,6 +18,7 @@ __all__ = [
     "ActionLedger",
     "CheckpointManager",
     "EnvironmentReconciler",
+    "ExecutionReplayEngine",
     "NoAvailableWorkerError",
     "NonIdempotentActionUncertaintyError",
     "RecoveryCoordinator",
