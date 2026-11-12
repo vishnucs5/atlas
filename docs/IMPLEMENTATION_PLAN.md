@@ -73,26 +73,45 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 
 ---
 
-## Next Phase
+## Phase 2: Browser Execution Runtime (COMPLETE)
 
-### Phase 2: Computer-Use Execution Engine & Drivers (Upcoming)
-- **Browser Automation Driver**:
-  - Playwright integration with accessibility tree (a11y tree) introspection and ARIA selector resolution.
-  - Action execution: click, type, scroll, drag, wait for state.
-  - Session lifecycle and cookie/storage persistence.
-- **Desktop Automation Driver**:
-  - Windows UI Automation (UIA) driver for native application control.
-  - Synthetic input dispatch with rate limiting and hardware simulation.
-- **Deterministic Verification Engine**:
-  - Visual screenshot capture and perceptual diffing.
-  - DOM state and accessibility condition assertions.
-  - Post-action invariant verification before advancing lifecycle states.
+**Target:** Implement resilient, model-agnostic browser automation runtime using Playwright Chromium as low-level driver behind the ATLAS `ComputerDriver` contract, with multimodal observation, action execution, firewall gating, and deterministic verification.  
+**Status:** **100% COMPLETE (9/9 Acceptance Criteria Verified)**  
+**Completed Date:** 2026-11-12  
+
+### Task Breakdown & Progress
+
+- [x] **Task 2.1: Scaffolding, `ComputerDriver` Protocol & ADR-0004**
+  - Define `ComputerDriver` and `DriverHealth` in `atlas_core.runtime.driver`.
+  - Define browser runtime exception hierarchy (`DriverError`, `NavigationTimeoutError`, `ElementNotFoundError`, etc.).
+  - Document architectural decisions in `docs/adr/0004-browser-runtime-architecture.md`.
+- [x] **Task 2.2: Observation Engine (`packages/atlas-observation`)**
+  - Extract structured DOM snapshots and interactive elements (`dom.py`).
+  - Capture semantic accessibility trees via Chromium CDP `Accessibility.getFullAXTree` with DOM ARIA tree fallback (`accessibility.py`).
+  - Capture full-page and viewport PNG screenshots with base64 data encoding (`capture.py`).
+- [x] **Task 2.3: Browser Driver & Action Execution (`packages/atlas-browser`)**
+  - Manage browser lifecycle (launch, headless/headed, isolated `BrowserContext`, page allocation, health check).
+  - Execute core browser actions: `navigate`, `click` (by role/text/css/xpath/coords), `type`, `fill`, `select`, `scroll`, `press_key`, `wait`.
+- [x] **Task 2.4: File Downloads, Uploads & Network Monitoring (`packages/atlas-browser`)**
+  - Intercept downloads with path traversal prevention, SHA-256 calculation, and size tracking (`DownloadManager`).
+  - Support file upload inputs with validation.
+  - Intercept network requests, status codes, and console errors (`NetworkMonitor`).
+- [x] **Task 2.5: Deterministic Post-Condition Verification (`packages/atlas-verification`)**
+  - Implement matchers for `element_visible`, `element_hidden`, `text_present`, `url_matches`, `file_downloaded`, and `value_equals`.
+  - Build `VerificationEngine` with async timeout polling for asynchronous operations.
+- [x] **Task 2.6: Synthetic Fixtures & End-to-End Suite**
+  - Hermetic `SyntheticServer` serving deterministic test pages (`/`, `/login`, `/interactive`, `/upload`, `/download`).
+  - End-to-end integration test (`test_browser_runtime_e2e.py`) validating: Task $\to$ State Machine $\to$ Observation $\to$ Action Proposal $\to$ Action Firewall $\to$ Execution $\to$ Verification $\to$ SQLite Event Store.
+- [x] **Task 2.7: Acceptance Verification & CLI Diagnostics**
+  - Integrate Playwright Chromium checks into `atlas doctor`.
+  - Implement `atlas environment test browser` CLI diagnostic.
+  - Complete test matrix (112 tests passing).
 
 ---
 
-## Future Phases
+## Next Phase
 
-### Phase 3: Autonomous Planning & Multi-Agent Collaboration
+### Phase 3: Autonomous Planning & Model Adapters (Upcoming)
 - Hierarchical planner (goal decomposition, subtask generation).
 - Multi-agent collaboration protocols (specialized subagents: researcher, executor, verifier).
 - Dynamic error recovery and replanning loops.

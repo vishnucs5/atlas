@@ -11,6 +11,7 @@ This document tracks Architectural Decision Records (ADRs) adopted in ATLAS. Eve
 | [ADR-0001](adr/0001-monorepo-and-runtime-ownership.md) | Monorepo Workspace & Runtime Ownership | Accepted | 2026-11-12 | Maintain complete ownership of runtime orchestration; organize as a `uv` workspace; no third-party framework wrappers. |
 | [ADR-0002](adr/0002-event-sourced-task-persistence.md) | Event-Sourced Task Persistence | Accepted | 2026-11-12 | Implement append-only event sourcing for all task mutations; SQLite (WAL) for local dev, PostgreSQL for production. |
 | [ADR-0003](adr/0003-action-firewall-policy-separation.md) | Action Firewall & Policy Separation | Accepted | 2026-11-12 | Decouple model decision-making from execution drivers via an explicit pre-execution Action Firewall policy engine. |
+| [ADR-0004](adr/0004-browser-runtime-architecture.md) | Browser Runtime & Playwright Separation | Accepted | 2026-11-12 | Isolate Playwright behind ComputerDriver protocol; enforce Action Firewall gating and deterministic verification. |
 
 ---
 

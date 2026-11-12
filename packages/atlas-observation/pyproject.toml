@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-observation"
+version = "0.1.0"
+description = "Computer state and observation engine for ATLAS"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "playwright>=1.40.0",
+    "pydantic>=2.7.0",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_observation"]

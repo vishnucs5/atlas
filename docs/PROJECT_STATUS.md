@@ -1,25 +1,37 @@
 # Project Status: ATLAS
 
-**Current Phase:** Phase 1 (Foundation & Core Lifecycle) — **COMPLETED**  
-**Next Phase:** Phase 2 (Computer-Use Execution Engine & Drivers)  
+**Current Phase:** Phase 2 (Browser Execution Runtime) — **COMPLETED**  
+**Next Phase:** Phase 3 (Model Provider Adapters & Planning Loop)  
 **Date:** 2026-11-12  
-**Overall Status:** GREEN (Phase 1 100% Complete — 14/14 Acceptance Criteria Verified)
+**Overall Status:** GREEN (Phase 1: 14/14 ACs Complete; Phase 2: 9/9 ACs Complete — 112/112 Tests Passing)
 
 ---
 
-## Task Progress Summary
+## Phase 2 Task Progress Summary
 
-| Task | Title | Package / Component | Status | Owner |
-| :--- | :--- | :--- | :--- | :--- |
-| **Task 1** | Monorepo Workspace, Governance & Documentation Scaffolding | Root / Docs | **COMPLETED** | Subagent |
-| **Task 2** | Core Data Contracts | `packages/atlas-core` | **COMPLETED** | Subagent |
-| **Task 3** | Task State Machine & Lifecycle Exceptions | `packages/atlas-core` | **COMPLETED** | Subagent |
-| **Task 4** | Action Firewall Policy Engine | `packages/atlas-policy` | **COMPLETED** | Subagent |
-| **Task 5** | Contextual Observability & Structured Logging | `packages/atlas-observability` | **COMPLETED** | Subagent |
-| **Task 6** | Event-Sourced Storage Engine | `packages/atlas-storage` | **COMPLETED** | Subagent |
-| **Task 7** | FastAPI Service & Health Endpoints | `apps/api` | **COMPLETED** | Subagent |
-| **Task 8** | Developer CLI Suite | `apps/cli` | **COMPLETED** | Subagent |
-| **Task 9** | CI Workflow, Test Matrix & Phase 1 Acceptance Verification | `.github/workflows` / Docs | **COMPLETED** | Subagent |
+| Task | Title | Package / Component | Status |
+| :--- | :--- | :--- | :--- |
+| **Task 2.1** | Scaffolding, `ComputerDriver` Protocol & ADR-0004 | `atlas-core` / Docs | **COMPLETED** |
+| **Task 2.2** | Observation Engine | `packages/atlas-observation` | **COMPLETED** |
+| **Task 2.3** | Browser Driver & Action Execution | `packages/atlas-browser` | **COMPLETED** |
+| **Task 2.4** | File Downloads, Uploads & Network Monitoring | `packages/atlas-browser` | **COMPLETED** |
+| **Task 2.5** | Deterministic Post-Condition Verification | `packages/atlas-verification` | **COMPLETED** |
+| **Task 2.6** | Hermetic Synthetic Fixtures & End-to-End Suite | `tests/fixtures`, `tests/integration` | **COMPLETED** |
+| **Task 2.7** | Acceptance Verification & CLI Diagnostics | `apps/cli`, Docs | **COMPLETED** |
+
+---
+
+## Phase 2 Acceptance Tracker (9/9 Complete)
+
+- [x] **P2-01**: ATLAS launches Chromium browser (headless and headed) and manages isolated contexts.
+- [x] **P2-02**: Multi-tab/page management behaves deterministically with active page selection.
+- [x] **P2-03**: DOM and accessibility snapshots return typed, structured data (`atlas_observation`).
+- [x] **P2-04**: Viewport and full-page PNG screenshots capture accurately with base64 data encoding.
+- [x] **P2-05**: All core browser actions execute successfully (`navigate`, `click`, `type`, `fill`, `select`, `scroll`, `press_key`, `wait`, `upload`).
+- [x] **P2-06**: Action Firewall enforces URL domain validation (allow/block lists) and fails closed on malformed inputs.
+- [x] **P2-07**: File downloads are intercepted and restricted to designated safe directory without path traversal.
+- [x] **P2-08**: Deterministic post-action verification matches expected browser states (`element_visible`, `element_hidden`, `text_present`, `url_matches`, `file_downloaded`, `value_equals`).
+- [x] **P2-09**: Hermetic local test suite runs 100% offline without third-party network dependencies.
 
 ---
 

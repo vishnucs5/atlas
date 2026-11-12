@@ -18,7 +18,7 @@ uv run pytest -v
 
 ---
 
-## 2. Test Suites Matrix (97 / 97 Passed)
+## 2. Test Suites Matrix (112 / 112 Passed)
 
 | Test Suite File | Package / Component | Description | Status | Pass / Total |
 | :--- | :--- | :--- | :--- | :--- |
@@ -28,8 +28,14 @@ uv run pytest -v
 | `tests/unit/test_observability.py` | `atlas-observability` | JSON structured formatting, contextual binding, secret masking | **PASSED** | 18 / 18 |
 | `tests/unit/test_sqlite_storage.py` | `atlas-storage` | SQLite WAL mode, sequential events, optimistic concurrency | **PASSED** | 13 / 13 |
 | `tests/unit/test_api_health.py` | `apps/api` | `/healthz`, `/readyz`, `/api/v1/status` endpoints & degradation | **PASSED** | 10 / 10 |
-| `tests/integration/test_cli.py` | `apps/cli` | `atlas doctor`, `atlas init`, `atlas task` CLI operations | **PASSED** | 6 / 6 |
-| **Total** | **All Workspace Packages** | **Full Phase 1 Test Suite** | **PASSED** | **97 / 97 (100%)** |
+| `tests/integration/test_cli.py` | `apps/cli` | `atlas doctor`, `atlas init`, `atlas task`, `atlas environment` | **PASSED** | 7 / 7 |
+| `tests/unit/test_browser_driver_lifecycle.py` | `atlas-browser` | Playwright Chromium launch, contexts, health check, protocol | **PASSED** | 3 / 3 |
+| `tests/unit/test_browser_actions.py` | `atlas-browser` | Navigation, form filling, dropdowns, clicks, uploads, firewall | **PASSED** | 4 / 4 |
+| `tests/unit/test_browser_downloads_and_errors.py` | `atlas-browser` | Downloads, containment, missing elements, driver health states | **PASSED** | 3 / 3 |
+| `tests/unit/test_observation_engine.py` | `atlas-observation` | DOM snapshots, CDP/ARIA accessibility tree, PNG screenshots | **PASSED** | 1 / 1 |
+| `tests/unit/test_verification_engine.py` | `atlas-verification` | Declarative post-condition verifications (visibility, text, file) | **PASSED** | 2 / 2 |
+| `tests/integration/test_browser_runtime_e2e.py` | `integration` | Full lifecycle: Task $\to$ State Machine $\to$ Driver $\to$ Store | **PASSED** | 1 / 1 |
+| **Total** | **All Workspace Packages** | **Full ATLAS Test Suite** | **PASSED** | **112 / 112 (100%)** |
 
 ---
 

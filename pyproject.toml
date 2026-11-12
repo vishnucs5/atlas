@@ -16,6 +16,9 @@ members = [
     "packages/atlas-storage",
     "packages/atlas-policy",
     "packages/atlas-observability",
+    "packages/atlas-browser",
+    "packages/atlas-observation",
+    "packages/atlas-verification",
     "apps/api",
     "apps/cli",
 ]
@@ -36,6 +39,9 @@ pythonpath = [
     "packages/atlas-storage/src",
     "packages/atlas-policy/src",
     "packages/atlas-observability/src",
+    "packages/atlas-browser/src",
+    "packages/atlas-observation/src",
+    "packages/atlas-verification/src",
     "apps/api/src",
     "apps/cli/src",
 ]

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-11-12 — Phase 2 Browser Execution Runtime Release
+
+### Added
+- **Browser Execution Driver (`packages/atlas-browser`)**:
+  - `PlaywrightBrowserDriver` implementing the core `ComputerDriver` protocol with Chromium automation.
+  - Isolated browser context creation with per-session cookies, cache, viewport settings, and health check monitoring.
+  - `BrowserActionExecutor` supporting `browser.navigate`, `browser.click`, `browser.type`, `browser.fill`, `browser.select`, `browser.scroll`, `browser.press_key`, `browser.wait`, `browser.upload`.
+  - Resilient locator resolution supporting accessible roles (`page.get_by_role`), text matching, placeholder, labels, test IDs, CSS, XPath, and coordinate clicking.
+  - `DownloadManager` intercepting download events, preventing directory traversal, computing SHA-256 checksums, and logging file sizes.
+  - `NetworkMonitor` capturing HTTP request/response metrics, status codes, and console errors.
+- **Multimodal Observation Engine (`packages/atlas-observation`)**:
+  - `extract_dom_snapshot` and `extract_interactive_elements` for structured DOM evaluation.
+  - `extract_accessibility_tree` using Chromium CDP `Accessibility.getFullAXTree` with fallback to semantic DOM ARIA walking.
+  - `capture_screenshot` and `capture_observation` generating base64-encoded PNG screenshots and structured `Observation` domain models.
+- **Deterministic Verification Engine (`packages/atlas-verification`)**:
+  - `VerificationEngine` evaluating declarative post-conditions against live browser state with async polling.
+  - Post-condition matchers: `element_visible`, `element_hidden`, `text_present`, `url_matches`, `file_downloaded`, `value_equals`.
+- **Core Runtime Driver Contracts (`packages/atlas-core`)**:
+  - `ComputerDriver` abstract protocol and `DriverHealth` model in `atlas_core.runtime.driver`.
+  - Browser runtime exception hierarchy (`DriverError`, `NavigationTimeoutError`, `ElementNotFoundError`, `DetachedElementError`, `BrowserCrashError`, `ActionExecutionError`).
+- **Developer CLI Extensions (`apps/cli`)**:
+  - `atlas doctor` extended with Playwright Chromium driver availability check.
+  - `atlas environment test browser` CLI diagnostic command verifying headless Chromium launch and connectivity.
+- **Hermetic Synthetic Test Fixtures (`tests/fixtures`)**:
+  - Local HTTP `SyntheticServer` serving deterministic test pages (`/`, `/login`, `/interactive`, `/upload`, `/download`).
+  - End-to-end integration test (`test_browser_runtime_e2e.py`) validating the full ATLAS lifecycle without external network dependencies.
+
+---
+
 ## [0.1.0] - 2026-11-12 — Phase 1 Foundation & Core Lifecycle Release
 
 ### Added

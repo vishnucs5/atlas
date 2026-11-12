@@ -13,13 +13,25 @@ CORE_SRC = str(REPO_ROOT / "packages" / "atlas-core" / "src")
 STORAGE_SRC = str(REPO_ROOT / "packages" / "atlas-storage" / "src")
 POLICY_SRC = str(REPO_ROOT / "packages" / "atlas-policy" / "src")
 OBS_SRC = str(REPO_ROOT / "packages" / "atlas-observability" / "src")
+BROWSER_SRC = str(REPO_ROOT / "packages" / "atlas-browser" / "src")
+OBSERVATION_SRC = str(REPO_ROOT / "packages" / "atlas-observation" / "src")
+VERIFICATION_SRC = str(REPO_ROOT / "packages" / "atlas-verification" / "src")
 
 
 def get_cli_env(extra_env: dict[str, str] | None = None) -> dict[str, str]:
     """Build subprocess execution environment with source paths in PYTHONPATH."""
     env = os.environ.copy()
     existing = env.get("PYTHONPATH", "")
-    src_paths = [CLI_SRC, CORE_SRC, STORAGE_SRC, POLICY_SRC, OBS_SRC]
+    src_paths = [
+        CLI_SRC,
+        CORE_SRC,
+        STORAGE_SRC,
+        POLICY_SRC,
+        OBS_SRC,
+        BROWSER_SRC,
+        OBSERVATION_SRC,
+        VERIFICATION_SRC,
+    ]
     if existing:
         src_paths.append(existing)
     env["PYTHONPATH"] = os.pathsep.join(src_paths)
@@ -59,7 +71,24 @@ def test_cli_doctor() -> None:
     assert "Python:" in result.stdout
     assert "SQLite:" in result.stdout
     assert "Platform:" in result.stdout
+    assert "Playwright Chromium:" in result.stdout
     assert "System status: HEALTHY" in result.stdout
+
+
+def test_cli_environment_test_browser() -> None:
+    """Verify 'atlas environment test browser' validates browser driver connectivity."""
+    cmd = [sys.executable, "-m", "atlas_cli.main", "environment", "test", "browser"]
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        env=get_cli_env(),
+        cwd=str(REPO_ROOT),
+    )
+    assert result.returncode == 0
+    assert "Testing ATLAS Browser Runtime..." in result.stdout
+    assert "browser.playwright.chromium" in result.stdout
+    assert "Browser test: SUCCESS" in result.stdout
 
 
 def test_cli_init_and_task_lifecycle(tmp_path: Path) -> None:

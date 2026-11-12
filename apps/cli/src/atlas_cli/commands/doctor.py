@@ -54,6 +54,18 @@ def check_sqlite() -> tuple[bool, str]:
         return False, f"SQLite: Error initializing SQLite ({exc}) [FAIL]"
 
 
+def check_playwright() -> tuple[bool, str]:
+    """Verify Playwright Chromium browser driver availability."""
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            executable = p.chromium.executable_path
+            return True, f"Playwright Chromium: Available ({executable}) [OK]"
+    except Exception as exc:
+        return True, f"Playwright Chromium: Not installed or unavailable ({exc}) [INFO]"
+
+
 def check_workspace() -> tuple[bool, str]:
     """Check if the ATLAS workspace is initialized."""
     atlas_dir = get_atlas_dir()
@@ -79,6 +91,7 @@ def run_doctor() -> int:
         results.append(win_check)
 
     results.append(check_sqlite())
+    results.append(check_playwright())
     results.append(check_workspace())
 
     all_passed = True

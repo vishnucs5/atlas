@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-browser"
+version = "0.1.0"
+description = "Browser automation driver and execution runtime for ATLAS"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "atlas-policy",
+    "atlas-observation",
+    "atlas-verification",
+    "atlas-observability",
+    "playwright>=1.40.0",
+    "pydantic>=2.7.0",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+atlas-policy = { workspace = true }
+atlas-observation = { workspace = true }
+atlas-verification = { workspace = true }
+atlas-observability = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_browser"]

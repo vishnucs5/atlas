@@ -11,6 +11,7 @@ class ActionTarget(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     strategy: str
+    value: Any | None = None
     parameters: dict[str, Any] = Field(default_factory=dict)
 
 

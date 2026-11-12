@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from atlas_cli.commands.doctor import run_doctor
+from atlas_cli.commands.environment import run_environment_test_browser
 from atlas_cli.commands.init import run_init
 from atlas_cli.commands.task import run_task_create, run_task_inspect, run_task_list
 
@@ -21,6 +22,29 @@ def create_parser() -> argparse.ArgumentParser:
         "doctor",
         help="Run environment diagnostics and verify system health",
         description="Verify Python version, OS platform, and SQLite WAL capability.",
+    )
+
+    # Command: atlas environment
+    env_parser = subparsers.add_parser(
+        "environment",
+        help="Environment and driver runtime testing",
+        description="Verify and test execution drivers and environment availability.",
+    )
+    env_subparsers = env_parser.add_subparsers(
+        dest="env_command",
+        help="Environment subcommands",
+    )
+    test_parser = env_subparsers.add_parser(
+        "test",
+        help="Run diagnostic test for specific execution runtime",
+    )
+    test_subparsers = test_parser.add_subparsers(
+        dest="runtime_target",
+        help="Runtime driver to test",
+    )
+    test_subparsers.add_parser(
+        "browser",
+        help="Test Playwright Chromium browser driver launch and connectivity",
     )
 
     # Command: atlas init
@@ -119,6 +143,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "doctor":
         return run_doctor()
+
+    if args.command == "environment":
+        if (
+            getattr(args, "env_command", None) == "test"
+            and getattr(args, "runtime_target", None) == "browser"
+        ):
+            return run_environment_test_browser()
+        parser.parse_args(["environment", "--help"])
+        return 0
 
     if args.command == "init":
         return run_init()
