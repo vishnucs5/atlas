@@ -8,6 +8,7 @@ members = [
     "atlas-monorepo",
     "atlas-observability",
     "atlas-policy",
+    "atlas-storage",
 ]
 
 [[package]]
@@ -58,6 +59,21 @@ source = { editable = "packages/atlas-observability" }
 name = "atlas-policy"
 version = "0.1.0"
 source = { editable = "packages/atlas-policy" }
+dependencies = [
+    { name = "atlas-core" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "pydantic", specifier = ">=2.7.0" },
+]
+
+[[package]]
+name = "atlas-storage"
+version = "0.1.0"
+source = { editable = "packages/atlas-storage" }
 dependencies = [
     { name = "atlas-core" },
     { name = "pydantic" },
