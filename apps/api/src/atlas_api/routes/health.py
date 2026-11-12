@@ -1,6 +1,5 @@
 """Health, readiness, and component status routes for ATLAS API."""
 
-import os
 from datetime import UTC, datetime
 from typing import Any
 
@@ -56,7 +55,11 @@ def check_storage_status(request: Request) -> str:
             return "error"
 
     storage: Any = getattr(request.app.state, "storage", None)
-    if storage is not None and hasattr(storage, "list_tasks"):
+    if storage is None:
+        logger.warning("Storage backend not initialized on application state")
+        return "error"
+
+    if hasattr(storage, "list_tasks"):
         try:
             storage.list_tasks(limit=1)
             return "ok"
@@ -64,17 +67,8 @@ def check_storage_status(request: Request) -> str:
             logger.error("Configured storage check failed", extra={"error": str(exc)})
             return "error"
 
-    try:
-        from atlas_storage.sqlite import SQLiteStorage
-
-        db_path = os.getenv("ATLAS_DB_PATH", ":memory:")
-        fallback_storage = SQLiteStorage(db_path)
-        fallback_storage.initialize()
-        fallback_storage.list_tasks(limit=1)
-        return "ok"
-    except Exception as exc:
-        logger.error("Default storage check failed", extra={"error": str(exc)})
-        return "error"
+    logger.error("Storage backend does not implement required interface")
+    return "error"
 
 
 @router.get("/health", response_model=HealthResponse, summary="Liveness Probe")
@@ -84,8 +78,16 @@ def get_health() -> HealthResponse:
     return HealthResponse()
 
 
-@router.get("/v1/status", response_model=StatusResponse, summary="Component Status")
-@router.get("/api/v1/status", response_model=StatusResponse, summary="Component Status (API prefix alias)")
+@router.get(
+    "/v1/status",
+    response_model=StatusResponse,
+    summary="Component Status",
+)
+@router.get(
+    "/api/v1/status",
+    response_model=StatusResponse,
+    summary="Component Status (API prefix alias)",
+)
 def get_v1_status(request: Request) -> StatusResponse:
     """Return detailed system and component status."""
     storage_state = check_storage_status(request)

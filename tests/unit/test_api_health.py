@@ -1,7 +1,24 @@
 """Unit tests for ATLAS FastAPI health and status endpoints."""
 
+import pytest
 from atlas_api.main import app, create_app
+from atlas_storage.sqlite import SQLiteStorage
 from fastapi.testclient import TestClient
+
+
+@pytest.fixture(autouse=True)
+def configure_test_storage():
+    """Ensure test app has a cleanly managed in-memory storage engine."""
+    storage = SQLiteStorage(":memory:")
+    storage.initialize()
+    app.state.storage = storage
+    try:
+        yield storage
+    finally:
+        try:
+            storage.close()
+        finally:
+            app.state.storage = None
 
 
 def test_health_endpoint():
@@ -61,6 +78,34 @@ def test_readyz_readiness_endpoint():
     assert data["status"] in ("ok", "healthy")
     assert data["components"]["api"] == "ok"
     assert data["components"]["storage"] == "ok"
+
+
+def test_v1_status_when_storage_missing():
+    """Verify /v1/status reports degraded when app.state.storage is None."""
+    test_app = create_app()
+    test_app.state.storage = None
+    client = TestClient(test_app)
+
+    response = client.get("/v1/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "degraded"
+    assert data["components"]["api"] == "ok"
+    assert data["components"]["storage"] == "error"
+
+
+def test_readyz_when_storage_missing_returns_503():
+    """Verify /readyz returns HTTP 503 when app.state.storage is None."""
+    test_app = create_app()
+    test_app.state.storage = None
+    client = TestClient(test_app)
+
+    response = client.get("/readyz")
+    assert response.status_code == 503
+    data = response.json()
+    assert data["status"] == "degraded"
+    assert data["components"]["api"] == "ok"
+    assert data["components"]["storage"] == "error"
 
 
 def test_v1_status_storage_degraded():
