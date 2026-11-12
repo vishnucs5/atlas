@@ -208,6 +208,35 @@ def test_sqlite_event_retrieval(tmp_path):
     assert store.get_latest_event("unknown_task") is None
 
 
+def test_sqlite_get_latest_sequence(tmp_path):
+    """Verify get_latest_sequence returns 0 for empty tasks and max sequence for active tasks."""
+    db_file = tmp_path / "test_sequence.db"
+    store = SQLiteStorage(str(db_file))
+    store.initialize()
+
+    # Returns 0 when no events exist
+    assert store.get_latest_sequence("nonexistent_task") == 0
+
+    now = datetime.now(UTC)
+    for seq in range(1, 5):
+        store.append_event(
+            ExecutionEvent(
+                event_id=f"e_seq_{seq}",
+                task_id="t_seq",
+                sequence=seq,
+                event_type=EventType.OBSERVATION_CAPTURED,
+                timestamp=now,
+                payload={"index": seq},
+                correlation_id="c_seq",
+            )
+        )
+        assert store.get_latest_sequence("t_seq") == seq
+
+    assert store.get_latest_sequence("t_seq") == 4
+    assert store.get_latest_sequence("other_task") == 0
+    store.close()
+
+
 def test_sqlite_batch_events_and_rollback(tmp_path):
     """Test batch appending events and atomic rollback upon collision."""
     db_file = tmp_path / "test_batch.db"
@@ -426,3 +455,7 @@ def test_postgres_storage_spec():
         interface.get_events("t_pg")
     with pytest.raises(NotImplementedError):
         interface.get_latest_event("t_pg")
+    with pytest.raises(NotImplementedError):
+        interface.append_events([])
+    with pytest.raises(NotImplementedError):
+        interface.get_latest_sequence("t_pg")

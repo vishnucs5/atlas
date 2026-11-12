@@ -61,6 +61,10 @@ class EventStoreProtocol(Protocol):
         """Append an immutable event to the event stream."""
         ...
 
+    def append_events(self, events: list[ExecutionEvent]) -> None:
+        """Batch append multiple events atomically."""
+        ...
+
     def get_events(
         self,
         task_id: str,
@@ -71,4 +75,8 @@ class EventStoreProtocol(Protocol):
 
     def get_latest_event(self, task_id: str) -> ExecutionEvent | None:
         """Retrieve the event with the highest sequence number for a given task."""
+        ...
+
+    def get_latest_sequence(self, task_id: str) -> int:
+        """Retrieve the highest sequence number recorded for a task (0 if none exist)."""
         ...

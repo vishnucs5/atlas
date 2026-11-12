@@ -149,6 +149,7 @@ class SQLiteStorage(TaskStoreProtocol, EventStoreProtocol):
                 )
                 conn.commit()
             except sqlite3.Error as exc:
+                conn.rollback()
                 raise StorageError(f"Failed to save task '{task.task_id}': {exc}") from exc
 
     def get_task(self, task_id: str) -> Task | None:
@@ -183,31 +184,42 @@ class SQLiteStorage(TaskStoreProtocol, EventStoreProtocol):
             conn = self._get_connection()
             cursor = conn.cursor()
 
-            # First verify existence and current state
-            cursor.execute("SELECT status FROM tasks WHERE task_id = ?;", (task_id,))
-            row = cursor.fetchone()
-            if row is None:
-                raise TaskNotFoundError(f"Task '{task_id}' was not found.")
-
-            current_status = row["status"]
-            if expected_status is not None:
-                expected_str = (
-                    expected_status.value
-                    if isinstance(expected_status, TaskStatus)
-                    else str(expected_status)
-                )
-                if current_status != expected_str:
-                    raise OptimisticLockError(
-                        f"Task '{task_id}' current status '{current_status}' does not match expected '{expected_str}'."
-                    )
-
             try:
-                cursor.execute(
-                    "UPDATE tasks SET status = ?, updated_at = ? WHERE task_id = ?;",
-                    (new_status_str, now_str, task_id),
-                )
+                if expected_status is not None:
+                    expected_str = (
+                        expected_status.value
+                        if isinstance(expected_status, TaskStatus)
+                        else str(expected_status)
+                    )
+                    cursor.execute(
+                        "UPDATE tasks SET status = ?, updated_at = ? WHERE task_id = ? AND status = ?;",
+                        (new_status_str, now_str, task_id, expected_str),
+                    )
+                    if cursor.rowcount == 0:
+                        cursor.execute("SELECT status FROM tasks WHERE task_id = ?;", (task_id,))
+                        row = cursor.fetchone()
+                        if row is None:
+                            raise TaskNotFoundError(f"Task '{task_id}' was not found.")
+                        current_status = row["status"]
+                        raise OptimisticLockError(
+                            f"Task '{task_id}' current status '{current_status}' does not match expected '{expected_str}'."
+                        )
+                else:
+                    cursor.execute(
+                        "UPDATE tasks SET status = ?, updated_at = ? WHERE task_id = ?;",
+                        (new_status_str, now_str, task_id),
+                    )
+                    if cursor.rowcount == 0:
+                        cursor.execute("SELECT 1 FROM tasks WHERE task_id = ?;", (task_id,))
+                        if cursor.fetchone() is None:
+                            raise TaskNotFoundError(f"Task '{task_id}' was not found.")
+
                 conn.commit()
+            except (TaskNotFoundError, OptimisticLockError):
+                conn.rollback()
+                raise
             except sqlite3.Error as exc:
+                conn.rollback()
                 raise StorageError(f"Failed to update status for task '{task_id}': {exc}") from exc
 
             updated = self.get_task(task_id)
@@ -285,10 +297,12 @@ class SQLiteStorage(TaskStoreProtocol, EventStoreProtocol):
                 )
                 conn.commit()
             except sqlite3.IntegrityError as exc:
+                conn.rollback()
                 raise SequenceCollisionError(
                     f"Integrity violation on event '{event.event_id}' (sequence {event.sequence} for task '{event.task_id}'): {exc}"
                 ) from exc
             except sqlite3.Error as exc:
+                conn.rollback()
                 raise StorageError(f"Failed to append event '{event.event_id}': {exc}") from exc
 
     def append_events(self, events: list[ExecutionEvent]) -> None:
@@ -368,6 +382,22 @@ class SQLiteStorage(TaskStoreProtocol, EventStoreProtocol):
             if row is None:
                 return None
             return self._row_to_event(row)
+
+    def get_latest_sequence(self, task_id: str) -> int:
+        """Retrieve the highest sequence number recorded for a task (0 if none exist)."""
+        query = """
+        SELECT MAX(sequence) AS max_seq
+        FROM execution_events
+        WHERE task_id = ?;
+        """
+        with self._lock:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query, (task_id,))
+            row = cursor.fetchone()
+            if row is None or row["max_seq"] is None:
+                return 0
+            return int(row["max_seq"])
 
     # -------------------------------------------------------------------------
     # Helper Deserializers

@@ -144,3 +144,13 @@ class PostgresTaskStoreInterface(TaskStoreProtocol, EventStoreProtocol):
         raise NotImplementedError(
             "PostgreSQL production driver is scheduled for Phase 4 hardening."
         )
+
+    def append_events(self, events: list[ExecutionEvent]) -> None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def get_latest_sequence(self, task_id: str) -> int:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
