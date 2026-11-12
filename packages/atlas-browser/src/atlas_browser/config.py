@@ -17,6 +17,7 @@ class BrowserConfig(BaseModel):
     timeout_ms: int = 30000
     navigation_timeout_ms: int = 30000
     download_dir: Path | str | None = None
+    artifacts_dir: Path | str | None = None
     user_agent: str | None = None
     accept_downloads: bool = True
     ignore_https_errors: bool = True

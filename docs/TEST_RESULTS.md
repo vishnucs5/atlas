@@ -18,7 +18,7 @@ uv run pytest -v
 
 ---
 
-## 2. Test Suites Matrix (112 / 112 Passed)
+## 2. Test Suites Matrix (115 / 115 Passed)
 
 | Test Suite File | Package / Component | Description | Status | Pass / Total |
 | :--- | :--- | :--- | :--- | :--- |
@@ -35,7 +35,8 @@ uv run pytest -v
 | `tests/unit/test_observation_engine.py` | `atlas-observation` | DOM snapshots, CDP/ARIA accessibility tree, PNG screenshots | **PASSED** | 1 / 1 |
 | `tests/unit/test_verification_engine.py` | `atlas-verification` | Declarative post-condition verifications (visibility, text, file) | **PASSED** | 2 / 2 |
 | `tests/integration/test_browser_runtime_e2e.py` | `integration` | Full lifecycle: Task $\to$ State Machine $\to$ Driver $\to$ Store | **PASSED** | 1 / 1 |
-| **Total** | **All Workspace Packages** | **Full ATLAS Test Suite** | **PASSED** | **112 / 112 (100%)** |
+| `tests/integration/test_phase_2_definition_of_done.py` | `integration` | Definition of Done: 8-step workflow, policy bypass, recovery | **PASSED** | 3 / 3 |
+| **Total** | **All Workspace Packages** | **Full ATLAS Test Suite** | **PASSED** | **115 / 115 (100%)** |
 
 ---
 

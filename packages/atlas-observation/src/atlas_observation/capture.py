@@ -3,6 +3,7 @@
 import base64
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from atlas_core.contracts.observation import Observation
@@ -28,6 +29,7 @@ async def capture_observation(
     include_screenshot: bool = True,
     full_page: bool = False,
     include_interactive_elements: bool = True,
+    save_dir: Path | str | None = None,
 ) -> Observation:
     """Capture a comprehensive environment observation of the active browser page."""
     now = datetime.now(UTC)
@@ -40,10 +42,21 @@ async def capture_observation(
     dom = await extract_dom_snapshot(page)
     a11y = await extract_accessibility_tree(page)
 
+    metadata: dict[str, Any] = {
+        "url": url,
+        "title": title,
+    }
+
     screenshot_ref: str | None = None
     if include_screenshot:
         try:
             raw_bytes = await capture_screenshot(page, full_page=full_page)
+            if save_dir:
+                dir_path = Path(save_dir).resolve()
+                dir_path.mkdir(parents=True, exist_ok=True)
+                file_path = dir_path / f"{obs_id}.png"
+                file_path.write_bytes(raw_bytes)
+                metadata["screenshot_file"] = str(file_path)
             screenshot_ref = f"data:image/png;base64,{base64.b64encode(raw_bytes).decode('ascii')}"
         except Exception:
             screenshot_ref = None
@@ -56,11 +69,6 @@ async def capture_observation(
         )
     except Exception:
         focused_selector = None
-
-    metadata: dict[str, Any] = {
-        "url": url,
-        "title": title,
-    }
 
     if include_interactive_elements:
         metadata["interactive_elements"] = await extract_interactive_elements(page)

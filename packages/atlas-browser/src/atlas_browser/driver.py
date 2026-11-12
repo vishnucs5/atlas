@@ -116,11 +116,12 @@ class PlaywrightBrowserDriver(ComputerDriver):
         self._connected = True
         return self._context
 
-    async def observe(self) -> Observation:
+    async def observe(self, save_dir: Path | str | None = None) -> Observation:
         """Capture the current multimodal and structured state of the browser."""
         if not self._connected or not self._active_page:
             raise DriverError("Cannot observe: browser is not connected")
 
+        artifacts_path = save_dir or self.config.artifacts_dir
         page = self.active_page
         obs = await capture_observation(
             page=page,
@@ -128,6 +129,7 @@ class PlaywrightBrowserDriver(ComputerDriver):
             session_id=self._driver_id,
             include_screenshot=True,
             include_interactive_elements=True,
+            save_dir=artifacts_path,
         )
         # Augment with network diagnostics and downloaded files
         obs.metadata["network_summary"] = self._network_monitor.get_summary()
