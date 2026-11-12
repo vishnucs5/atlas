@@ -16,7 +16,8 @@
 | **Task 2.4** | File Downloads, Uploads & Network Monitoring | **COMPLETED** | `uv run pytest tests/unit/test_browser_downloads_and_errors.py` | `feat/phase-2` |
 | **Task 2.5** | Deterministic Action Verification (`atlas-verification`) | **COMPLETED** | `uv run pytest tests/unit/test_verification_engine.py` | `feat/phase-2` |
 | **Task 2.6** | Synthetic Fixtures & End-to-End Suite | **COMPLETED** | `uv run pytest tests/integration/test_browser_runtime_e2e.py` | `feat/phase-2` |
-| **Task 2.7** | Acceptance Verification & Final Report | **COMPLETED** | `uv run pytest -v` (112/112 passed) | `feat/phase-2` |
+| **Task 2.7** | Acceptance Verification & Final Report | **COMPLETED** | `uv run pytest -v` (115/115 passed) | `cae54eb` |
+| **Task 2.8** | Definition of Done & Recovery Suite | **COMPLETED** | `uv run pytest tests/integration/test_phase_2_definition_of_done.py` | `cae54eb` |
 
 ---
 
@@ -29,5 +30,5 @@
 - [x] 5. Outcomes are verified and recorded (`VerificationEngine` + `ExecutionEvent`).
 - [x] 6. Browser sessions are isolated (per-session contexts, separated cache/cookies).
 - [x] 7. Browser failures are handled safely (timeouts, crashes, detached elements).
-- [x] 8. Automated tests demonstrate the above (hermetic local test suite, 112/112 tests).
+- [x] 8. Automated tests demonstrate the above (hermetic local test suite, 115/115 tests).
 - [x] 9. CI, linting, formatting and type checking pass (`ruff check`, `ruff format`).
