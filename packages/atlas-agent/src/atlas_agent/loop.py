@@ -34,6 +34,7 @@ class AutonomousAgentLoop:
         planner: StructuredPlanner | None = None,
         context_manager: ContextManager | None = None,
         safety_engine: SafetyEngine | None = None,
+        approval_manager: Any | None = None,
     ) -> None:
         self._router = model_router
         self._firewall = action_firewall
@@ -44,6 +45,7 @@ class AutonomousAgentLoop:
         self._planner = planner or StructuredPlanner()
         self._context_mgr = context_manager or ContextManager()
         self._safety = safety_engine or SafetyEngine()
+        self._approval_mgr = approval_manager
         self._memory = TaskMemory()
 
     def _normalize_action_type(self, tool_name: str) -> str:
@@ -192,6 +194,74 @@ class AutonomousAgentLoop:
                 elapsed_seconds=elapsed,
                 timeout_seconds=float(plan_budget.timeout_seconds),
             )
+
+            # Check if there is an approved action resuming from WAITING_APPROVAL
+            if "pending_approval_action" in task.metadata:
+                pending_dict = task.metadata.pop("pending_approval_action")
+                action = ComputerAction.model_validate(pending_dict)
+                tc_id = action.parameters.get("_tool_call_id", f"tc_{action.action_id}")
+                tc_name = action.action_type.replace(".", "_")
+
+                await self._emit_event(
+                    task.task_id,
+                    session.session_id,
+                    EventType.ACTION_STARTED,
+                    {"action_id": action.action_id, "approved": True},
+                    step_corr_id,
+                )
+                result = await self._driver.execute(action)
+
+                verified = True
+                if action.expected_state:
+                    page = getattr(self._driver, "active_page", None)
+                    download_dir = getattr(self._driver, "downloads_path", None)
+                    v_res = await self._verification.verify(
+                        action.expected_state, page=page, download_dir=download_dir
+                    )
+                    verified = getattr(v_res, "verified", bool(v_res))
+                    await self._emit_event(
+                        task.task_id,
+                        session.session_id,
+                        EventType.VERIFICATION_COMPLETED,
+                        {"verified": verified, "evidence": getattr(v_res, "evidence", {})},
+                        step_corr_id,
+                    )
+
+                is_successful = (
+                    getattr(result, "success", False)
+                    or getattr(result, "status", "") == "completed"
+                )
+                if is_successful and verified:
+                    await self._emit_event(
+                        task.task_id,
+                        session.session_id,
+                        EventType.ACTION_COMPLETED,
+                        {"action_id": action.action_id, "output": result.output},
+                        step_corr_id,
+                    )
+                    tool_result_content = result.output or "Action executed successfully"
+                else:
+                    await self._emit_event(
+                        task.task_id,
+                        session.session_id,
+                        EventType.ACTION_FAILED,
+                        {
+                            "action_id": action.action_id,
+                            "error": result.error or "Verification failed",
+                        },
+                        step_corr_id,
+                    )
+                    tool_result_content = f"Action failed: {result.error or 'Verification failed'}"
+
+                self._context_mgr.add_message(
+                    ModelMessage(
+                        role="tool",
+                        tool_call_id=tc_id,
+                        name=tc_name,
+                        content=str(tool_result_content),
+                    )
+                )
+                continue
 
             # Step 1: OBSERVE
             try:
@@ -348,11 +418,40 @@ class AutonomousAgentLoop:
 
             # Step 7: REQUEST APPROVAL (if required)
             if decision.decision == PolicyDecisionType.REQUIRE_APPROVAL:
+                req_id = None
+                if self._approval_mgr:
+                    risk_str = (
+                        decision.risk_level.value
+                        if hasattr(decision.risk_level, "value")
+                        else str(decision.risk_level)
+                    )
+                    req = self._approval_mgr.create_request(
+                        task_id=task.task_id,
+                        action_id=action.action_id,
+                        action_type=action.action_type,
+                        parameters=action.parameters,
+                        reason=decision.reason,
+                        risk_level=risk_str,
+                    )
+                    req_id = req.request_id
+
+                # Store pending action data in metadata so it can be resumed
+                action_data = action.model_dump()
+                action_data["parameters"]["_tool_call_id"] = tc_id
+                task.metadata["pending_approval_action"] = action_data
+
+                payload: dict[str, Any] = {
+                    "action_id": action.action_id,
+                    "action_type": action.action_type,
+                }
+                if req_id:
+                    payload["request_id"] = req_id
+
                 await self._emit_event(
                     task.task_id,
                     session.session_id,
                     EventType.APPROVAL_REQUESTED,
-                    {"action_id": action.action_id},
+                    payload,
                     step_corr_id,
                 )
                 await self._transition_task(
