@@ -4,11 +4,23 @@ This module defines the connection configuration, relational schema DDL, and int
 contract for production-grade event-sourced storage (scheduled for Phase 4 hardening).
 """
 
+from datetime import datetime
+from typing import Any
+
+from atlas_core.contracts.checkpoint import Checkpoint
 from atlas_core.contracts.event import ExecutionEvent
+from atlas_core.contracts.ledger import ActionExecutionRecord, ActionExecutionStatus
 from atlas_core.contracts.task import Task, TaskStatus
+from atlas_core.contracts.worker import WorkerLease, WorkerRecord, WorkerStatus
 from pydantic import BaseModel, ConfigDict, Field
 
-from atlas_storage.interfaces import EventStoreProtocol, TaskStoreProtocol
+from atlas_storage.interfaces import (
+    ActionLedgerStoreProtocol,
+    CheckpointStoreProtocol,
+    EventStoreProtocol,
+    TaskStoreProtocol,
+    WorkerStoreProtocol,
+)
 
 POSTGRES_SCHEMA_DDL = """
 CREATE TABLE IF NOT EXISTS tasks (
@@ -41,6 +53,80 @@ CREATE TABLE IF NOT EXISTS execution_events (
 
 CREATE INDEX IF NOT EXISTS idx_events_task_seq ON execution_events(task_id, sequence);
 CREATE INDEX IF NOT EXISTS idx_events_correlation ON execution_events(correlation_id);
+
+CREATE TABLE IF NOT EXISTS checkpoints (
+    checkpoint_id VARCHAR(64) PRIMARY KEY,
+    task_id VARCHAR(64) NOT NULL REFERENCES tasks(task_id) ON DELETE CASCADE,
+    session_id VARCHAR(64),
+    worker_id VARCHAR(64),
+    lease_generation BIGINT NOT NULL DEFAULT 1,
+    state VARCHAR(32) NOT NULL,
+    sequence BIGINT NOT NULL DEFAULT 0,
+    plan_id VARCHAR(64),
+    plan_version INT NOT NULL DEFAULT 1,
+    current_step_id VARCHAR(64),
+    completed_action_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+    pending_action_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+    uncertain_action_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+    last_event_sequence BIGINT NOT NULL DEFAULT 0,
+    state_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+    environment_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    verification_evidence_refs JSONB NOT NULL DEFAULT '[]'::jsonb,
+    recovery_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    checkpoint_hash VARCHAR(128),
+    schema_version VARCHAR(16) NOT NULL DEFAULT '1.0',
+    created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_checkpoints_task ON checkpoints(task_id, created_at);
+
+CREATE TABLE IF NOT EXISTS action_ledger (
+    action_id VARCHAR(64) NOT NULL,
+    task_id VARCHAR(64) NOT NULL REFERENCES tasks(task_id) ON DELETE CASCADE,
+    idempotency_key VARCHAR(128) NOT NULL,
+    attempt INT NOT NULL DEFAULT 1,
+    status VARCHAR(32) NOT NULL,
+    worker_id VARCHAR(64) NOT NULL,
+    lease_generation BIGINT NOT NULL DEFAULT 1,
+    started_at TIMESTAMPTZ NOT NULL,
+    completed_at TIMESTAMPTZ,
+    action_type VARCHAR(64) NOT NULL,
+    parameters JSONB NOT NULL DEFAULT '{}'::jsonb,
+    output JSONB,
+    verification_result JSONB,
+    error JSONB,
+    schema_version VARCHAR(16) NOT NULL DEFAULT '1.0',
+    PRIMARY KEY (task_id, idempotency_key, attempt)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ledger_action_id ON action_ledger(action_id);
+CREATE INDEX IF NOT EXISTS idx_ledger_task_status ON action_ledger(task_id, status);
+
+CREATE TABLE IF NOT EXISTS worker_registry (
+    worker_id VARCHAR(64) PRIMARY KEY,
+    hostname VARCHAR(255) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    capabilities JSONB NOT NULL DEFAULT '[]'::jsonb,
+    current_task_id VARCHAR(64),
+    registered_at TIMESTAMPTZ NOT NULL,
+    last_heartbeat_at TIMESTAMPTZ NOT NULL,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    schema_version VARCHAR(16) NOT NULL DEFAULT '1.0'
+);
+
+CREATE TABLE IF NOT EXISTS worker_leases (
+    lease_id VARCHAR(64) PRIMARY KEY,
+    task_id VARCHAR(64) NOT NULL UNIQUE REFERENCES tasks(task_id) ON DELETE CASCADE,
+    worker_id VARCHAR(64) NOT NULL REFERENCES worker_registry(worker_id),
+    generation BIGINT NOT NULL DEFAULT 1,
+    status VARCHAR(32) NOT NULL,
+    acquired_at TIMESTAMPTZ NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    schema_version VARCHAR(16) NOT NULL DEFAULT '1.0'
+);
+
+CREATE INDEX IF NOT EXISTS idx_leases_worker ON worker_leases(worker_id);
 """
 
 
@@ -80,7 +166,13 @@ class PostgresStorageSpec:
         return POSTGRES_SCHEMA_DDL
 
 
-class PostgresTaskStoreInterface(TaskStoreProtocol, EventStoreProtocol):
+class PostgresTaskStoreInterface(
+    TaskStoreProtocol,
+    EventStoreProtocol,
+    CheckpointStoreProtocol,
+    ActionLedgerStoreProtocol,
+    WorkerStoreProtocol,
+):
     """Abstract interface and contract specification for PostgreSQL production drivers.
 
     Production implementation is provisioned in Phase 4 hardening.
@@ -151,6 +243,136 @@ class PostgresTaskStoreInterface(TaskStoreProtocol, EventStoreProtocol):
         )
 
     def get_latest_sequence(self, task_id: str) -> int:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def save_checkpoint(self, checkpoint: Checkpoint) -> None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def get_checkpoint(self, checkpoint_id: str) -> Checkpoint | None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def get_latest_checkpoint(self, task_id: str) -> Checkpoint | None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def list_checkpoints(self, task_id: str, limit: int = 50) -> list[Checkpoint]:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def record_action_attempt(self, record: ActionExecutionRecord) -> None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def update_action_status(
+        self,
+        task_id: str,
+        idempotency_key: str,
+        attempt: int,
+        status: ActionExecutionStatus,
+        output: dict[str, Any] | None = None,
+        verification_result: dict[str, Any] | None = None,
+        error: str | None = None,
+        completed_at: datetime | None = None,
+    ) -> ActionExecutionRecord:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def get_action_record(
+        self,
+        task_id: str,
+        idempotency_key: str,
+        attempt: int = 1,
+    ) -> ActionExecutionRecord | None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def get_latest_action(
+        self,
+        task_id: str,
+        idempotency_key: str,
+    ) -> ActionExecutionRecord | None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def get_task_actions(
+        self,
+        task_id: str,
+    ) -> list[ActionExecutionRecord]:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def register_worker(self, worker: WorkerRecord) -> None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def heartbeat_worker(self, worker_id: str, status: WorkerStatus | None = None) -> None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def get_worker(self, worker_id: str) -> WorkerRecord | None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def list_workers(self, status: WorkerStatus | None = None) -> list[WorkerRecord]:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def acquire_lease(
+        self,
+        task_id: str,
+        worker_id: str,
+        ttl_seconds: float = 30.0,
+    ) -> WorkerLease:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def renew_lease(
+        self,
+        lease_id: str,
+        worker_id: str,
+        ttl_seconds: float = 30.0,
+    ) -> WorkerLease:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def release_lease(
+        self,
+        lease_id: str,
+        worker_id: str,
+    ) -> None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def get_active_lease(self, task_id: str) -> WorkerLease | None:
+        raise NotImplementedError(
+            "PostgreSQL production driver is scheduled for Phase 4 hardening."
+        )
+
+    def validate_lease_fencing(
+        self,
+        task_id: str,
+        expected_generation: int,
+    ) -> bool:
         raise NotImplementedError(
             "PostgreSQL production driver is scheduled for Phase 4 hardening."
         )

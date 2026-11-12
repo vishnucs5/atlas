@@ -1,12 +1,20 @@
 """ATLAS Storage - Event-Sourced Storage Engine and Database Interfaces."""
 
 from atlas_storage.interfaces import (
+    ActionLedgerStoreProtocol,
+    ActionNotFoundError,
+    CheckpointNotFoundError,
+    CheckpointStoreProtocol,
+    CorruptedCheckpointError,
     EventStoreProtocol,
+    LeaseExpiredError,
     OptimisticLockError,
     SequenceCollisionError,
+    StaleWorkerError,
     StorageError,
     TaskNotFoundError,
     TaskStoreProtocol,
+    WorkerStoreProtocol,
 )
 from atlas_storage.postgres import (
     PostgresConfig,
@@ -19,7 +27,13 @@ from atlas_storage.sqlite import (
 )
 
 __all__ = [
+    "ActionLedgerStoreProtocol",
+    "ActionNotFoundError",
+    "CheckpointNotFoundError",
+    "CheckpointStoreProtocol",
+    "CorruptedCheckpointError",
     "EventStoreProtocol",
+    "LeaseExpiredError",
     "OptimisticLockError",
     "PostgresConfig",
     "PostgresStorageSpec",
@@ -27,7 +41,9 @@ __all__ = [
     "SQLiteStorage",
     "SQLiteTaskStore",
     "SequenceCollisionError",
+    "StaleWorkerError",
     "StorageError",
     "TaskNotFoundError",
     "TaskStoreProtocol",
+    "WorkerStoreProtocol",
 ]
