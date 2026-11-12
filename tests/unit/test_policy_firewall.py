@@ -385,4 +385,3 @@ def test_firewall_fails_closed_on_malformed_url(malformed_url: str):
     assert decision.decision == PolicyDecisionType.DENY
     assert decision.risk_level == RiskLevel.CRITICAL
     assert "malformed" in decision.reason.lower() or "unparseable" in decision.reason.lower()
-

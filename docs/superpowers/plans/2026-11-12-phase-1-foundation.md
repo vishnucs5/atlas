@@ -185,6 +185,7 @@ from atlas_core.contracts.event import ExecutionEvent, EventType
 from atlas_core.contracts.policy import PolicyDecision, PolicyDecisionType, RiskLevel
 from atlas_core.contracts.observation import Observation
 
+
 def test_task_contract_serialization():
     req = TaskRequest(objective="Research cloud providers", priority=TaskPriority.HIGH)
     assert req.objective == "Research cloud providers"
@@ -204,19 +205,23 @@ def test_task_contract_serialization():
     assert deserialized.task_id == "task_123"
     assert deserialized.status == TaskStatus.CREATED
 
+
 def test_computer_action_contract():
     action = ComputerAction(
         action_id="act_001",
         task_id="task_123",
         session_id="sess_456",
         action_type="browser.click",
-        target=ActionTarget(strategy="accessible_role", parameters={"role": "button", "name": "Search"}),
+        target=ActionTarget(
+            strategy="accessible_role", parameters={"role": "button", "name": "Search"}
+        ),
         expected_state=ExpectedState(condition="element_visible", target="Search results"),
         idempotency_key="task_123_act_001",
     )
     assert action.action_type == "browser.click"
     assert action.schema_version == "1.0"
     assert action.target.parameters["role"] == "button"
+
 
 def test_execution_event_contract():
     now = datetime.now(timezone.utc)
@@ -293,21 +298,27 @@ from atlas_core.contracts.task import TaskStatus
 from atlas_core.lifecycle.state_machine import TaskStateMachine
 from atlas_core.lifecycle.exceptions import InvalidStateTransitionError
 
+
 def test_valid_lifecycle_transitions():
     sm = TaskStateMachine()
     assert sm.transition(TaskStatus.CREATED, TaskStatus.QUEUED) == TaskStatus.QUEUED
     assert sm.transition(TaskStatus.QUEUED, TaskStatus.PLANNING) == TaskStatus.PLANNING
     assert sm.transition(TaskStatus.PLANNING, TaskStatus.READY) == TaskStatus.READY
     assert sm.transition(TaskStatus.READY, TaskStatus.RUNNING) == TaskStatus.RUNNING
-    assert sm.transition(TaskStatus.RUNNING, TaskStatus.WAITING_APPROVAL) == TaskStatus.WAITING_APPROVAL
+    assert (
+        sm.transition(TaskStatus.RUNNING, TaskStatus.WAITING_APPROVAL)
+        == TaskStatus.WAITING_APPROVAL
+    )
     assert sm.transition(TaskStatus.WAITING_APPROVAL, TaskStatus.RUNNING) == TaskStatus.RUNNING
     assert sm.transition(TaskStatus.RUNNING, TaskStatus.VERIFYING) == TaskStatus.VERIFYING
     assert sm.transition(TaskStatus.VERIFYING, TaskStatus.COMPLETED) == TaskStatus.COMPLETED
+
 
 def test_invalid_lifecycle_transition_raises():
     sm = TaskStateMachine()
     with pytest.raises(InvalidStateTransitionError):
         sm.transition(TaskStatus.CREATED, TaskStatus.COMPLETED)
+
 
 def test_terminal_state_cannot_transition():
     sm = TaskStateMachine()
@@ -364,6 +375,7 @@ from atlas_core.contracts.action import ComputerAction, ActionTarget
 from atlas_core.contracts.policy import PolicyDecisionType, RiskLevel
 from atlas_policy.firewall import ActionFirewall
 
+
 def test_firewall_allows_low_risk_action():
     firewall = ActionFirewall()
     action = ComputerAction(
@@ -376,6 +388,7 @@ def test_firewall_allows_low_risk_action():
     decision = firewall.evaluate(action)
     assert decision.decision == PolicyDecisionType.ALLOW
     assert decision.risk_level == RiskLevel.LOW
+
 
 def test_firewall_requires_approval_for_destructive_action():
     firewall = ActionFirewall()
@@ -435,11 +448,13 @@ import json
 import logging
 from atlas_observability.logging import get_logger, mask_secrets, bind_context
 
+
 def test_mask_secrets():
     raw = "My API key is sk-proj-1234567890abcdef12345 and password=supersecret"
     masked = mask_secrets(raw)
     assert "sk-proj-1234567890abcdef12345" not in masked
     assert "supersecret" not in masked
+
 
 def test_structured_json_logging():
     stream = io.StringIO()
@@ -501,6 +516,7 @@ import pytest
 from atlas_core.contracts.task import Task, TaskStatus, TaskPriority
 from atlas_core.contracts.event import ExecutionEvent, EventType
 from atlas_storage.sqlite import SQLiteStorage
+
 
 def test_sqlite_task_and_event_lifecycle(tmp_path):
     db_file = tmp_path / "test_atlas.db"
@@ -592,6 +608,7 @@ Create `tests/unit/test_api_health.py`:
 from fastapi.testclient import TestClient
 from atlas_api.main import app
 
+
 def test_health_endpoint():
     client = TestClient(app)
     response = client.get("/health")
@@ -600,6 +617,7 @@ def test_health_endpoint():
     assert data["status"] == "healthy"
     assert data["version"] == "0.1.0"
     assert "timestamp" in data
+
 
 def test_v1_status_endpoint():
     client = TestClient(app)
@@ -660,11 +678,13 @@ import subprocess
 import sys
 import pytest
 
+
 def test_cli_help():
     cmd = [sys.executable, "-m", "atlas_cli.main", "--help"]
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0
     assert "ATLAS - Autonomous Task & Lifecycle Automation System" in result.stdout
+
 
 def test_cli_doctor():
     cmd = [sys.executable, "-m", "atlas_cli.main", "doctor"]
@@ -673,10 +693,13 @@ def test_cli_doctor():
     assert "Python:" in result.stdout
     assert "System status: HEALTHY" in result.stdout
 
+
 def test_cli_init_and_task_lifecycle(tmp_path):
     env = {"ATLAS_HOME": str(tmp_path)}
     init_cmd = [sys.executable, "-m", "atlas_cli.main", "init"]
-    res_init = subprocess.run(init_cmd, capture_output=True, text=True, env={**dict(env), "PATH": ""})
+    res_init = subprocess.run(
+        init_cmd, capture_output=True, text=True, env={**dict(env), "PATH": ""}
+    )
     # Will run with default or isolated config directory
 ```
 

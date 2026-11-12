@@ -383,7 +383,9 @@ class ActionFirewall:
             rules_evaluated.append("domain_security_check")
             for domain in domains:
                 if domain.startswith(MALFORMED_DOMAIN_TOKEN_PREFIX):
-                    raw_target = domain.removeprefix(MALFORMED_DOMAIN_TOKEN_PREFIX).removesuffix(">")
+                    raw_target = domain.removeprefix(MALFORMED_DOMAIN_TOKEN_PREFIX).removesuffix(
+                        ">"
+                    )
                     return PolicyDecision(
                         decision=PolicyDecisionType.DENY,
                         risk_level=RiskLevel.CRITICAL,
