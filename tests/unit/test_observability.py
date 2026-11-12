@@ -10,6 +10,7 @@ from atlas_observability.logging import (
     context_scope,
     get_context,
     get_logger,
+    is_sensitive_key,
     mask_data,
     mask_secrets,
     unbind_context,
@@ -83,6 +84,52 @@ def test_mask_secrets_bearer_and_key_value_pairs():
     assert "clientsecret456" not in masked
 
 
+def test_mask_secrets_bare_secret_and_aws_keys():
+    """Verify redacting bare secret=, 'secret':, and AWS secret access key patterns."""
+    text = (
+        "config: secret=my_super_bare_secret_value\n"
+        'json_data: {"secret": "inner_bare_secret_pass"}\n'
+        "aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\n"
+        "secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\n"
+        "access_key=AKIAIOSFODNN7EXAMPLE"
+    )
+    masked = mask_secrets(text)
+    assert "my_super_bare_secret_value" not in masked
+    assert "inner_bare_secret_pass" not in masked
+    assert "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" not in masked
+    assert "AKIAIOSFODNN7EXAMPLE" not in masked
+    assert "secret=[REDACTED]" in masked
+    assert '"secret": "[REDACTED]"' in masked
+
+
+def test_mask_secrets_basic_auth_header():
+    """Verify redacting HTTP Basic authentication headers including base64 padding."""
+    text = (
+        "Headers:\n"
+        "Authorization: Basic dXNlcjpwYXNzd29yZA==\n"
+        "proxy-authorization: basic YWxhZGRpbjpvcGVuc2VzYW1l"
+    )
+    masked = mask_secrets(text)
+    assert "dXNlcjpwYXNzd29yZA==" not in masked
+    assert "YWxhZGRpbjpvcGVuc2VzYW1l" not in masked
+    assert "Basic [REDACTED]" in masked
+    assert "basic [REDACTED]" in masked
+
+
+def test_mask_secrets_token_variants():
+    """Verify redacting common token variants in key-value strings."""
+    text = (
+        "refresh_token=rt_9876543210 and session_token=st_1234567890\n"
+        '{"csrf_token": "csrf_secret_val", "api_token": "api_secret_val", "id_token": "id_secret_val"}'
+    )
+    masked = mask_secrets(text)
+    assert "rt_9876543210" not in masked
+    assert "st_1234567890" not in masked
+    assert "csrf_secret_val" not in masked
+    assert "api_secret_val" not in masked
+    assert "id_secret_val" not in masked
+
+
 def test_mask_secrets_jwt_and_pem_private_keys():
     """Verify redacting JWT tokens and PEM private keys."""
     jwt = (
@@ -107,25 +154,58 @@ def test_mask_secrets_leaves_benign_text_intact():
     assert mask_secrets(plain) == plain
 
 
+def test_is_sensitive_key_classification():
+    """Verify is_sensitive_key identifies sensitive keys while sparing token count metrics."""
+    assert is_sensitive_key("secret") is True
+    assert is_sensitive_key("client_secret") is True
+    assert is_sensitive_key("refresh_token") is True
+    assert is_sensitive_key("session_token") is True
+    assert is_sensitive_key("csrf_token") is True
+    assert is_sensitive_key("api_token") is True
+    assert is_sensitive_key("id_token") is True
+    assert is_sensitive_key("access_key") is True
+    assert is_sensitive_key("secret_access_key") is True
+    assert is_sensitive_key("aws_secret_access_key") is True
+
+    # Token usage metrics must NOT be redacted
+    assert is_sensitive_key("prompt_tokens") is False
+    assert is_sensitive_key("completion_tokens") is False
+    assert is_sensitive_key("total_tokens") is False
+    assert is_sensitive_key("max_tokens") is False
+    assert is_sensitive_key("tokens") is False
+    assert is_sensitive_key("action") is False
+
+
 def test_mask_data_nested_structures():
     """Verify mask_data recursively redacts dicts, lists, and primitives."""
     payload = {
         "user": "alice",
         "password": "plain_password_123",
         "api_key": "sk-proj-99999999999999999999",
+        "secret": "top_secret_val",
+        "refresh_token": "rt_nested_token",
+        "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
         "metadata": {
             "token": "tok_nested_12345",
             "items": ["safe_item", "secret password=innersecret in string"],
         },
+        "prompt_tokens": 120,
+        "completion_tokens": 45,
         "count": 42,
     }
     cleaned = mask_data(payload)
     assert cleaned["user"] == "alice"
     assert cleaned["password"] == "[REDACTED]"
     assert cleaned["api_key"] == "[REDACTED]"
+    assert cleaned["secret"] == "[REDACTED]"
+    assert cleaned["refresh_token"] == "[REDACTED]"
+    assert cleaned["aws_secret_access_key"] == "[REDACTED]"
     assert cleaned["metadata"]["token"] == "[REDACTED]"
     assert cleaned["metadata"]["items"][0] == "safe_item"
     assert "innersecret" not in cleaned["metadata"]["items"][1]
+    # Metrics preserved
+    assert cleaned["prompt_tokens"] == 120
+    assert cleaned["completion_tokens"] == 45
     assert cleaned["count"] == 42
 
 

@@ -29,11 +29,20 @@ _SENSITIVE_KEY_NAMES_NORM: set[str] = {
     "secretkey",
     "accesstoken",
     "authtoken",
+    "refreshtoken",
+    "sessiontoken",
+    "csrftoken",
+    "apitoken",
+    "idtoken",
     "token",
     "privatekey",
     "clientsecret",
     "clienttoken",
+    "accesskey",
+    "secretaccesskey",
+    "awssecretaccesskey",
     "bearer",
+    "basic",
     "authorization",
     "proxyauthorization",
     "cookie",
@@ -46,18 +55,47 @@ _SENSITIVE_SUFFIXES: tuple[str, ...] = (
     "secret",
     "apikey",
     "secretkey",
+    "accesskey",
+    "secretaccesskey",
+)
+
+# Token metric / count keys that should never be redacted as secrets
+_TOKEN_METRIC_NAMES: frozenset[str] = frozenset(
+    {
+        "prompttokens",
+        "completiontokens",
+        "totaltokens",
+        "inputtokens",
+        "outputtokens",
+        "usagetokens",
+        "maxtokens",
+        "numtokens",
+        "tokens",
+    }
 )
 
 
 def is_sensitive_key(key: str) -> bool:
     """Determine if a key name suggests sensitive content."""
     norm = re.sub(r"[-_]", "", str(key).lower())
+    if norm in _TOKEN_METRIC_NAMES:
+        return False
     if norm in _SENSITIVE_KEY_NAMES_NORM:
         return True
     if any(norm.endswith(suffix) for suffix in _SENSITIVE_SUFFIXES):
         return True
+    if norm.endswith("token"):
+        return True
     return False
 
+
+# Reusable regex fragment for sensitive key names in key-value logging
+_SENSITIVE_KEY_RE = (
+    r"(?:password|passwd|pwd|api[_-]?key|secret[_-]?key|secret|auth[_-]?token|"
+    r"access[_-]?token|refresh[_-]?token|session[_-]?token|csrf[_-]?token|api[_-]?token|"
+    r"id[_-]?token|client[_-]?secret|private[_-]?key|token|access[_-]?key|"
+    r"secret[_-]?access[_-]?key|aws[_-]?secret[_-]?access[_-]?key)"
+)
 
 # Compiled regular expressions for pattern-based secret redaction
 _SECRET_PATTERNS: list[tuple[re.Pattern[str], str | Callable[[re.Match[str]], str]]] = [
@@ -96,23 +134,21 @@ _SECRET_PATTERNS: list[tuple[re.Pattern[str], str | Callable[[re.Match[str]], st
         re.compile(r"\beyJ[a-zA-Z0-9_\-]{10,}\.[a-zA-Z0-9_\-]{10,}\.[a-zA-Z0-9_\-]{10,}\b"),
         "[REDACTED]",
     ),
-    # Bearer Tokens in headers
+    # Bearer and Basic Tokens in headers (supports base64 Basic auth with padding)
     (
-        re.compile(r"(?i)\b(bearer\s+)([a-zA-Z0-9_\-\.]{15,})\b"),
+        re.compile(
+            r"(?i)\b((?:bearer|basic)\s+)([a-zA-Z0-9_\-\.=/+]{10,})(?=[^a-zA-Z0-9_\-\.=/+]|$)"
+        ),
         r"\g<1>[REDACTED]",
     ),
     # Quoted key-value pairs in JSON, configs, or queries
     (
-        re.compile(
-            r"""(?i)(["']?(?:password|passwd|pwd|api[_-]?key|secret[_-]?key|auth[_-]?token|access[_-]?token|client[_-]?secret|private[_-]?key|token)["']?\s*[:=]\s*["'])([^"'\r\n]+)(["'])"""
-        ),
+        re.compile(rf"""(?i)(["']?{_SENSITIVE_KEY_RE}["']?\s*[:=]\s*["'])([^"'\r\n]+)(["'])"""),
         r"\g<1>[REDACTED]\g<3>",
     ),
     # Unquoted key-value pairs (CLI flags, URL params, key=value strings)
     (
-        re.compile(
-            r"""(?i)(["']?(?:password|passwd|pwd|api[_-]?key|secret[_-]?key|auth[_-]?token|access[_-]?token|client[_-]?secret|private[_-]?key|token)["']?\s*[:=]\s*)([^\s,;"'&>]+)"""
-        ),
+        re.compile(rf"""(?i)(["']?{_SENSITIVE_KEY_RE}["']?\s*[:=]\s*)([^\s,;"'&>]+)"""),
         r"\g<1>[REDACTED]",
     ),
 ]
