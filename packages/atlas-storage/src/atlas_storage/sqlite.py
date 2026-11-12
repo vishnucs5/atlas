@@ -19,6 +19,7 @@ from atlas_storage.interfaces import (
     ActionLedgerStoreProtocol,
     ActionNotFoundError,
     CheckpointStoreProtocol,
+    CorruptedCheckpointError,
     EventStoreProtocol,
     LeaseExpiredError,
     OptimisticLockError,
@@ -538,7 +539,13 @@ class SQLiteStorage(
             conn = self._get_connection()
             cursor = conn.execute(query, (task_id, limit))
             rows = cursor.fetchall()
-            return [self._row_to_checkpoint(r) for r in rows]
+            checkpoints: list[Checkpoint] = []
+            for r in rows:
+                try:
+                    checkpoints.append(self._row_to_checkpoint(r))
+                except CorruptedCheckpointError:
+                    continue
+            return checkpoints
 
     # -------------------------------------------------------------------------
     # ActionLedgerStoreProtocol Implementation
@@ -951,30 +958,41 @@ class SQLiteStorage(
 
     @staticmethod
     def _row_to_checkpoint(row: sqlite3.Row) -> Checkpoint:
-        return Checkpoint(
-            checkpoint_id=row["checkpoint_id"],
-            task_id=row["task_id"],
-            session_id=row["session_id"],
-            worker_id=row["worker_id"],
-            lease_generation=int(row["lease_generation"]),
-            state=TaskStatus(row["state"]),
-            sequence=int(row["sequence"]),
-            plan_id=row["plan_id"],
-            plan_version=int(row["plan_version"]),
-            current_step_id=row["current_step_id"],
-            completed_action_ids=json.loads(row["completed_action_ids"]),
-            pending_action_ids=json.loads(row["pending_action_ids"]),
-            uncertain_action_ids=json.loads(row["uncertain_action_ids"]),
-            last_event_sequence=int(row["last_event_sequence"]),
-            state_snapshot=json.loads(row["state_snapshot"]),
-            environment_metadata=json.loads(row["environment_metadata"]),
-            verification_evidence_refs=json.loads(row["verification_evidence_refs"]),
-            recovery_metadata=json.loads(row["recovery_metadata"]),
-            metadata=json.loads(row["metadata"]),
-            checkpoint_hash=row["checkpoint_hash"],
-            schema_version=row["schema_version"],
-            timestamp=datetime.fromisoformat(row["created_at"]),
-        )
+        try:
+            state_val = row["state"]
+            try:
+                state = TaskStatus(state_val)
+            except ValueError:
+                state = state_val
+
+            return Checkpoint(
+                checkpoint_id=row["checkpoint_id"],
+                task_id=row["task_id"],
+                session_id=row["session_id"],
+                worker_id=row["worker_id"],
+                lease_generation=int(row["lease_generation"]),
+                state=state,
+                sequence=int(row["sequence"]),
+                plan_id=row["plan_id"],
+                plan_version=int(row["plan_version"]),
+                current_step_id=row["current_step_id"],
+                completed_action_ids=json.loads(row["completed_action_ids"]),
+                pending_action_ids=json.loads(row["pending_action_ids"]),
+                uncertain_action_ids=json.loads(row["uncertain_action_ids"]),
+                last_event_sequence=int(row["last_event_sequence"]),
+                state_snapshot=json.loads(row["state_snapshot"]),
+                environment_metadata=json.loads(row["environment_metadata"]),
+                verification_evidence_refs=json.loads(row["verification_evidence_refs"]),
+                recovery_metadata=json.loads(row["recovery_metadata"]),
+                metadata=json.loads(row["metadata"]),
+                checkpoint_hash=row["checkpoint_hash"],
+                schema_version=row["schema_version"],
+                timestamp=datetime.fromisoformat(row["created_at"]),
+            )
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise CorruptedCheckpointError(
+                f"Failed to deserialize checkpoint '{row['checkpoint_id']}': {exc}"
+            ) from exc
 
     @staticmethod
     def _row_to_action_record(row: sqlite3.Row) -> ActionExecutionRecord:

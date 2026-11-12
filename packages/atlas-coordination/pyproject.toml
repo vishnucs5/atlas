@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-coordination"
+version = "0.1.0"
+description = "Control Plane Coordination, Checkpointing, Worker Leases, and Durable Recovery for ATLAS"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "atlas-storage",
+    "atlas-observability",
+    "atlas-policy",
+    "pydantic>=2.7.0",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+atlas-storage = { workspace = true }
+atlas-observability = { workspace = true }
+atlas-policy = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_coordination"]

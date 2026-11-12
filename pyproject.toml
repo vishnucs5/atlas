@@ -21,6 +21,7 @@ members = [
     "packages/atlas-verification",
     "packages/atlas-models",
     "packages/atlas-agent",
+    "packages/atlas-coordination",
     "apps/api",
     "apps/cli",
 ]
@@ -46,6 +47,7 @@ pythonpath = [
     "packages/atlas-verification/src",
     "packages/atlas-models/src",
     "packages/atlas-agent/src",
+    "packages/atlas-coordination/src",
     "apps/api/src",
     "apps/cli/src",
 ]
@@ -64,6 +66,7 @@ extraPaths = [
     "packages/atlas-verification/src",
     "packages/atlas-models/src",
     "packages/atlas-agent/src",
+    "packages/atlas-coordination/src",
     "apps/api/src",
     "apps/cli/src",
 ]
