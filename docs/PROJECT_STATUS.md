@@ -17,7 +17,7 @@
 | **Task 5** | Action Firewall Policy Engine | `packages/atlas-policy` | Planned | Pending |
 | **Task 6** | Contextual Observability & Structured Logging | `packages/atlas-observability` | Planned | Pending |
 | **Task 7** | FastAPI Service & Health Endpoints | `apps/api` | Planned | Pending |
-| **Task 8** | Developer CLI Suite | `apps/cli` | Planned | Pending |
+| **Task 8** | Developer CLI Suite | `apps/cli` | **COMPLETED** | Subagent |
 | **Task 9** | Automated CI Workflow | `.github/workflows` | Planned | Pending |
 | **Task 10** | System Integration & Phase 1 Verification | Cross-system | Planned | Pending |
 | **Task 11** | Final Governance & Milestone Release | Root / Docs | Planned | Pending |

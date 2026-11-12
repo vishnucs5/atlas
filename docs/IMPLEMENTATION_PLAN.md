@@ -53,11 +53,11 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
   - Expose `/healthz` (liveness), `/readyz` (readiness with SQLite check), and `/api/v1/status`.
   - Unit and API tests using `TestClient`.
 
-- [ ] **Task 8: Developer CLI Suite (`apps/cli`)**
+- [x] **Task 8: Developer CLI Suite (`apps/cli`)**
   - Implement `atlas` CLI commands:
     - `atlas doctor`: Check Python version, SQLite WAL support, OS environment.
     - `atlas init`: Initialize local database and default workspace directory.
-    - `atlas task`: Task management subcommands (create, get, list).
+    - `atlas task`: Task management subcommands (create, list, inspect).
   - Integration tests for CLI commands and error handling.
 
 - [ ] **Task 9: Automated CI Workflow (`.github/workflows/ci.yml`)**

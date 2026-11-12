@@ -5,6 +5,7 @@ requires-python = ">=3.11"
 [manifest]
 members = [
     "atlas-api",
+    "atlas-cli",
     "atlas-core",
     "atlas-monorepo",
     "atlas-observability",
@@ -64,6 +65,23 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.110.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "pydantic", specifier = ">=2.7.0" },
+]
+
+[[package]]
+name = "atlas-cli"
+version = "0.1.0"
+source = { editable = "apps/cli" }
+dependencies = [
+    { name = "atlas-core" },
+    { name = "atlas-observability" },
+    { name = "atlas-storage" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "atlas-observability", editable = "packages/atlas-observability" },
+    { name = "atlas-storage", editable = "packages/atlas-storage" },
 ]
 
 [[package]]

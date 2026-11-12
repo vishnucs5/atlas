@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-cli"
+version = "0.1.0"
+description = "ATLAS Developer CLI - Command-Line Interface for ATLAS"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "atlas-storage",
+    "atlas-observability",
+]
+
+[project.scripts]
+atlas = "atlas_cli.main:main"
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+atlas-storage = { workspace = true }
+atlas-observability = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_cli"]

@@ -25,7 +25,7 @@ uv run pytest -v --cov=packages --cov=apps
 | `tests/unit/test_policy_firewall.py` | `atlas-policy` | Rule sets (ALLOW, REQUIRE_APPROVAL, BLOCK, DRY_RUN) | Planned (Task 5) | - |
 | `tests/unit/test_observability.py` | `atlas-observability` | JSON structured formatting, contextual binding, secret masking | Planned (Task 6) | - |
 | `tests/unit/test_api_health.py` | `apps/api` | `/healthz`, `/readyz`, `/api/v1/status` endpoints | Planned (Task 7) | - |
-| `tests/integration/test_cli.py` | `apps/cli` | `atlas doctor`, `atlas init`, `atlas task` CLI operations | Planned (Task 8) | - |
+| `tests/integration/test_cli.py` | `apps/cli` | `atlas doctor`, `atlas init`, `atlas task` CLI operations | PASSED (Task 8) | 6/6 passing |
 | `tests/integration/test_end_to_end.py` | Full System | End-to-end task lifecycle integration suite | Planned (Task 10) | - |
 
 ---
@@ -46,8 +46,8 @@ uv run pytest -v --cov=packages --cov=apps
 | **AC-10** | Structured logging outputs JSON with `task_id`, `session_id`, and `step_id` | `test_observability.py` | Planned |
 | **AC-11** | Secret masking sanitizes API keys, tokens, and passwords | `test_observability.py` | Planned |
 | **AC-12** | FastAPI `/healthz` and `/readyz` report valid HTTP 200 health status | `test_api_health.py` | Planned |
-| **AC-13** | `atlas doctor` exits 0 on valid environment and reports diagnostics | `test_cli.py` | Planned |
-| **AC-14** | `atlas init` and `atlas task` initialize database and execute lifecycle tasks | `test_cli.py` | Planned |
+| **AC-13** | `atlas doctor` exits 0 on valid environment and reports diagnostics | `test_cli.py` | PASSED |
+| **AC-14** | `atlas init` and `atlas task` initialize database and execute lifecycle tasks | `test_cli.py` | PASSED |
 
 ---
 
