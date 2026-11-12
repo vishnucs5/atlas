@@ -4,7 +4,7 @@ import base64
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from atlas_core.contracts.observation import Observation
 from playwright.async_api import Page
@@ -16,7 +16,7 @@ from atlas_observation.dom import extract_dom_snapshot, extract_interactive_elem
 async def capture_screenshot(
     page: Page,
     full_page: bool = False,
-    format: str = "png",
+    format: Literal["png", "jpeg"] = "png",
 ) -> bytes:
     """Capture raw viewport or full-page screenshot bytes."""
     return await page.screenshot(full_page=full_page, type=format)
