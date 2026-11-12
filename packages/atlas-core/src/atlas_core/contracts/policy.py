@@ -54,7 +54,7 @@ class ApprovalRequest(BaseModel):
     action_hash: str
     risk_level: RiskLevel
     reason: str
-    status: str = ApprovalStatus.PENDING.value
+    status: ApprovalStatus = ApprovalStatus.PENDING
     created_at: datetime | None = None
     resolved_at: datetime | None = None
     schema_version: str = "1.0"

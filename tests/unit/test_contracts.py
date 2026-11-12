@@ -8,11 +8,12 @@ from atlas_core.contracts.model import ModelCapabilities, ModelRequest, ModelRes
 from atlas_core.contracts.observation import Observation
 from atlas_core.contracts.policy import (
     ApprovalRequest,
+    ApprovalStatus,
     PolicyDecision,
     PolicyDecisionType,
     RiskLevel,
 )
-from atlas_core.contracts.session import Session
+from atlas_core.contracts.session import Session, SessionStatus
 from atlas_core.contracts.task import Task, TaskPriority, TaskRequest, TaskStatus
 from pydantic import ValidationError
 
@@ -119,8 +120,23 @@ def test_policy_and_approval_contracts():
         reason="Privileged terminal execution",
     )
     assert approval.approval_id == "appr_001"
-    assert approval.status == "PENDING"
+    assert approval.status == ApprovalStatus.PENDING
     assert approval.risk_level == RiskLevel.CRITICAL
+
+    # Test strict StrEnum validation for ApprovalRequest.status
+    with pytest.raises(ValidationError):
+        ApprovalRequest(
+            approval_id="appr_bad",
+            task_id="task_123",
+            action_id="act_001",
+            action_hash="hash_abc123",
+            risk_level=RiskLevel.LOW,
+            reason="Invalid status",
+            status="INVALID",
+        )
+
+    with pytest.raises(ValidationError):
+        approval.status = "INVALID"
 
 
 def test_session_contract():
@@ -129,12 +145,26 @@ def test_session_contract():
         session_id="sess_456",
         task_id="task_123",
         session_type="browser",
-        status="active",
+        status=SessionStatus.ACTIVE,
         created_at=now,
         updated_at=now,
     )
     assert sess.session_id == "sess_456"
+    assert sess.status == SessionStatus.ACTIVE
     assert sess.schema_version == "1.0"
+
+    # Test strict StrEnum validation for Session.status
+    with pytest.raises(ValidationError):
+        Session(
+            session_id="sess_bad",
+            task_id="task_123",
+            created_at=now,
+            updated_at=now,
+            status="INVALID",
+        )
+
+    with pytest.raises(ValidationError):
+        sess.status = "INVALID"
 
 
 def test_checkpoint_contract():

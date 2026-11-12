@@ -24,7 +24,7 @@ class Session(BaseModel):
     session_id: str
     task_id: str
     session_type: str = "browser"
-    status: str = SessionStatus.ACTIVE.value
+    status: SessionStatus = SessionStatus.ACTIVE
     created_at: datetime
     updated_at: datetime
     metadata: dict[str, Any] = Field(default_factory=dict)
