@@ -13,7 +13,7 @@
 | **Task 1** | Monorepo Workspace, Governance & Documentation Scaffolding | Root / Docs | **COMPLETED** | Subagent |
 | **Task 2** | Core Data Contracts | `packages/atlas-core` | Planned | Pending |
 | **Task 3** | Task State Machine & Lifecycle Exceptions | `packages/atlas-core` | Planned | Pending |
-| **Task 4** | Event-Sourced Storage Engine | `packages/atlas-storage` | Planned | Pending |
+| **Task 4** | Event-Sourced Storage Engine | `packages/atlas-storage` | **COMPLETED** | Subagent |
 | **Task 5** | Action Firewall Policy Engine | `packages/atlas-policy` | Planned | Pending |
 | **Task 6** | Contextual Observability & Structured Logging | `packages/atlas-observability` | Planned | Pending |
 | **Task 7** | FastAPI Service & Health Endpoints | `apps/api` | Planned | Pending |

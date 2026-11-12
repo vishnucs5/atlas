@@ -30,11 +30,11 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
   - Implement transition event emission hook.
   - Comprehensive unit tests covering all valid transitions and invalid transitions.
 
-- [ ] **Task 4: Event-Sourced Storage Engine (`packages/atlas-storage`)**
-  - Implement storage interface definitions (`TaskStorageInterface`, `EventStoreInterface`).
+- [x] **Task 4: Event-Sourced Storage Engine (`packages/atlas-storage`)**
+  - Implement storage interface definitions (`TaskStoreProtocol`, `EventStoreProtocol`).
   - Implement SQLite storage engine with WAL mode and `busy_timeout`.
-  - Implement materialized `tasks` table and append-only `events` table.
-  - Implement PostgreSQL abstract interface.
+  - Implement materialized `tasks` table and append-only `execution_events` table.
+  - Implement PostgreSQL abstract interface and specification.
   - Unit tests for append, query, sequence ordering, and concurrency.
 
 - [ ] **Task 5: Action Firewall Policy Engine (`packages/atlas-policy`)**
