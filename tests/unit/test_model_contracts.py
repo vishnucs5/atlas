@@ -165,7 +165,7 @@ def test_model_error_normalization():
 
     # Invalid error type should raise ValidationError
     with pytest.raises(ValidationError):
-        ModelError(error_type="INVALID_ERROR_TYPE", message="Invalid")
+        ModelError(error_type="INVALID_ERROR_TYPE", message="Invalid")  # type: ignore[arg-type]
 
 
 def test_model_capabilities_extended():
@@ -232,7 +232,10 @@ def test_model_request_and_response_backward_compatibility():
         latency_ms=120,
     )
     assert len(resp_typed.tool_calls) == 1
-    assert resp_typed.tool_calls[0].name == "search"
+    first_tool_call = resp_typed.tool_calls[0]
+    assert isinstance(first_tool_call, ToolCall)
+    assert first_tool_call.name == "search"
+    assert isinstance(resp_typed.usage, TokenUsage)
     assert resp_typed.usage.total_tokens == 30
 
     # Test Response with backward-compatible legacy dicts
@@ -245,22 +248,155 @@ def test_model_request_and_response_backward_compatibility():
         usage={"prompt_tokens": 5, "completion_tokens": 10},
     )
     assert resp_legacy.content == "Hello legacy"
-    u = resp_legacy.usage
-    p_tokens = u.prompt_tokens if isinstance(u, TokenUsage) else u["prompt_tokens"]
-    assert p_tokens == 5
+    # Subscriptable dict-like access works on TokenUsage
+    assert resp_legacy.usage["prompt_tokens"] == 5
+    assert isinstance(resp_legacy.usage, TokenUsage)
+    assert resp_legacy.usage.prompt_tokens == 5
+    assert "prompt_tokens" in resp_legacy.usage
+    assert resp_legacy.usage.get("total_tokens") == 0
+
+    # Subscriptable dict-like access works on ToolCall
+    tc = resp_typed.tool_calls[0]
+    assert tc["name"] == "search"
+    assert isinstance(tc, ToolCall)
+    assert tc.name == "search"
+    assert "arguments" in tc
+
+
+def test_contract_validation_errors():
+    """Verify strict validation and error handling for model contracts."""
+    # Invalid role in ModelMessage
+    with pytest.raises(ValidationError):
+        ModelMessage(role="invalid_role", content="test")  # type: ignore[arg-type]
+
+    # Invalid discriminator in ContentPart within ModelMessage
+    with pytest.raises(ValidationError):
+        ModelMessage(
+            role="user",
+            content=[{"type": "audio", "data": "abc123audio"}],  # type: ignore[list-item]
+        )
+
+    # Missing required field in TextPart
+    with pytest.raises(ValidationError):
+        TextPart()  # type: ignore[call-arg]
+
+    # Missing required fields in ToolDefinition
+    with pytest.raises(ValidationError):
+        ToolDefinition(name="only_name")  # type: ignore[call-arg]
+
+    # Missing required fields in ToolCall
+    with pytest.raises(ValidationError):
+        ToolCall(id="only_id")  # type: ignore[call-arg]
+
+    # Missing required fields in ModelRequest
+    with pytest.raises(ValidationError):
+        ModelRequest(request_id="req_1")  # type: ignore[call-arg]
+
+    # Missing required fields in ModelResponse
+    with pytest.raises(ValidationError):
+        ModelResponse(response_id="resp_1")  # type: ignore[call-arg]
+
+    # Validate assignment checks
+    msg = ModelMessage(role="user", content="valid")
+    with pytest.raises(ValidationError):
+        msg.role = "super_admin"  # type: ignore[assignment]
+
+    err = ModelError(error_type="TIMEOUT", message="Timed out")
+    with pytest.raises(ValidationError):
+        err.error_type = "NOT_AN_ERROR"  # type: ignore[assignment]
+
+
+def test_json_round_trips_for_all_contracts():
+    """Verify deterministic JSON serialization and deserialization across all model contracts."""
+    # TextPart
+    tp = TextPart(text="hello")
+    assert TextPart.model_validate_json(tp.model_dump_json()).text == "hello"
+
+    # ImagePart
+    ip = ImagePart(data="base64str", media_type="image/jpeg", detail="low")
+    assert ImagePart.model_validate_json(ip.model_dump_json()).detail == "low"
+
+    # ModelMessage
+    mm = ModelMessage(role="assistant", content=[tp, ip], name="agent_1")
+    mm_rt = ModelMessage.model_validate_json(mm.model_dump_json())
+    assert mm_rt.role == "assistant"
+    assert mm_rt.name == "agent_1"
+    assert isinstance(mm_rt.content, list)
+    assert len(mm_rt.content) == 2
+
+    # ToolDefinition
+    td = ToolDefinition(name="nav", description="Navigate", parameters={"k": "v"})
+    assert ToolDefinition.model_validate_json(td.model_dump_json()).name == "nav"
+
+    # ToolCall
+    tc = ToolCall(id="tc_1", name="nav", arguments={"url": "https://test.com"})
+    assert ToolCall.model_validate_json(tc.model_dump_json()).arguments["url"] == "https://test.com"
+
+    # TokenUsage
+    tu = TokenUsage(
+        prompt_tokens=100, completion_tokens=50, total_tokens=150, estimated_cost_usd=0.001
+    )
+    tu_rt = TokenUsage.model_validate_json(tu.model_dump_json())
+    assert tu_rt.total_tokens == 150
+    assert tu_rt.estimated_cost_usd == 0.001
+
+    # ProviderHealth
+    now = datetime.now(UTC)
+    ph = ProviderHealth(provider_id="gemini", status="HEALTHY", latency_ms=45, last_checked_at=now)
+    ph_rt = ProviderHealth.model_validate_json(ph.model_dump_json())
+    assert ph_rt.provider_id == "gemini"
+    assert ph_rt.latency_ms == 45
+
+    # ModelError
+    me = ModelError(
+        error_type="AUTHENTICATION", message="Invalid API key", provider="openai", status_code=401
+    )
+    me_rt = ModelError.model_validate_json(me.model_dump_json())
+    assert me_rt.error_type == "AUTHENTICATION"
+    assert me_rt.status_code == 401
+
+    # ModelCapabilities
+    mc = ModelCapabilities(model_name="gpt-4o", provider="openai", context_window=128000)
+    assert ModelCapabilities.model_validate_json(mc.model_dump_json()).model_name == "gpt-4o"
+
+    # ModelRequest
+    mreq = ModelRequest(
+        request_id="r1", task_id="t1", model_name="gpt-4o", messages=[mm], tools=[td]
+    )
+    mreq_rt = ModelRequest.model_validate_json(mreq.model_dump_json())
+    assert mreq_rt.request_id == "r1"
+    assert len(mreq_rt.messages) == 1
+
+    # ModelResponse
+    mresp = ModelResponse(
+        response_id="res1",
+        request_id="r1",
+        model_name="gpt-4o",
+        content="Done",
+        tool_calls=[tc],
+        usage=tu,
+    )
+    mresp_rt = ModelResponse.model_validate_json(mresp.model_dump_json())
+    assert mresp_rt.response_id == "res1"
+    assert mresp_rt.content == "Done"
+    assert isinstance(mresp_rt.usage, TokenUsage)
+    assert mresp_rt.usage.total_tokens == 150
 
 
 def test_zero_dependency_core_purity():
     """Constitutional Rule 3: packages/atlas-core must NEVER import external vendor SDKs."""
+    import subprocess
 
-    forbidden_modules = [
-        "openai",
-        "anthropic",
-        "google.genai",
-        "playwright",
-        "selenium",
-        "requests",
-        "aiohttp",
-    ]
-    for mod in forbidden_modules:
-        assert mod not in sys.modules, f"Rule 3 Violation: {mod} was imported by atlas-core!"
+    check_script = (
+        "import sys\n"
+        "import atlas_core\n"
+        "import atlas_core.contracts\n"
+        "import atlas_core.contracts.model\n"
+        "forbidden = ['openai', 'anthropic', 'google.genai', 'playwright', 'selenium', 'requests', 'aiohttp']\n"
+        "violated = [m for m in forbidden if m in sys.modules]\n"
+        "if violated:\n"
+        "    print(f'Rule 3 Violation: {violated}')\n"
+        "    sys.exit(1)\n"
+    )
+    res = subprocess.run([sys.executable, "-c", check_script], capture_output=True, text=True)
+    assert res.returncode == 0, res.stdout or res.stderr

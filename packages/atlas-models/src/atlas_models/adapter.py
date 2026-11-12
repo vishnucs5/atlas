@@ -40,7 +40,7 @@ class ModelAdapter(ABC):
         ...
 
     @abstractmethod
-    async def stream(self, request: ModelRequest) -> AsyncIterator[str]:
+    def stream(self, request: ModelRequest) -> AsyncIterator[str]:
         """Stream completion text tokens asynchronously."""
         ...
 

@@ -38,11 +38,23 @@ class ModelMessage(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     role: Literal["system", "user", "assistant", "tool"]
-    content: str | list[TextPart | ImagePart] | None = None
+    content: str | list[ContentPart] | None = None
     tool_call_id: str | None = None
     name: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     schema_version: str = "1.0"
+
+    def __getitem__(self, item: str) -> Any:
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            raise KeyError(item) from None
+
+    def __contains__(self, item: object) -> bool:
+        return hasattr(self, str(item))
+
+    def get(self, item: str, default: Any = None) -> Any:
+        return getattr(self, item, default)
 
 
 class ToolDefinition(BaseModel):
@@ -54,6 +66,18 @@ class ToolDefinition(BaseModel):
     description: str
     parameters: dict[str, Any] = Field(default_factory=dict)
     schema_version: str = "1.0"
+
+    def __getitem__(self, item: str) -> Any:
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            raise KeyError(item) from None
+
+    def __contains__(self, item: object) -> bool:
+        return hasattr(self, str(item))
+
+    def get(self, item: str, default: Any = None) -> Any:
+        return getattr(self, item, default)
 
 
 class ToolCall(BaseModel):
@@ -67,6 +91,18 @@ class ToolCall(BaseModel):
     type: str = "function"
     schema_version: str = "1.0"
 
+    def __getitem__(self, item: str) -> Any:
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            raise KeyError(item) from None
+
+    def __contains__(self, item: object) -> bool:
+        return hasattr(self, str(item))
+
+    def get(self, item: str, default: Any = None) -> Any:
+        return getattr(self, item, default)
+
 
 class TokenUsage(BaseModel):
     """Quantified token metrics and cost accounting for model invocations."""
@@ -79,6 +115,18 @@ class TokenUsage(BaseModel):
     cached_tokens: int = 0
     estimated_cost_usd: float = 0.0
     schema_version: str = "1.0"
+
+    def __getitem__(self, item: str) -> Any:
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            raise KeyError(item) from None
+
+    def __contains__(self, item: object) -> bool:
+        return hasattr(self, str(item))
+
+    def get(self, item: str, default: Any = None) -> Any:
+        return getattr(self, item, default)
 
 
 class ProviderHealth(BaseModel):
