@@ -11,3 +11,4 @@ build/
 *.db-journal
 *.db-wal
 .atlas/
+artifacts/

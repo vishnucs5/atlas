@@ -3,11 +3,19 @@
 import os
 from contextlib import asynccontextmanager
 
+from atlas_agent.runtime import ProductionRuntime
 from atlas_observability import get_logger
+from atlas_storage.sqlite import SQLiteStorage
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from atlas_api.routes.approvals import router as approvals_router
+from atlas_api.routes.artifacts import router as artifacts_router
+from atlas_api.routes.dashboard import router as dashboard_router
+from atlas_api.routes.events import router as events_router
 from atlas_api.routes.health import router as health_router
+from atlas_api.routes.tasks import router as tasks_router
+from atlas_api.routes.workers import router as workers_router
 
 logger = get_logger("atlas.api")
 API_VERSION = "0.1.0"
@@ -18,17 +26,29 @@ async def lifespan(app: FastAPI):
     """Lifecycle manager handling startup and shutdown initialization."""
     logger.info("Initializing ATLAS API service", extra={"version": API_VERSION})
     db_path = os.getenv("ATLAS_DB_PATH", ":memory:")
+    storage: SQLiteStorage | None = None
     try:
-        from atlas_storage.sqlite import SQLiteStorage
-
         storage = SQLiteStorage(db_path)
         storage.initialize()
         app.state.storage = storage
-        logger.info("Storage backend initialized", extra={"db_path": db_path})
+        runtime = ProductionRuntime(storage=storage)
+        await runtime.initialize()
+        app.state.runtime = runtime
+        logger.info("ProductionRuntime initialized", extra={"db_path": db_path})
     except Exception as exc:
-        logger.error("Failed to initialize storage backend", extra={"error": str(exc)})
+        logger.error("Failed to initialize storage or runtime", extra={"error": str(exc)})
         app.state.storage = None
+        app.state.runtime = None
+
     yield
+
+    runtime = getattr(app.state, "runtime", None)
+    if runtime is not None:
+        try:
+            await runtime.shutdown()
+        except Exception as exc:
+            logger.error("Failed to cleanly shut down runtime", extra={"error": str(exc)})
+
     storage = getattr(app.state, "storage", None)
     if storage is not None and hasattr(storage, "close"):
         try:
@@ -55,7 +75,18 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Health & status
     app.include_router(health_router)
+
+    # Core API endpoints
+    app.include_router(tasks_router)
+    app.include_router(approvals_router)
+    app.include_router(events_router)
+    app.include_router(artifacts_router)
+    app.include_router(workers_router)
+
+    # Embedded Operator Dashboard
+    app.include_router(dashboard_router)
 
     return app
 
