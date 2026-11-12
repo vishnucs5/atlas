@@ -17,7 +17,7 @@
 | **Task 5.4** | Unified Production Runtime (`ProductionRuntime`) & 14-State Lifecycle | `packages/atlas-agent` | **COMPLETED** (`319d5d1`) |
 | **Task 5.5** | Production REST API, RBAC Auth, SSE Streaming & Operator Dashboard | `apps/api` | **COMPLETED** (`a1ef574`) |
 | **Task 5.6** | Standalone Background Worker Daemon & CLI Operations | `apps/cli` | **COMPLETED** (`f2bc0fd`) |
-| **Task 5.7** | End-to-End Integration Suite, Docker Deployment Topology & Demo | `tests/integration`, Docker | **COMPLETED** (`pending`) |
+| **Task 5.7** | End-to-End Integration Suite, Docker Deployment Topology & Demo | `tests/integration`, Docker | **COMPLETED** (`4a593f3`) |
 
 ---
 

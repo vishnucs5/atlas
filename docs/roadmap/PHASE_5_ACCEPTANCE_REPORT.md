@@ -19,7 +19,7 @@
 | `319d5d1` | `packages/atlas-agent` | Unified production runtime (`ProductionRuntime`) orchestrating 14-state task lifecycle |
 | `a1ef574` | `apps/api` | Production REST API with RBAC auth, SSE event streaming, and embedded operator dashboard (`/dashboard`) |
 | `f2bc0fd` | `apps/cli` | Standalone background worker daemon (`atlas worker run`), task controls, and approval CLI commands |
-| `pending` | `orchestration` | Comprehensive E2E integration test suite, Dockerfile, compose.yaml, and demonstration script |
+| `4a593f3` | `orchestration` | Comprehensive E2E integration test suite, Dockerfile, compose.yaml, and demonstration script |
 
 ---
 

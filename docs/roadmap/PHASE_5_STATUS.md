@@ -62,4 +62,4 @@
 | **Milestone 4** | Unified Production Runtime (`ProductionRuntime`) | **COMPLETED** | `runtime.py` in `packages/atlas-agent`, `test_production_runtime.py` | `319d5d1` |
 | **Milestone 5** | Production REST API, SSE & Dashboard | **COMPLETED** | Task/approval/worker routes, SSE streaming, `/dashboard`, `test_production_api.py` | `a1ef574` |
 | **Milestone 6** | Standalone Worker Daemon & CLI Integration | **COMPLETED** | `atlas worker run`, `atlas task`, `atlas approval`, `test_worker_cli.py` | `f2bc0fd` |
-| **Milestone 7** | Full E2E Integration Suite & Docker Deployment | **COMPLETED** | `test_production_e2e.py`, `demo_production_runtime.py`, Docker | `pending` |
+| **Milestone 7** | Full E2E Integration Suite & Docker Deployment | **COMPLETED** | `test_production_e2e.py`, `demo_production_runtime.py`, Docker | `4a593f3` |
