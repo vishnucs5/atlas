@@ -3,10 +3,23 @@
 import argparse
 import sys
 
+from atlas_cli.commands.approval import (
+    run_approval_deny,
+    run_approval_grant,
+    run_approval_list,
+)
 from atlas_cli.commands.doctor import run_doctor
 from atlas_cli.commands.environment import run_environment_test_browser
 from atlas_cli.commands.init import run_init
-from atlas_cli.commands.task import run_task_create, run_task_inspect, run_task_list
+from atlas_cli.commands.task import (
+    run_task_cancel,
+    run_task_create,
+    run_task_inspect,
+    run_task_list,
+    run_task_pause,
+    run_task_resume,
+)
+from atlas_cli.commands.worker import run_worker_daemon
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -57,7 +70,7 @@ def create_parser() -> argparse.ArgumentParser:
     # Command: atlas task
     task_parser = subparsers.add_parser(
         "task",
-        help="Task lifecycle operations (create, list, inspect)",
+        help="Task lifecycle operations (create, list, inspect, pause, resume, cancel)",
         description="Manage ATLAS tasks and inspect execution events.",
     )
     task_subparsers = task_parser.add_subparsers(
@@ -129,6 +142,78 @@ def create_parser() -> argparse.ArgumentParser:
         help="Unique task identifier to inspect",
     )
 
+    # Subcommand: atlas task pause
+    pause_cmd = task_subparsers.add_parser("pause", help="Pause an active task")
+    pause_cmd.add_argument("task_id", type=str, help="Task ID to pause")
+    pause_cmd.add_argument("--reason", "-r", type=str, default=None, help="Pause reason")
+
+    # Subcommand: atlas task resume
+    resume_cmd = task_subparsers.add_parser("resume", help="Resume a paused task")
+    resume_cmd.add_argument("task_id", type=str, help="Task ID to resume")
+
+    # Subcommand: atlas task cancel
+    cancel_cmd = task_subparsers.add_parser("cancel", help="Cancel a task")
+    cancel_cmd.add_argument("task_id", type=str, help="Task ID to cancel")
+    cancel_cmd.add_argument("--reason", "-r", type=str, default=None, help="Cancellation reason")
+
+    # Command: atlas worker
+    worker_parser = subparsers.add_parser(
+        "worker",
+        help="Worker daemon fleet management and execution",
+    )
+    worker_subparsers = worker_parser.add_subparsers(
+        dest="worker_command",
+        help="Worker subcommands",
+    )
+    worker_run_cmd = worker_subparsers.add_parser(
+        "run",
+        help="Launch a standalone background worker daemon",
+    )
+    worker_run_cmd.add_argument("--worker-id", type=str, default=None, help="Unique worker node ID")
+    worker_run_cmd.add_argument(
+        "--capabilities",
+        "-c",
+        type=str,
+        default="desktop,browser",
+        help="Comma-separated capabilities",
+    )
+    worker_run_cmd.add_argument(
+        "--heartbeat-interval", type=float, default=5.0, help="Heartbeat interval in seconds"
+    )
+    worker_run_cmd.add_argument(
+        "--poll-interval", type=float, default=1.0, help="Task poll interval in seconds"
+    )
+    worker_run_cmd.add_argument(
+        "--max-tasks", type=int, default=0, help="Exit after processing N tasks (0=unlimited)"
+    )
+    worker_run_cmd.add_argument(
+        "--once", action="store_true", help="Process at most one task then exit"
+    )
+
+    # Command: atlas approval
+    approval_parser = subparsers.add_parser(
+        "approval",
+        help="Human-in-the-loop authorization operations",
+    )
+    approval_subparsers = approval_parser.add_subparsers(
+        dest="approval_command",
+        help="Approval subcommands",
+    )
+    appr_list_cmd = approval_subparsers.add_parser("list", help="List approval requests")
+    appr_list_cmd.add_argument("--status", "-s", type=str, default=None, help="Filter by status")
+
+    appr_grant_cmd = approval_subparsers.add_parser("grant", help="Grant an approval request")
+    appr_grant_cmd.add_argument("request_id", type=str, help="Request ID to grant")
+    appr_grant_cmd.add_argument(
+        "--reason", "-r", type=str, default=None, help="Grant justification"
+    )
+
+    appr_deny_cmd = approval_subparsers.add_parser("deny", help="Deny an approval request")
+    appr_deny_cmd.add_argument("request_id", type=str, help="Request ID to deny")
+    appr_deny_cmd.add_argument(
+        "--reason", "-r", type=str, default=None, help="Denial justification"
+    )
+
     return parser
 
 
@@ -174,6 +259,37 @@ def main(argv: list[str] | None = None) -> int:
             )
         if args.task_command == "inspect":
             return run_task_inspect(task_id=args.task_id)
+        if args.task_command == "pause":
+            return run_task_pause(task_id=args.task_id, reason=args.reason)
+        if args.task_command == "resume":
+            return run_task_resume(task_id=args.task_id)
+        if args.task_command == "cancel":
+            return run_task_cancel(task_id=args.task_id, reason=args.reason)
+
+    if args.command == "worker":
+        if getattr(args, "worker_command", None) == "run":
+            caps = [c.strip() for c in args.capabilities.split(",") if c.strip()]
+            return run_worker_daemon(
+                worker_id=args.worker_id,
+                capabilities=caps,
+                heartbeat_interval=args.heartbeat_interval,
+                poll_interval=args.poll_interval,
+                max_tasks=args.max_tasks,
+                once=args.once,
+            )
+        parser.parse_args(["worker", "--help"])
+        return 0
+
+    if args.command == "approval":
+        if args.approval_command is None:
+            parser.parse_args(["approval", "--help"])
+            return 0
+        if args.approval_command == "list":
+            return run_approval_list(status_filter=args.status)
+        if args.approval_command == "grant":
+            return run_approval_grant(request_id=args.request_id, reason=args.reason)
+        if args.approval_command == "deny":
+            return run_approval_deny(request_id=args.request_id, reason=args.reason)
 
     parser.print_help()
     return 1

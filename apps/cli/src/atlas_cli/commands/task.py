@@ -210,3 +210,78 @@ def run_task_inspect(task_id: str) -> int:
     except Exception as exc:
         print(f"Error inspecting task: {exc}", file=sys.stderr)
         return 1
+
+
+def run_task_pause(task_id: str, reason: str | None = None) -> int:
+    """Pause an active task."""
+    storage = _get_storage()
+    if storage is None:
+        return 1
+    import asyncio
+
+    from atlas_agent.runtime import ProductionRuntime
+
+    runtime = ProductionRuntime(storage=storage)
+    loop = asyncio.new_event_loop()
+    try:
+        task = loop.run_until_complete(runtime.pause_task(task_id, reason=reason))
+        print(f"[✔] Task '{task.task_id}' transitioned to PAUSED.")
+        return 0
+    except KeyError:
+        print(f"Error: Task '{task_id}' not found.", file=sys.stderr)
+        return 1
+    except ValueError as err:
+        print(f"Error: {err}", file=sys.stderr)
+        return 1
+    finally:
+        loop.close()
+
+
+def run_task_resume(task_id: str) -> int:
+    """Resume a paused task."""
+    storage = _get_storage()
+    if storage is None:
+        return 1
+    import asyncio
+
+    from atlas_agent.runtime import ProductionRuntime
+
+    runtime = ProductionRuntime(storage=storage)
+    loop = asyncio.new_event_loop()
+    try:
+        task = loop.run_until_complete(runtime.resume_task(task_id, wait_until_complete=False))
+        print(f"[✔] Task '{task.task_id}' resumed (status: {task.status.value}).")
+        return 0
+    except KeyError:
+        print(f"Error: Task '{task_id}' not found.", file=sys.stderr)
+        return 1
+    except ValueError as err:
+        print(f"Error: {err}", file=sys.stderr)
+        return 1
+    finally:
+        loop.close()
+
+
+def run_task_cancel(task_id: str, reason: str | None = None) -> int:
+    """Cancel an active or pending task."""
+    storage = _get_storage()
+    if storage is None:
+        return 1
+    import asyncio
+
+    from atlas_agent.runtime import ProductionRuntime
+
+    runtime = ProductionRuntime(storage=storage)
+    loop = asyncio.new_event_loop()
+    try:
+        task = loop.run_until_complete(runtime.cancel_task(task_id, reason=reason))
+        print(f"[✔] Task '{task.task_id}' transitioned to CANCELLED.")
+        return 0
+    except KeyError:
+        print(f"Error: Task '{task_id}' not found.", file=sys.stderr)
+        return 1
+    except ValueError as err:
+        print(f"Error: {err}", file=sys.stderr)
+        return 1
+    finally:
+        loop.close()
