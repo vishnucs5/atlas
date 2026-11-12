@@ -232,3 +232,157 @@ def test_firewall_benign_terminal_is_high_risk_approval():
     decision = firewall.evaluate(action)
     assert decision.decision == PolicyDecisionType.REQUIRE_APPROVAL
     assert decision.risk_level == RiskLevel.HIGH
+
+
+def test_firewall_blocked_domains_returns_deny_critical():
+    """Verify explicit blocked_domains configuration returns DENY with CRITICAL risk."""
+    firewall = ActionFirewall(blocked_domains=["*.malicious.com", "phishing.org"])
+    action = ComputerAction(
+        action_id="act_blocked",
+        task_id="t1",
+        session_id="s1",
+        action_type="browser.navigate",
+        parameters={"url": "https://sub.malicious.com/login"},
+        idempotency_key="k_blocked",
+    )
+    decision = firewall.evaluate(action)
+    assert decision.decision == PolicyDecisionType.DENY
+    assert decision.risk_level == RiskLevel.CRITICAL
+    assert "explicitly blocked" in decision.reason.lower()
+
+
+def test_firewall_wildcard_and_leading_dot_domain_normalization():
+    """Verify domain matching handles wildcard (*.domain) and leading dot (.domain) syntax."""
+    firewall = ActionFirewall(allowed_domains=["*.example.com", ".python.org"])
+
+    # Matches subdomain of wildcard
+    act_sub = ComputerAction(
+        action_id="act_sub",
+        task_id="t1",
+        session_id="s1",
+        action_type="browser.navigate",
+        parameters={"url": "https://api.example.com"},
+        idempotency_key="k_sub",
+    )
+    assert firewall.evaluate(act_sub).decision == PolicyDecisionType.ALLOW
+
+    # Matches base domain of wildcard
+    act_base = ComputerAction(
+        action_id="act_base",
+        task_id="t1",
+        session_id="s1",
+        action_type="browser.navigate",
+        parameters={"url": "https://example.com"},
+        idempotency_key="k_base",
+    )
+    assert firewall.evaluate(act_base).decision == PolicyDecisionType.ALLOW
+
+    # Matches subdomain with leading dot pattern
+    act_dot = ComputerAction(
+        action_id="act_dot",
+        task_id="t1",
+        session_id="s1",
+        action_type="browser.navigate",
+        parameters={"url": "https://docs.python.org"},
+        idempotency_key="k_dot",
+    )
+    assert firewall.evaluate(act_dot).decision == PolicyDecisionType.ALLOW
+
+
+def test_policy_rule_exact_action_type_matching():
+    """Verify PolicyRule with exact_action_type matches only identical action types."""
+    firewall = ActionFirewall()
+    rule = PolicyRule(
+        rule_id="exact_type_rule",
+        name="Exact Action Match",
+        exact_action_type="custom.special_action",
+        decision=PolicyDecisionType.REQUIRE_APPROVAL,
+        risk_level=RiskLevel.HIGH,
+    )
+    firewall.add_rule(rule)
+
+    # Identical match
+    action_match = ComputerAction(
+        action_id="act_exact",
+        task_id="t1",
+        session_id="s1",
+        action_type="custom.special_action",
+        idempotency_key="k_exact",
+    )
+    decision = firewall.evaluate(action_match)
+    assert decision.decision == PolicyDecisionType.REQUIRE_APPROVAL
+    assert decision.risk_level == RiskLevel.HIGH
+    assert "exact_type_rule" in decision.rules_evaluated
+
+    # Prefix variation should not match exact rule
+    action_variation = ComputerAction(
+        action_id="act_var",
+        task_id="t1",
+        session_id="s1",
+        action_type="custom.special_action.extra",
+        idempotency_key="k_var",
+    )
+    assert not rule.matches(action_variation)
+
+
+def test_policy_rule_disabled_is_skipped():
+    """Verify disabled policy rules (enabled=False) are ignored during evaluation."""
+    firewall = ActionFirewall()
+    disabled_rule = PolicyRule(
+        rule_id="disabled_deny",
+        name="Disabled Deny Rule",
+        action_prefix="browser.scroll",
+        decision=PolicyDecisionType.DENY,
+        risk_level=RiskLevel.CRITICAL,
+        enabled=False,
+    )
+    firewall.add_rule(disabled_rule)
+
+    assert not disabled_rule.matches(
+        ComputerAction(
+            action_id="act_test",
+            task_id="t1",
+            session_id="s1",
+            action_type="browser.scroll",
+            idempotency_key="k_test",
+        )
+    )
+
+    action = ComputerAction(
+        action_id="act_scroll",
+        task_id="t1",
+        session_id="s1",
+        action_type="browser.scroll",
+        idempotency_key="k_scroll",
+    )
+    decision = firewall.evaluate(action)
+    # Built-in scroll rule should allow it despite disabled deny rule
+    assert decision.decision == PolicyDecisionType.ALLOW
+    assert decision.risk_level == RiskLevel.LOW
+
+
+@pytest.mark.parametrize(
+    "malformed_url",
+    [
+        "http://[invalid-ipv6",
+        "http://",
+        "https://",
+        "://bad-url",
+    ],
+)
+def test_firewall_fails_closed_on_malformed_url(malformed_url: str):
+    """Verify malformed or unparseable URLs fail closed with DENY decision."""
+    firewall = ActionFirewall(allowed_domains=["example.com"])
+    action = ComputerAction(
+        action_id="act_malformed",
+        task_id="t1",
+        session_id="s1",
+        action_type="browser.navigate",
+        parameters={"url": malformed_url},
+        idempotency_key="k_mal",
+    )
+    decision = firewall.evaluate(action)
+    assert decision.decision == PolicyDecisionType.DENY
+    assert decision.risk_level == RiskLevel.CRITICAL
+    assert "malformed" in decision.reason.lower() or "unparseable" in decision.reason.lower()
+

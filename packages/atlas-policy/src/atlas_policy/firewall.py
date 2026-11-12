@@ -57,8 +57,14 @@ class PolicyRule(BaseModel):
         return False
 
 
+MALFORMED_DOMAIN_TOKEN_PREFIX = "<malformed:"
+
+
 def _extract_domains_from_action(action: ComputerAction) -> list[str]:
-    """Extract hostnames/domains referenced in action parameters and target."""
+    """Extract hostnames/domains referenced in action parameters and target.
+
+    Fails closed by returning a malformed token if a candidate URL cannot be parsed.
+    """
     candidates: list[str] = []
 
     # Check direct parameters
@@ -76,24 +82,37 @@ def _extract_domains_from_action(action: ComputerAction) -> list[str]:
 
     domains: list[str] = []
     for cand in candidates:
-        if "://" not in cand and not cand.startswith("//"):
-            cand = f"http://{cand}"
+        to_parse = cand
+        if "://" not in to_parse and not to_parse.startswith("//"):
+            to_parse = f"http://{to_parse}"
         try:
-            parsed = urlparse(cand)
+            parsed = urlparse(to_parse)
             host = parsed.hostname
             if host:
                 domains.append(host.lower())
+            else:
+                # No valid hostname extracted from candidate URL; fail closed
+                domains.append(f"{MALFORMED_DOMAIN_TOKEN_PREFIX}{cand}>")
         except Exception:
-            continue
+            # Constitution Rule 5: No swallowing exceptions; fail closed on malformed URLs
+            domains.append(f"{MALFORMED_DOMAIN_TOKEN_PREFIX}{cand}>")
 
     return domains
 
 
 def _is_domain_allowed(domain: str, allowed_domains: Sequence[str] | set[str]) -> bool:
-    """Check if domain matches an allowed domain or is a subdomain of an allowed domain."""
-    norm_domain = domain.lower()
+    """Check if domain matches an allowed domain or is a subdomain of an allowed domain.
+
+    Normalizes wildcards (e.g. `*.example.com`) and leading dots (`.example.com`).
+    """
+    norm_domain = domain.lower().strip()
     for allowed in allowed_domains:
-        norm_allowed = allowed.lower().strip()
+        raw_allowed = allowed.lower().strip()
+        if raw_allowed == "*":
+            return True
+        norm_allowed = raw_allowed.lstrip("*").lstrip(".")
+        if not norm_allowed:
+            continue
         if norm_domain == norm_allowed or norm_domain.endswith(f".{norm_allowed}"):
             return True
     return False
@@ -363,6 +382,14 @@ class ActionFirewall:
         if domains:
             rules_evaluated.append("domain_security_check")
             for domain in domains:
+                if domain.startswith(MALFORMED_DOMAIN_TOKEN_PREFIX):
+                    raw_target = domain.removeprefix(MALFORMED_DOMAIN_TOKEN_PREFIX).removesuffix(">")
+                    return PolicyDecision(
+                        decision=PolicyDecisionType.DENY,
+                        risk_level=RiskLevel.CRITICAL,
+                        reason=f"Action contains malformed or unparseable target URL: '{raw_target}'. Failing closed.",
+                        rules_evaluated=rules_evaluated,
+                    )
                 # Check explicit blocklist
                 if self._blocked_domains and _is_domain_allowed(domain, self._blocked_domains):
                     return PolicyDecision(
