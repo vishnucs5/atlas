@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 members = [
     "atlas-core",
     "atlas-monorepo",
+    "atlas-observability",
     "atlas-policy",
 ]
 
@@ -47,6 +48,11 @@ dev = [
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
 ]
+
+[[package]]
+name = "atlas-observability"
+version = "0.1.0"
+source = { editable = "packages/atlas-observability" }
 
 [[package]]
 name = "atlas-policy"
