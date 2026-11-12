@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-monorepo"
+version = "0.1.0"
+description = "ATLAS - Autonomous Task & Lifecycle Automation System"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "packages/atlas-core",
+    "packages/atlas-storage",
+    "packages/atlas-policy",
+    "packages/atlas-observability",
+    "apps/api",
+    "apps/cli",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [
+    "packages/atlas-core/src",
+    "packages/atlas-storage/src",
+    "packages/atlas-policy/src",
+    "packages/atlas-observability/src",
+    "apps/api/src",
+    "apps/cli/src",
+]
+asyncio_mode = "auto"
