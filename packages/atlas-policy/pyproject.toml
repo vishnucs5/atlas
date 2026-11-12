@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-policy"
+version = "0.1.0"
+description = "ATLAS Policy - Action Firewall and Policy Engine"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "pydantic>=2.7.0",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_policy"]

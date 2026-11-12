@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 members = [
     "atlas-core",
     "atlas-monorepo",
+    "atlas-policy",
 ]
 
 [[package]]
@@ -45,6 +46,21 @@ dev = [
 dev = [
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
+]
+
+[[package]]
+name = "atlas-policy"
+version = "0.1.0"
+source = { editable = "packages/atlas-policy" }
+dependencies = [
+    { name = "atlas-core" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "pydantic", specifier = ">=2.7.0" },
 ]
 
 [[package]]
