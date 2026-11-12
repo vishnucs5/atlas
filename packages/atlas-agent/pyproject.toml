@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-agent"
+version = "0.1.0"
+description = "Autonomous Planning Engine, Context Management, and Agent Loop for ATLAS"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "atlas-models",
+    "atlas-policy",
+    "atlas-observation",
+    "atlas-verification",
+    "atlas-observability",
+    "pydantic>=2.7.0",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+atlas-models = { workspace = true }
+atlas-policy = { workspace = true }
+atlas-observation = { workspace = true }
+atlas-verification = { workspace = true }
+atlas-observability = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_agent"]

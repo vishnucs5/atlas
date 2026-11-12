@@ -20,6 +20,7 @@ members = [
     "packages/atlas-observation",
     "packages/atlas-verification",
     "packages/atlas-models",
+    "packages/atlas-agent",
     "apps/api",
     "apps/cli",
 ]

@@ -4,6 +4,7 @@ requires-python = ">=3.11"
 
 [manifest]
 members = [
+    "atlas-agent",
     "atlas-api",
     "atlas-browser",
     "atlas-cli",
@@ -46,6 +47,31 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a1/98/7e457a3b014976887a050561955c0b76e1e7e2d6e27b78ecef2ef80518f2/anyio-4.16.0.tar.gz", hash = "sha256:59bb03251907983d1603d27c3087ddb1e93299ea2163adcdba37899a4fb12ffb", size = 310971, upload-time = "2026-11-01T11:20:07.282Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/16/7757fb84c819accc7d7e9af5291b261e4abb8627ee040f99e7d35ef2457a/anyio-4.16.0-py3-none-any.whl", hash = "sha256:c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026", size = 134521, upload-time = "2026-11-01T11:20:05.59Z" },
+]
+
+[[package]]
+name = "atlas-agent"
+version = "0.1.0"
+source = { editable = "packages/atlas-agent" }
+dependencies = [
+    { name = "atlas-core" },
+    { name = "atlas-models" },
+    { name = "atlas-observability" },
+    { name = "atlas-observation" },
+    { name = "atlas-policy" },
+    { name = "atlas-verification" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "atlas-models", editable = "packages/atlas-models" },
+    { name = "atlas-observability", editable = "packages/atlas-observability" },
+    { name = "atlas-observation", editable = "packages/atlas-observation" },
+    { name = "atlas-policy", editable = "packages/atlas-policy" },
+    { name = "atlas-verification", editable = "packages/atlas-verification" },
+    { name = "pydantic", specifier = ">=2.7.0" },
 ]
 
 [[package]]
