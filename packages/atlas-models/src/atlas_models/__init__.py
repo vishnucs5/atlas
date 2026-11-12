@@ -8,11 +8,21 @@ from atlas_models.adapters import (
     OpenAIAdapter,
     OpenAICompatibleAdapter,
 )
+from atlas_models.router import (
+    CircuitBreaker,
+    CircuitState,
+    CostTracker,
+    ModelRouter,
+)
 
 __all__ = [
     "AnthropicAdapter",
+    "CircuitBreaker",
+    "CircuitState",
+    "CostTracker",
     "GeminiAdapter",
     "ModelAdapter",
+    "ModelRouter",
     "OllamaAdapter",
     "OpenAIAdapter",
     "OpenAICompatibleAdapter",
