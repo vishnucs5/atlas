@@ -342,26 +342,35 @@ class ProductionRuntime(AtlasRuntime):
                 self.storage.save_task(task)
                 # Create checkpoint at suspension point
                 try:
-                    await self.checkpoint_mgr.create_checkpoint(
-                        task=task,
-                        session=session,
-                        reason="Suspended for human approval",
+                    last_seq = self.storage.get_latest_sequence(task.task_id)
+                    chk = self.checkpoint_mgr.create_checkpoint(
+                        task_id=task.task_id,
+                        state=task.status,
+                        sequence=last_seq,
+                        session_id=session.session_id,
+                        metadata={"reason": "Suspended for human approval"},
                     )
+                    task.current_checkpoint_id = chk.checkpoint_id
+                    self.storage.save_task(task)
                 except Exception as cp_err:
                     logger.warning("Checkpoint generation failed during approval pause: %s", cp_err)
                 return task
 
             # Completed normally (loop transitions through VERIFYING -> COMPLETED)
             if task.status == TaskStatus.COMPLETED:
-                self.storage.save_task(task)
                 try:
-                    await self.checkpoint_mgr.create_checkpoint(
-                        task=task,
-                        session=session,
-                        reason="Task completed successfully",
+                    last_seq = self.storage.get_latest_sequence(task.task_id)
+                    chk = self.checkpoint_mgr.create_checkpoint(
+                        task_id=task.task_id,
+                        state=task.status,
+                        sequence=last_seq,
+                        session_id=session.session_id,
+                        metadata={"reason": "Task completed successfully"},
                     )
-                except Exception:
-                    pass
+                    task.current_checkpoint_id = chk.checkpoint_id
+                except Exception as cp_err:
+                    logger.warning("Checkpoint generation failed during completion: %s", cp_err)
+                self.storage.save_task(task)
                 return task
 
             self.storage.save_task(task)

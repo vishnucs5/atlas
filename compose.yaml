@@ -1,0 +1,46 @@
+services:
+  atlas-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: atlas-runtime:latest
+    container_name: atlas-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ATLAS_HOME=/data
+      - ATLAS_DB_PATH=/data/atlas.db
+      - ATLAS_ARTIFACTS_DIR=/data/artifacts
+      - ATLAS_API_KEY_ADMIN=admin-key
+      - ATLAS_API_KEY_OPERATOR=operator-key
+      - ATLAS_API_KEY_WORKER=worker-key
+      - ATLAS_API_KEY_VIEWER=viewer-key
+    volumes:
+      - atlas_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  atlas-worker:
+    image: atlas-runtime:latest
+    container_name: atlas-worker
+    restart: unless-stopped
+    depends_on:
+      atlas-api:
+        condition: service_healthy
+    environment:
+      - ATLAS_HOME=/data
+      - ATLAS_DB_PATH=/data/atlas.db
+      - ATLAS_ARTIFACTS_DIR=/data/artifacts
+      - ATLAS_API_KEY_WORKER=worker-key
+    volumes:
+      - atlas_data:/data
+    command: ["atlas", "worker", "run", "--capabilities", "desktop,browser", "--heartbeat-interval", "5.0", "--poll-interval", "1.0"]
+
+volumes:
+  atlas_data:
+    driver: local

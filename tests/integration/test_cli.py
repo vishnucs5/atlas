@@ -9,6 +9,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CLI_SRC = str(REPO_ROOT / "apps" / "cli" / "src")
+API_SRC = str(REPO_ROOT / "apps" / "api" / "src")
 CORE_SRC = str(REPO_ROOT / "packages" / "atlas-core" / "src")
 STORAGE_SRC = str(REPO_ROOT / "packages" / "atlas-storage" / "src")
 POLICY_SRC = str(REPO_ROOT / "packages" / "atlas-policy" / "src")
@@ -16,6 +17,9 @@ OBS_SRC = str(REPO_ROOT / "packages" / "atlas-observability" / "src")
 BROWSER_SRC = str(REPO_ROOT / "packages" / "atlas-browser" / "src")
 OBSERVATION_SRC = str(REPO_ROOT / "packages" / "atlas-observation" / "src")
 VERIFICATION_SRC = str(REPO_ROOT / "packages" / "atlas-verification" / "src")
+MODELS_SRC = str(REPO_ROOT / "packages" / "atlas-models" / "src")
+AGENT_SRC = str(REPO_ROOT / "packages" / "atlas-agent" / "src")
+COORDINATION_SRC = str(REPO_ROOT / "packages" / "atlas-coordination" / "src")
 
 
 def get_cli_env(extra_env: dict[str, str] | None = None) -> dict[str, str]:
@@ -24,6 +28,7 @@ def get_cli_env(extra_env: dict[str, str] | None = None) -> dict[str, str]:
     existing = env.get("PYTHONPATH", "")
     src_paths = [
         CLI_SRC,
+        API_SRC,
         CORE_SRC,
         STORAGE_SRC,
         POLICY_SRC,
@@ -31,6 +36,9 @@ def get_cli_env(extra_env: dict[str, str] | None = None) -> dict[str, str]:
         BROWSER_SRC,
         OBSERVATION_SRC,
         VERIFICATION_SRC,
+        MODELS_SRC,
+        AGENT_SRC,
+        COORDINATION_SRC,
     ]
     if existing:
         src_paths.append(existing)

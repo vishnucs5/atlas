@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-11-12 — Phase 5 Production Runtime Integration & Orchestration Release
+
+### Added
+- **Unified Production Runtime (`packages/atlas-agent`)**:
+  - `ProductionRuntime` conforming to `AtlasRuntime` protocol, orchestrating the full 14-state task state machine without skipping intermediate states (`CREATED` $\to$ `QUEUED` $\to$ `PLANNING` $\to$ `READY` $\to$ `RUNNING` $\to$ `WAITING_APPROVAL` $\leftrightarrow$ `RUNNING` $\to$ `VERIFYING` $\to$ `COMPLETED`).
+  - Integrated coordination of `StructuredPlanner`, `ModelRouter`, `ContextManager`, `ActionFirewall`, `ApprovalManager`, `WorkerScheduler`, `DriverRegistry`, `VerificationEngine`, `CheckpointManager`, `RecoveryCoordinator`, and `SQLiteStorage`.
+  - Air-gapped / CI execution resilience: automatic `HermeticFallbackAdapter` fallback when zero external LLM API credentials are provided.
+- **Multi-Driver Abstraction & Desktop Automation (`packages/atlas-browser`)**:
+  - `DriverRegistry` enabling capability-based dynamic routing to `PlaywrightBrowserDriver` and `DesktopDriver`.
+  - `DesktopDriver` implementing `ComputerDriver` with cross-platform window management, pointer/keyboard actions, accessibility extraction, and display capture.
+- **Human-in-the-Loop Approval Workflow (`packages/atlas-coordination`)**:
+  - `ApprovalManager` pausing tasks in `WAITING_APPROVAL` whenever high-risk actions are proposed, resuming on approval and cancelling on rejection.
+  - Expiration monitoring and deterministic status transitions (`PENDING`, `GRANTED`, `DENIED`, `EXPIRED`).
+- **Secure Artifact Storage (`packages/atlas-coordination`)**:
+  - `ArtifactManager` with directory traversal protection, size quotas, and recursive secret scrubbing (`redact_secrets`) across screenshots, DOM snapshots, logs, and downloads.
+- **Production REST API & Operator Dashboard (`apps/api`)**:
+  - Comprehensive endpoints for tasks, approvals, workers, artifacts, checkpoints, and health.
+  - Role-Based Access Control (RBAC) supporting `admin`, `operator`, `worker`, and `viewer` roles via header-based API keys.
+  - Real-time Server-Sent Events (SSE) streaming (`/api/v1/events/stream`) with sequence-based replay and secret redaction.
+  - Embedded single-page web Operator Dashboard (`/dashboard`) displaying live task status, worker fleet health, approval inbox, and real-time event logs.
+- **Background Worker Daemon & CLI Operations (`apps/cli`)**:
+  - Standalone worker daemon (`atlas worker run`) with registration, heartbeat loop, lease fencing, and capability discovery.
+  - CLI task lifecycle commands (`atlas task create`, `atlas task cancel`, `atlas task list`).
+  - CLI approval commands (`atlas approval list`, `atlas approval grant`, `atlas approval deny`).
+- **End-to-End Test Suite, Docker Deployment & Demonstration (`tests/integration`, `scripts/`, Docker)**:
+  - Full end-to-end integration test (`tests/integration/test_production_e2e.py`) verifying the complete production lifecycle with approvals.
+  - Multi-stage `Dockerfile` with Playwright Chromium browser bundle.
+  - Multi-service `compose.yaml` orchestrating API server, worker pool, shared volumes, health checks, and restart policies.
+  - Standalone executable demonstration script (`scripts/demo_production_runtime.py`).
+  - Architectural ADR: [ADR-0008](adr/0008-production-runtime-integration.md).
+
+---
+
 ## [0.4.0] - 2026-11-12 — Phase 4 Durable Execution & Recovery Infrastructure Release
 
 ### Added
