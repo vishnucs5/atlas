@@ -1,5 +1,6 @@
 """Model interaction, message, tool, and capability contracts."""
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
@@ -192,8 +193,8 @@ class ModelRequest(BaseModel):
     request_id: str
     task_id: str
     model_name: str
-    messages: list[ModelMessage | dict[str, Any]] = Field(default_factory=list)
-    tools: list[ToolDefinition | dict[str, Any]] = Field(default_factory=list)
+    messages: Sequence[ModelMessage | dict[str, Any]] = Field(default_factory=list)
+    tools: Sequence[ToolDefinition | dict[str, Any]] = Field(default_factory=list)
     system_prompt: str | None = None
     temperature: float = 0.0
     max_tokens: int | None = None

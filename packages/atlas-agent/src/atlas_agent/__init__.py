@@ -6,6 +6,7 @@ from atlas_agent.context import (
     TaskMemory,
     demarcate_untrusted_content,
 )
+from atlas_agent.loop import AutonomousAgentLoop
 from atlas_agent.planner import (
     ExecutionPlan,
     PlanBudget,
@@ -15,8 +16,16 @@ from atlas_agent.planner import (
     StepStatus,
     StructuredPlanner,
 )
+from atlas_agent.safety import (
+    ActionLoopDetectedError,
+    BudgetExhaustedError,
+    SafetyEngine,
+)
 
 __all__ = [
+    "ActionLoopDetectedError",
+    "AutonomousAgentLoop",
+    "BudgetExhaustedError",
     "ContextManager",
     "DOMSummarizer",
     "ExecutionPlan",
@@ -24,6 +33,7 @@ __all__ = [
     "PlanStatus",
     "PlanStep",
     "ReplanBudgetExceededError",
+    "SafetyEngine",
     "StepStatus",
     "StructuredPlanner",
     "TaskMemory",

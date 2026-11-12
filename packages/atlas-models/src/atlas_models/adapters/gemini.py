@@ -2,7 +2,7 @@
 
 import os
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from typing import Any
 
 import httpx
@@ -85,7 +85,7 @@ class GeminiAdapter(ModelAdapter):
             contents.append({"role": role, "parts": parts})
         return contents
 
-    def _format_tools(self, tools: list[Any]) -> list[dict[str, Any]]:
+    def _format_tools(self, tools: Sequence[Any]) -> list[dict[str, Any]]:
         declarations = []
         for t in tools:
             if isinstance(t, dict):

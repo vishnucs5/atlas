@@ -2,7 +2,7 @@
 
 import json
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from typing import Any
 
 import httpx
@@ -84,7 +84,7 @@ class OllamaAdapter(ModelAdapter):
             formatted.append(entry)
         return formatted
 
-    def _format_tools(self, tools: list[Any]) -> list[dict[str, Any]]:
+    def _format_tools(self, tools: Sequence[Any]) -> list[dict[str, Any]]:
         formatted = []
         for t in tools:
             if isinstance(t, dict):
