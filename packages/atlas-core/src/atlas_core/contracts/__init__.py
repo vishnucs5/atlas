@@ -9,9 +9,18 @@ from atlas_core.contracts.action import (
 from atlas_core.contracts.checkpoint import Checkpoint
 from atlas_core.contracts.event import EventType, ExecutionEvent
 from atlas_core.contracts.model import (
+    ContentPart,
+    ImagePart,
     ModelCapabilities,
+    ModelError,
+    ModelMessage,
     ModelRequest,
     ModelResponse,
+    ProviderHealth,
+    TextPart,
+    TokenUsage,
+    ToolCall,
+    ToolDefinition,
 )
 from atlas_core.contracts.observation import Observation
 from atlas_core.contracts.policy import (
@@ -36,15 +45,20 @@ __all__ = [
     "ApprovalStatus",
     "Checkpoint",
     "ComputerAction",
+    "ContentPart",
     "EventType",
     "ExecutionEvent",
     "ExpectedState",
+    "ImagePart",
     "ModelCapabilities",
+    "ModelError",
+    "ModelMessage",
     "ModelRequest",
     "ModelResponse",
     "Observation",
     "PolicyDecision",
     "PolicyDecisionType",
+    "ProviderHealth",
     "RiskLevel",
     "Session",
     "SessionStatus",
@@ -52,4 +66,8 @@ __all__ = [
     "TaskPriority",
     "TaskRequest",
     "TaskStatus",
+    "TextPart",
+    "TokenUsage",
+    "ToolCall",
+    "ToolDefinition",
 ]
