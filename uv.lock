@@ -8,6 +8,7 @@ members = [
     "atlas-browser",
     "atlas-cli",
     "atlas-core",
+    "atlas-models",
     "atlas-monorepo",
     "atlas-observability",
     "atlas-observation",
@@ -124,6 +125,25 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "pydantic", specifier = ">=2.7.0" }]
+
+[[package]]
+name = "atlas-models"
+version = "0.1.0"
+source = { editable = "packages/atlas-models" }
+dependencies = [
+    { name = "atlas-core" },
+    { name = "atlas-observability" },
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "atlas-observability", editable = "packages/atlas-observability" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "pydantic", specifier = ">=2.7.0" },
+]
 
 [[package]]
 name = "atlas-monorepo"
