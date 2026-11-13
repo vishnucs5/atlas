@@ -32,7 +32,7 @@ The entire test suite across all 10 packages and applications passes with **285/
 | `235bed9` | `M4` | docs(status): record M4 commit hash eee7a6b |
 | `addf096` | `M5` | feat(observability): add prometheus metrics, exposition endpoint, and operational telemetry |
 | `4b97868` | `M5` | docs(status): record M5 commit hash addf096 |
-| `Pending` | `M6` | feat(release): complete 28-scenario acceptance suite and final acceptance report |
+| `184db50` | `M6` | feat(release): complete 28-scenario acceptance suite and final acceptance report |
 
 ---
 

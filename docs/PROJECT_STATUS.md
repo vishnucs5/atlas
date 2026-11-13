@@ -17,7 +17,7 @@
 | **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | `atlas-agent`, `atlas-api` | **COMPLETED** | `008a932` |
 | **M4** | Production Deployment (Docker Compose multi-service, Windows worker Session 0 check, .env.example) | `compose.yaml`, `atlas-browser`, `atlas-cli` | **COMPLETED** | `eee7a6b` |
 | **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | `atlas-observability`, `atlas-api` | **COMPLETED** | `addf096` |
-| **M6** | Release Readiness & 28-Scenario Acceptance Suite | `tests/integration/test_phase6_acceptance.py`, `docs/` | **COMPLETED** | Pending |
+| **M6** | Release Readiness & 28-Scenario Acceptance Suite | `tests/integration/test_phase6_acceptance.py`, `docs/` | **COMPLETED** | `184db50` |
 
 ---
 
