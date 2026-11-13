@@ -2,8 +2,12 @@
 
 from atlas_storage.backup import (
     BackupIntegrityError,
+    clean_old_backups,
+    create_postgres_backup,
     create_sqlite_backup,
+    restore_postgres_backup,
     restore_sqlite_backup,
+    verify_postgres_backup,
     verify_sqlite_backup,
 )
 from atlas_storage.interfaces import (
@@ -55,7 +59,11 @@ __all__ = [
     "TaskNotFoundError",
     "TaskStoreProtocol",
     "WorkerStoreProtocol",
+    "create_postgres_backup",
     "create_sqlite_backup",
+    "restore_postgres_backup",
     "restore_sqlite_backup",
+    "verify_postgres_backup",
     "verify_sqlite_backup",
+    "clean_old_backups",
 ]

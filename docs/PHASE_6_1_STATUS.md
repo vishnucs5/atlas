@@ -14,8 +14,8 @@
 |---|---|:---:|---|:---:|
 | **M0** | Audit, Baseline Verification & Phase 6.1 Plan | **COMPLETED** | `PHASE_6_1_PLAN.md`, `PHASE_6_1_STATUS.md`, Repository Audit | `342bd61` |
 | **M1** | PostgreSQL Storage Backend (`PostgresStorage`, connection pooling, transactions, migrations) | **COMPLETED** | `packages/atlas-storage/src/atlas_storage/postgres.py`, API injection | `0bebf9f` |
-| **M2** | Live PostgreSQL Integration Test Suite (15 scenarios against native PostgreSQL) | **COMPLETED** | `tests/integration/test_postgres_storage_e2e.py` | *pending* |
-| **M3** | PostgreSQL Backup & Restore Engine, SHA-256 sidecars & Operations Guide | **PENDING** | `packages/atlas-storage/src/atlas_storage/backup.py`, `docs/POSTGRESQL_OPERATIONS.md` | *pending* |
+| **M2** | Live PostgreSQL Integration Test Suite (15 scenarios against native PostgreSQL) | **COMPLETED** | `tests/integration/test_postgres_storage_e2e.py` | `f83b960` |
+| **M3** | PostgreSQL Backup & Restore Engine, SHA-256 sidecars & Operations Guide | **COMPLETED** | `packages/atlas-storage/src/atlas_storage/backup.py`, `docs/POSTGRESQL_OPERATIONS.md` | *pending* |
 | **M4** | Adversarial Security Verification & Residual Threat Audit | **PENDING** | `tests/unit/test_security_adversarial.py`, `docs/SECURITY_THREAT_MODEL.md` | *pending* |
 | **M5** | Reproducible Performance Benchmarks & Clean Deployment Verification | **PENDING** | Benchmark scripts, latency/throughput comparisons, deployment stack test | *pending* |
 | **M6** | Release Readiness, Changelog & Final Phase 6.1 Acceptance Report | **PENDING** | `docs/PHASE_6_1_ACCEPTANCE_REPORT.md`, `docs/CHANGELOG.md` | *pending* |
