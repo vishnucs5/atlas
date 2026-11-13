@@ -17,8 +17,8 @@
 | **M2** | Task Graph Engine & Versioned DAG | **COMPLETED** | `atlas_core/contracts/graph.py`, `atlas_orchestration/graph_engine.py`, tests | `583cd7b` |
 | **M3** | Inter-Agent Communication Protocol & Shared Memory Engine | **COMPLETED** | `atlas_orchestration/messaging.py`, `atlas_orchestration/memory.py`, tests | `ea73c4e` |
 | **M4** | Specialist Agents & Capability-Based Routing | **COMPLETED** | Specialist agent implementations, model routing, tests | `6f4fe75` |
-| **M5** | Agent Supervisor, Independent QA Reviewer & Recovery | **PENDING** | `atlas_orchestration/supervisor.py`, `reviewer.py`, `recovery.py`, tests | *pending* |
-| **M6** | REST API, Dashboard Integration & End-to-End Acceptance Suite | **PENDING** | `apps/api/routes/orchestration.py`, `test_phase7_acceptance.py`, acceptance report | *pending* |
+| **M5** | Agent Supervisor, Independent QA Reviewer & Recovery | **COMPLETED** | `atlas_orchestration/supervisor.py`, `reviewer.py`, `recovery.py`, tests | `[pending-commit]` |
+| **M6** | REST API, Dashboard Integration & End-to-End Acceptance Suite | **IN PROGRESS** | `apps/api/routes/orchestration.py`, `test_phase7_acceptance.py`, acceptance report | *pending* |
 
 ---
 
@@ -35,11 +35,11 @@
 - [x] **MA-09:** Modular Specialist Agents implemented: Research, Browser, Desktop, Coding, Data Analysis, QA.
 - [x] **MA-10:** Specialist agents strictly reuse existing ATLAS execution contracts (`ComputerAction`, `ActionFirewall`, drivers).
 - [x] **MA-11:** Model Router routes specialist requests by capabilities, context limits, availability, and budgets.
-- [ ] **MA-12:** Agent Supervisor performs hierarchical decomposition, subtask dispatch, parallel scheduling, and cancellation propagation.
-- [ ] **MA-13:** Independent QA Reviewer evaluates deliverables, evidence, and policy compliance before task completion.
-- [ ] **MA-14:** Reviewer rejection triggers structured replanning and corrective subtask dispatch.
-- [ ] **MA-15:** Multi-Agent Recovery Coordinator detects crashes/lease expiration and safely reassigns subtasks.
-- [ ] **MA-16:** Recovery coordinator prevents blind retries of non-idempotent actions in `UNKNOWN` state.
+- [x] **MA-12:** Agent Supervisor performs hierarchical decomposition, subtask dispatch, parallel scheduling, and cancellation propagation.
+- [x] **MA-13:** Independent QA Reviewer evaluates deliverables, evidence, and policy compliance before task completion.
+- [x] **MA-14:** Reviewer rejection triggers structured replanning and corrective subtask dispatch.
+- [x] **MA-15:** Multi-Agent Recovery Coordinator detects crashes/lease expiration and safely reassigns subtasks.
+- [x] **MA-16:** Recovery coordinator prevents blind retries of non-idempotent actions in `UNKNOWN` state.
 - [ ] **MA-17:** Versioned REST APIs exposed for agents, task graphs, delegation, messages, and shared memory.
 - [ ] **MA-18:** Operator Dashboard integrates real multi-agent status and DAG visualization.
 - [ ] **MA-19:** Comprehensive Phase 7 acceptance suite passing with 100% green rate.

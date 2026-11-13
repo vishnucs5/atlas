@@ -17,11 +17,19 @@ from atlas_orchestration.messaging import (
     ExpiredMessageError,
     UnauthorizedCrossTaskCommunicationError,
 )
+from atlas_orchestration.recovery import (
+    MultiAgentRecoveryManager,
+)
 from atlas_orchestration.registry import (
     AgentBudgetExhaustedError,
     AgentNotFoundError,
     AgentRegistry,
     AgentUnavailableError,
+)
+from atlas_orchestration.reviewer import (
+    IndependentReviewer,
+    ReviewResult,
+    ReviewVerdict,
 )
 from atlas_orchestration.specialist import (
     BrowserSpecialist,
@@ -33,6 +41,11 @@ from atlas_orchestration.specialist import (
     ResearchSpecialist,
     SpecialistAgent,
 )
+from atlas_orchestration.supervisor import (
+    AgentSupervisor,
+    OrchestrationError,
+    ReviewRejectionError,
+)
 
 __version__ = "0.1.0"
 
@@ -41,6 +54,7 @@ __all__ = [
     "AgentMessageRouter",
     "AgentNotFoundError",
     "AgentRegistry",
+    "AgentSupervisor",
     "AgentUnavailableError",
     "BrowserSpecialist",
     "CircularDelegationError",
@@ -50,12 +64,18 @@ __all__ = [
     "DesktopSpecialist",
     "DuplicateMessageError",
     "ExpiredMessageError",
+    "IndependentReviewer",
     "InvalidNodeStateError",
     "MemoryAccessDeniedError",
+    "MultiAgentRecoveryManager",
     "NodeNotFoundError",
+    "OrchestrationError",
     "PolicyViolationError",
     "QASpecialist",
     "ResearchSpecialist",
+    "ReviewRejectionError",
+    "ReviewResult",
+    "ReviewVerdict",
     "SharedMemoryEngine",
     "SpecialistAgent",
     "TaskGraphEngine",
