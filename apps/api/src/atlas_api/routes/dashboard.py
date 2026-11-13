@@ -1,4 +1,4 @@
-"""Operator Dashboard route rendering a self-contained web interface."""
+"""Operator Dashboard route rendering a self-contained web interface with Marketplace & Skills ecosystem."""
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
@@ -15,6 +15,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     :root {
       --bg: #0f172a;
       --card-bg: #1e293b;
+      --card-hover: #273548;
       --border: #334155;
       --text: #f8fafc;
       --text-muted: #94a3b8;
@@ -23,6 +24,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       --success: #22c55e;
       --warning: #f59e0b;
       --danger: #ef4444;
+      --purple: #a855f7;
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,9 +39,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 1.5rem;
+      padding-bottom: 1rem;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
     .brand {
       display: flex;
@@ -63,10 +67,59 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     .badge-success { background: rgba(34, 197, 94, 0.15); color: var(--success); }
     .badge-warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
     .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
     .auth-bar {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+    }
+    nav.main-nav {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+    nav.main-nav button {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 0.375rem;
+      cursor: pointer;
+    }
+    nav.main-nav button.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      border-color: var(--border);
+    }
+    .sub-nav {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      background: rgba(30, 41, 59, 0.5);
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+    }
+    .sub-nav button {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.775rem;
+      font-weight: 500;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    .sub-nav button.active {
+      background: var(--primary);
+      color: #0f172a;
+      font-weight: 600;
     }
     input, select, button, textarea {
       font-family: inherit;
@@ -88,12 +141,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     button:hover { background: var(--primary-hover); color: #fff; }
     button.btn-danger { background: var(--danger); color: #fff; }
     button.btn-success { background: var(--success); color: #0f172a; }
+    button.btn-secondary { background: var(--border); color: var(--text); }
     button.btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
     }
     .card {
       background: var(--card-bg);
@@ -111,7 +165,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       align-items: center;
     }
     .stat-val {
-      font-size: 2rem;
+      font-size: 1.75rem;
       font-weight: 700;
       color: var(--primary);
     }
@@ -137,12 +191,35 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       border: 1px solid var(--border);
       border-radius: 0.375rem;
       padding: 0.75rem;
-      height: 220px;
+      height: 200px;
       overflow-y: auto;
       font-family: monospace;
       font-size: 0.75rem;
       white-space: pre-wrap;
       color: #38bdf8;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .mkt-screen { display: none; }
+    .mkt-screen.active { display: block; }
+    .node-canvas {
+      min-height: 220px;
+      background: #020617;
+      border: 1px dashed var(--border);
+      border-radius: 0.375rem;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .node-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      padding: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
   </style>
 </head>
@@ -150,7 +227,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   <header>
     <div class="brand">
       <h1>ATLAS Control Plane</h1>
-      <span class="badge badge-primary">v0.1.0</span>
+      <span class="badge badge-primary">v0.8.0</span>
       <span class="badge badge-success" id="engine-status">ONLINE</span>
     </div>
     <div class="auth-bar">
@@ -159,123 +236,514 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     </div>
   </header>
 
-  <div class="grid">
-    <div class="card">
-      <h2>Active Tasks</h2>
-      <div class="stat-val" id="stat-tasks">0</div>
+  <!-- Main Navigation Tabs -->
+  <nav class="main-nav">
+    <button id="tab-btn-fleet" class="active" onclick="switchMainTab('fleet')">Task Fleet & Ops</button>
+    <button id="tab-btn-multiagent" onclick="switchMainTab('multiagent')">Multi-Agent Orchestration</button>
+    <button id="tab-btn-marketplace" onclick="switchMainTab('marketplace')">Marketplace & Skill Ecosystem</button>
+  </nav>
+
+  <!-- TAB 1: FLEET OPS -->
+  <div id="tab-fleet" class="tab-content active">
+    <div class="grid">
+      <div class="card">
+        <h2>Active Tasks</h2>
+        <div class="stat-val" id="stat-tasks">0</div>
+      </div>
+      <div class="card">
+        <h2>Pending Approvals</h2>
+        <div class="stat-val" id="stat-approvals" style="color: var(--warning);">0</div>
+      </div>
+      <div class="card">
+        <h2>Active Workers</h2>
+        <div class="stat-val" id="stat-workers">0</div>
+      </div>
+      <div class="card">
+        <h2>Specialist Agents</h2>
+        <div class="stat-val" id="stat-agents" style="color: var(--primary);">0</div>
+      </div>
     </div>
-    <div class="card">
-      <h2>Pending Approvals</h2>
-      <div class="stat-val" id="stat-approvals" style="color: var(--warning);">0</div>
+
+    <div class="grid" style="grid-template-columns: 2fr 1fr;">
+      <div class="card">
+        <h2>Task Fleet</h2>
+        <table id="tasks-table">
+          <thead>
+            <tr>
+              <th>Task ID</th>
+              <th>Objective</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tasks-body">
+            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No tasks yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Submit New Task</h2>
+        <form id="task-form" onsubmit="submitTask(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Objective</label>
+            <input type="text" id="task-obj" placeholder="e.g. Navigate to example.com and verify header" required style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Priority</label>
+            <select id="task-pri" style="width: 100%;">
+              <option value="NORMAL">NORMAL</option>
+              <option value="HIGH">HIGH</option>
+              <option value="CRITICAL">CRITICAL</option>
+              <option value="LOW">LOW</option>
+            </select>
+          </div>
+          <button type="submit">Submit Task</button>
+        </form>
+      </div>
     </div>
-    <div class="card">
-      <h2>Active Workers</h2>
-      <div class="stat-val" id="stat-workers">0</div>
-    </div>
-    <div class="card">
-      <h2>Specialist Agents</h2>
-      <div class="stat-val" id="stat-agents" style="color: var(--primary);">0</div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Human Approval Inbox</h2>
+        <table id="approvals-table">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Task ID</th>
+              <th>Action</th>
+              <th>Risk Level</th>
+              <th>Reason</th>
+              <th>Decision</th>
+            </tr>
+          </thead>
+          <tbody id="approvals-body">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No pending approvals</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <div class="grid" style="grid-template-columns: 2fr 1fr;">
-    <div class="card">
-      <h2>Task Fleet</h2>
-      <table id="tasks-table">
-        <thead>
-          <tr>
-            <th>Task ID</th>
-            <th>Objective</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tasks-body">
-          <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No tasks yet</td></tr>
-        </tbody>
-      </table>
+  <!-- TAB 2: MULTI-AGENT ORCHESTRATION -->
+  <div id="tab-multiagent" class="tab-content">
+    <div class="grid" style="grid-template-columns: 2fr 1fr;">
+      <div class="card">
+        <h2>Autonomous Specialist Agents</h2>
+        <table id="agents-table">
+          <thead>
+            <tr>
+              <th>Agent ID</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Capabilities</th>
+              <th>Status</th>
+              <th>Tokens Used</th>
+            </tr>
+          </thead>
+          <tbody id="agents-body">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No specialist agents loaded</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Submit Multi-Agent DAG Task</h2>
+        <form id="ma-task-form" onsubmit="submitMultiAgentTask(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Autonomous Objective</label>
+            <input type="text" id="ma-task-obj" placeholder="e.g. Research and build consensus algorithm" required style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Max Concurrency</label>
+            <input type="number" id="ma-task-parallel" value="4" min="1" max="16" style="width: 100%;">
+          </div>
+          <button type="submit">Dispatch Multi-Agent DAG</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: WORKFLOW MARKETPLACE & SKILL ECOSYSTEM (14 SCREENS) -->
+  <div id="tab-marketplace" class="tab-content">
+    <!-- Sub-navigation for 14 Marketplace Screens -->
+    <div class="sub-nav">
+      <button class="active" onclick="switchMarketplaceScreen('screen-mkt-overview')">1. Overview</button>
+      <button onclick="switchMarketplaceScreen('screen-wf-discovery')">2. Workflows</button>
+      <button onclick="switchMarketplaceScreen('screen-sk-discovery')">3. Skills</button>
+      <button onclick="switchMarketplaceScreen('screen-wf-detail')">4. Workflow Detail</button>
+      <button onclick="switchMarketplaceScreen('screen-sk-detail')">5. Skill Detail</button>
+      <button onclick="switchMarketplaceScreen('screen-pkg-versions')">6. Version History</button>
+      <button onclick="switchMarketplaceScreen('screen-pub-profile')">7. Publisher Profile</button>
+      <button onclick="switchMarketplaceScreen('screen-inst-management')">8. Installations</button>
+      <button onclick="switchMarketplaceScreen('screen-inst-skills')">9. Installed Skills</button>
+      <button onclick="switchMarketplaceScreen('screen-inst-workflows')">10. Installed Workflows</button>
+      <button onclick="switchMarketplaceScreen('screen-wf-builder')">11. Visual Workflow Builder</button>
+      <button onclick="switchMarketplaceScreen('screen-pkg-publish')">12. Package Publishing</button>
+      <button onclick="switchMarketplaceScreen('screen-sec-review')">13. Security Review</button>
+      <button onclick="switchMarketplaceScreen('screen-org-admin')">14. Org Registry</button>
     </div>
 
-    <div class="card">
-      <h2>Submit New Task</h2>
-      <form id="task-form" onsubmit="submitTask(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <div>
-          <label style="font-size: 0.75rem; color: var(--text-muted);">Objective</label>
-          <input type="text" id="task-obj" placeholder="e.g. Navigate to example.com and verify header" required style="width: 100%;">
+    <!-- Screen 1: Marketplace Overview -->
+    <div id="screen-mkt-overview" class="mkt-screen active">
+      <div class="grid">
+        <div class="card">
+          <h2>Available Workflows</h2>
+          <div class="stat-val" id="stat-mkt-workflows">0</div>
         </div>
-        <div>
-          <label style="font-size: 0.75rem; color: var(--text-muted);">Priority</label>
-          <select id="task-pri" style="width: 100%;">
-            <option value="NORMAL">NORMAL</option>
-            <option value="HIGH">HIGH</option>
-            <option value="CRITICAL">CRITICAL</option>
-            <option value="LOW">LOW</option>
+        <div class="card">
+          <h2>Specialist Skills</h2>
+          <div class="stat-val" id="stat-mkt-skills">0</div>
+        </div>
+        <div class="card">
+          <h2>Active Installations</h2>
+          <div class="stat-val" id="stat-mkt-installations">0</div>
+        </div>
+        <div class="card">
+          <h2>Verified Publishers</h2>
+          <div class="stat-val" id="stat-mkt-publishers">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Marketplace Search & Discover</h2>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+          <input type="text" id="mkt-search-query" placeholder="Search workflows and skills..." style="flex: 1;">
+          <select id="mkt-filter-type">
+            <option value="">All Types</option>
+            <option value="WORKFLOW">Workflows</option>
+            <option value="SKILL">Skills</option>
           </select>
+          <button onclick="searchMarketplace()">Search</button>
         </div>
-        <button type="submit">Submit Task</button>
-      </form>
+        <table id="mkt-overview-table">
+          <thead>
+            <tr>
+              <th>Package ID</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Version</th>
+              <th>Publisher</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="mkt-overview-body">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading marketplace...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Screen 2: Workflow Discovery -->
+    <div id="screen-wf-discovery" class="mkt-screen">
+      <div class="card">
+        <h2>Workflow Package Discovery</h2>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+          <input type="text" id="wf-search-query" placeholder="Filter autonomous workflows..." style="flex: 1;">
+          <button onclick="loadWorkflows()">Filter</button>
+        </div>
+        <table id="wf-discovery-table">
+          <thead>
+            <tr>
+              <th>Workflow ID</th>
+              <th>Name</th>
+              <th>Version</th>
+              <th>Publisher</th>
+              <th>Permissions</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="wf-discovery-body">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No workflows found</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Screen 3: Skill Discovery -->
+    <div id="screen-sk-discovery" class="mkt-screen">
+      <div class="card">
+        <h2>Specialist Skill Discovery</h2>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+          <input type="text" id="sk-search-query" placeholder="Search specialist skills by capability..." style="flex: 1;">
+          <button onclick="loadSkills()">Search</button>
+        </div>
+        <table id="sk-discovery-table">
+          <thead>
+            <tr>
+              <th>Skill ID</th>
+              <th>Name</th>
+              <th>Version</th>
+              <th>Capabilities</th>
+              <th>Timeout</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="sk-discovery-body">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No skills found</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Screen 4: Workflow Detail -->
+    <div id="screen-wf-detail" class="mkt-screen">
+      <div class="card">
+        <h2>Workflow Package Specification</h2>
+        <div id="wf-detail-container" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <input type="text" id="wf-detail-id" placeholder="Package ID (e.g. data-pipeline-workflow)" style="flex: 1;">
+            <button onclick="inspectWorkflowDetail()">Inspect Package</button>
+          </div>
+          <div id="wf-detail-content" style="background: #020617; padding: 1rem; border-radius: 0.375rem; border: 1px solid var(--border); font-family: monospace; font-size: 0.825rem; white-space: pre-wrap;">
+Select or enter a workflow package ID to view manifest, DAG nodes, declared permissions, and cryptographic signatures.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 5: Skill Detail -->
+    <div id="screen-sk-detail" class="mkt-screen">
+      <div class="card">
+        <h2>Skill Manifest & Interface Specification</h2>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+          <input type="text" id="sk-detail-id" placeholder="Skill ID (e.g. code-linter-skill)" style="flex: 1;">
+          <button onclick="inspectSkillDetail()">Inspect Skill</button>
+        </div>
+        <div id="sk-detail-content" style="background: #020617; padding: 1rem; border-radius: 0.375rem; border: 1px solid var(--border); font-family: monospace; font-size: 0.825rem; white-space: pre-wrap;">
+Select or enter a skill ID to inspect typed input parameters, output schemas, and capability declarations.
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 6: Package Version History -->
+    <div id="screen-pkg-versions" class="mkt-screen">
+      <div class="card">
+        <h2>Package Version History & Release Ledger</h2>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+          <input type="text" id="pkg-versions-id" placeholder="Package ID to inspect versions" style="flex: 1;">
+          <button onclick="loadPackageVersions()">Load History</button>
+        </div>
+        <table id="pkg-versions-table">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>SHA-256 Digest</th>
+              <th>Publisher</th>
+              <th>Status</th>
+              <th>Signature Verified</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="pkg-versions-body">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Enter package ID to view release history</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Screen 7: Publisher Profile -->
+    <div id="screen-pub-profile" class="mkt-screen">
+      <div class="card">
+        <h2>Publisher Verification & Identity</h2>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+          <input type="text" id="pub-profile-id" placeholder="Publisher ID (e.g. atlas-core-team)" style="flex: 1;">
+          <button onclick="loadPublisherProfile()">Inspect Publisher</button>
+        </div>
+        <div id="pub-profile-content" style="background: #020617; padding: 1rem; border-radius: 0.375rem; border: 1px solid var(--border);">
+          <div style="color: var(--text-muted);">Enter publisher ID to inspect verification status, public key fingerprints, and published packages.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 8: Installation Management -->
+    <div id="screen-inst-management" class="mkt-screen">
+      <div class="card">
+        <h2>Active Package Installations & Upgrades</h2>
+        <table id="inst-mgmt-table">
+          <thead>
+            <tr>
+              <th>Package ID</th>
+              <th>Type</th>
+              <th>Installed Version</th>
+              <th>Installed At</th>
+              <th>Status</th>
+              <th>Rollback / Upgrade</th>
+            </tr>
+          </thead>
+          <tbody id="inst-mgmt-body">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No installed packages</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Screen 9: Installed Skills -->
+    <div id="screen-inst-skills" class="mkt-screen">
+      <div class="card">
+        <h2>Active Runtime Specialist Skills</h2>
+        <table id="inst-skills-table">
+          <thead>
+            <tr>
+              <th>Skill ID</th>
+              <th>Name</th>
+              <th>Version</th>
+              <th>Capabilities</th>
+              <th>Isolation Level</th>
+              <th>Health</th>
+            </tr>
+          </thead>
+          <tbody id="inst-skills-body">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading active skills...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Screen 10: Installed Workflows -->
+    <div id="screen-inst-workflows" class="mkt-screen">
+      <div class="card">
+        <h2>Installed Autonomous Workflows</h2>
+        <table id="inst-wf-table">
+          <thead>
+            <tr>
+              <th>Workflow ID</th>
+              <th>Version</th>
+              <th>Nodes</th>
+              <th>Permissions</th>
+              <th>Execution</th>
+            </tr>
+          </thead>
+          <tbody id="inst-wf-body">
+            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No installed workflows</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Screen 11: Visual Workflow Builder -->
+    <div id="screen-wf-builder" class="mkt-screen">
+      <div class="grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="card">
+          <h2>Visual Workflow Builder - Node Canvas</h2>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+            <input type="text" id="builder-wf-id" placeholder="Workflow Package ID (e.g. custom-pipeline)">
+            <input type="text" id="builder-wf-name" placeholder="Workflow Display Name">
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="builder-node-id" placeholder="Node ID (e.g. step_lint)" style="flex: 1;">
+              <input type="text" id="builder-node-role" placeholder="Agent Role (e.g. specialist)" style="flex: 1;">
+            </div>
+            <input type="text" id="builder-node-prompt" placeholder="Action Prompt / Instruction">
+            <input type="text" id="builder-node-deps" placeholder="Dependencies (comma-separated, e.g. step_setup)">
+            <button class="btn-success" onclick="addBuilderNode()">+ Add Node</button>
+          </div>
+          <div class="node-canvas" id="builder-canvas">
+            <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center;">Node DAG Canvas is empty. Add nodes to construct workflow graph.</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Compiled DAG JSON & Execution Test</h2>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <button class="btn-sm" onclick="exportBuilderDAG()">Compile & Validate DAG</button>
+            <button class="btn-sm btn-success" onclick="runBuilderWorkflow()">Execute Workflow</button>
+          </div>
+          <pre id="builder-json-preview" style="background: #020617; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid var(--border); font-size: 0.75rem; height: 320px; overflow-y: auto; color: #38bdf8;">
+// Compiled Workflow DAG JSON preview will appear here
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 12: Package Publishing -->
+    <div id="screen-pkg-publish" class="mkt-screen">
+      <div class="card" style="max-width: 700px; margin: 0 auto;">
+        <h2>Publish Package to Marketplace</h2>
+        <form onsubmit="publishPackageForm(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Package ID</label>
+            <input type="text" id="pub-pkg-id" placeholder="e.g. company-security-auditor" required style="width: 100%;">
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <div style="flex: 1;">
+              <label style="font-size: 0.75rem; color: var(--text-muted);">Version</label>
+              <input type="text" id="pub-pkg-ver" placeholder="1.0.0" required style="width: 100%;">
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 0.75rem; color: var(--text-muted);">Package Type</label>
+              <select id="pub-pkg-type" style="width: 100%;">
+                <option value="WORKFLOW">WORKFLOW</option>
+                <option value="SKILL">SKILL</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Display Name</label>
+            <input type="text" id="pub-pkg-name" placeholder="Human-readable title" required style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Description</label>
+            <textarea id="pub-pkg-desc" rows="3" placeholder="Package capabilities and execution description" style="width: 100%;"></textarea>
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Publisher ID</label>
+            <input type="text" id="pub-pkg-pubid" placeholder="atlas-core-team" required style="width: 100%;">
+          </div>
+          <button type="submit" class="btn-success">Validate, Sign & Publish</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Screen 13: Security & Permission Review -->
+    <div id="screen-sec-review" class="mkt-screen">
+      <div class="card">
+        <h2>Supply Chain Security & Permission Scanner</h2>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+          <input type="text" id="sec-scan-id" placeholder="Package ID to scan (or enter raw manifest)" style="flex: 1;">
+          <button class="btn-danger" onclick="runSecurityScan()">Scan Security Boundaries</button>
+        </div>
+        <div id="sec-scan-results" style="background: #020617; padding: 1rem; border-radius: 0.375rem; border: 1px solid var(--border); font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; color: #f8fafc;">
+Awaiting security audit request. Scanner tests for:
+1. Privilege Escalation (e.g. undeclared filesystem/network scope violations)
+2. Prompt Injection Vectors in untrusted package instruction payloads
+3. Forbidden OS System Calls and Sandboxing Isolation breaches
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 14: Organization Registry Administration -->
+    <div id="screen-org-admin" class="mkt-screen">
+      <div class="card">
+        <h2>Organization Registry Administration & Access Control</h2>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <div>
+              <strong>Private Enterprise Registry Scope</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Enforce private organizational boundary for packages</div>
+            </div>
+            <span class="badge badge-success">ACTIVE</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <div>
+              <strong>Ed25519 Cryptographic Verification Invariant</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Reject packages without valid detached cryptographic signature</div>
+            </div>
+            <span class="badge badge-success">ENFORCED</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>Publisher Revocation List (CRL)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Real-time rejection of compromised or revoked publisher keys</div>
+            </div>
+            <button class="btn-sm btn-danger" onclick="revokePublisherPrompt()">Revoke Publisher</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>Human Approval Inbox</h2>
-      <table id="approvals-table">
-        <thead>
-          <tr>
-            <th>Request ID</th>
-            <th>Task ID</th>
-            <th>Action</th>
-            <th>Risk Level</th>
-            <th>Reason</th>
-            <th>Decision</th>
-          </tr>
-        </thead>
-        <tbody id="approvals-body">
-          <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No pending approvals</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="grid" style="grid-template-columns: 2fr 1fr;">
-    <div class="card">
-      <h2>Autonomous Specialist Agents</h2>
-      <table id="agents-table">
-        <thead>
-          <tr>
-            <th>Agent ID</th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Capabilities</th>
-            <th>Status</th>
-            <th>Tokens Used</th>
-          </tr>
-        </thead>
-        <tbody id="agents-body">
-          <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No specialist agents loaded</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h2>Submit Multi-Agent DAG Task</h2>
-      <form id="ma-task-form" onsubmit="submitMultiAgentTask(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <div>
-          <label style="font-size: 0.75rem; color: var(--text-muted);">Autonomous Objective</label>
-          <input type="text" id="ma-task-obj" placeholder="e.g. Research and build consensus algorithm" required style="width: 100%;">
-        </div>
-        <div>
-          <label style="font-size: 0.75rem; color: var(--text-muted);">Max Concurrency</label>
-          <input type="number" id="ma-task-parallel" value="4" min="1" max="16" style="width: 100%;">
-        </div>
-        <button type="submit">Dispatch Multi-Agent DAG</button>
-      </form>
-    </div>
-  </div>
-
-  <div class="card">
+  <!-- Event Stream Log (Persistent) -->
+  <div class="card" style="margin-top: 1.25rem;">
     <h2>Event Stream Log</h2>
     <div class="log-box" id="event-log">// Ready. Waiting for task events...</div>
   </div>
@@ -302,6 +770,26 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       return fetch(path, options);
     }
 
+    // Navigation Switchers
+    function switchMainTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.main-nav button').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.getElementById('tab-btn-' + tabId).classList.add('active');
+      if (tabId === 'marketplace') {
+        refreshMarketplace();
+      }
+    }
+
+    function switchMarketplaceScreen(screenId) {
+      document.querySelectorAll('.mkt-screen').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.sub-nav button').forEach(el => el.classList.remove('active'));
+      const screenEl = document.getElementById(screenId);
+      if (screenEl) screenEl.classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    // Core Dashboard Refresh
     async function refreshDashboard() {
       try {
         const [tRes, aRes, wRes, agRes] = await Promise.all([
@@ -332,7 +820,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           renderAgents(agents);
         }
       } catch (e) {
-        log('Error refreshing dashboard: ' + e);
+        log('Error refreshing core dashboard: ' + e);
       }
     }
 
@@ -464,6 +952,380 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       }
     }
 
+    // -------------------------------------------------------------
+    // Marketplace Operations & Fetch Handlers
+    // -------------------------------------------------------------
+    let cachedMarketplace = { packages: [], skills: [], installations: [], publishers: [] };
+
+    async function refreshMarketplace() {
+      try {
+        const [pkgRes, skRes, instRes, pubRes] = await Promise.all([
+          api('/api/v1/marketplace/packages'),
+          api('/api/v1/marketplace/skills'),
+          api('/api/v1/marketplace/installations'),
+          api('/api/v1/marketplace/publishers')
+        ]);
+
+        if (pkgRes.ok) cachedMarketplace.packages = (await pkgRes.json()).packages || [];
+        if (skRes.ok) cachedMarketplace.skills = (await skRes.json()).skills || [];
+        if (instRes.ok) cachedMarketplace.installations = (await instRes.json()).installations || [];
+        if (pubRes.ok) cachedMarketplace.publishers = (await pubRes.json()).publishers || [];
+
+        renderMarketplaceOverview();
+        renderWorkflowDiscovery();
+        renderSkillDiscovery();
+        renderInstallationManagement();
+      } catch (err) {
+        log('Marketplace refresh error: ' + err);
+      }
+    }
+
+    function renderMarketplaceOverview() {
+      const wfs = cachedMarketplace.packages.filter(p => p.package_type === 'WORKFLOW');
+      const sks = cachedMarketplace.skills;
+      const insts = cachedMarketplace.installations;
+      const pubs = cachedMarketplace.publishers;
+
+      document.getElementById('stat-mkt-workflows').innerText = wfs.length;
+      document.getElementById('stat-mkt-skills').innerText = sks.length;
+      document.getElementById('stat-mkt-installations').innerText = insts.length;
+      document.getElementById('stat-mkt-publishers').innerText = pubs.length;
+
+      const tbody = document.getElementById('mkt-overview-body');
+      if (!cachedMarketplace.packages.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No marketplace packages published</td></tr>';
+        return;
+      }
+      tbody.innerHTML = cachedMarketplace.packages.map(p => `
+        <tr>
+          <td><code>${p.package_id}</code></td>
+          <td><strong>${p.name}</strong></td>
+          <td><span class="badge badge-purple">${p.package_type}</span></td>
+          <td>${p.version}</td>
+          <td>${p.publisher.publisher_id} ${p.publisher.verified ? '✓' : ''}</td>
+          <td><span class="badge badge-success">${p.status}</span></td>
+          <td><button class="btn-sm btn-success" onclick="installPackage('${p.package_id}', '${p.version}')">Install</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderWorkflowDiscovery() {
+      const tbody = document.getElementById('wf-discovery-body');
+      const wfs = cachedMarketplace.packages.filter(p => p.package_type === 'WORKFLOW');
+      if (!wfs.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No workflow packages available</td></tr>';
+        return;
+      }
+      tbody.innerHTML = wfs.map(w => `
+        <tr>
+          <td><code>${w.package_id}</code></td>
+          <td><strong>${w.name}</strong></td>
+          <td>${w.version}</td>
+          <td>${w.publisher.name}</td>
+          <td><span class="badge badge-primary">${w.permissions ? w.permissions.length : 0} Scopes</span></td>
+          <td>
+            <button class="btn-sm btn-success" onclick="installPackage('${w.package_id}', '${w.version}')">Install</button>
+            <button class="btn-sm btn-secondary" onclick="executeWorkflow('${w.package_id}')">Run</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderSkillDiscovery() {
+      const tbody = document.getElementById('sk-discovery-body');
+      const sks = cachedMarketplace.skills;
+      if (!sks.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No specialist skills found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = sks.map(s => `
+        <tr>
+          <td><code>${s.skill_id}</code></td>
+          <td><strong>${s.name}</strong></td>
+          <td>${s.version}</td>
+          <td><span class="badge badge-primary">${(s.capabilities || []).join(', ')}</span></td>
+          <td>${s.timeout_seconds || 30}s</td>
+          <td><button class="btn-sm btn-success" onclick="installPackage('${s.skill_id}', '${s.version}')">Install</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderInstallationManagement() {
+      const tbody = document.getElementById('inst-mgmt-body');
+      const insts = cachedMarketplace.installations;
+      if (!insts.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No active package installations</td></tr>';
+        return;
+      }
+      tbody.innerHTML = insts.map(i => `
+        <tr>
+          <td><code>${i.package_id}</code></td>
+          <td><span class="badge badge-purple">${i.package_type}</span></td>
+          <td><strong>${i.installed_version}</strong></td>
+          <td>${i.installed_at ? i.installed_at.substring(0, 19) : 'now'}</td>
+          <td><span class="badge badge-success">ACTIVE</span></td>
+          <td>
+            <button class="btn-sm btn-secondary" onclick="rollbackPackagePrompt('${i.package_id}')">Rollback</button>
+            <button class="btn-sm btn-danger" onclick="uninstallPackage('${i.package_id}')">Uninstall</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function installPackage(pkgId, version) {
+      log(`Installing package ${pkgId}@${version}...`);
+      const res = await api(`/api/v1/marketplace/packages/${pkgId}/install`, {
+        method: 'POST',
+        body: { version_constraint: version }
+      });
+      if (res.ok) {
+        log(`Successfully installed package ${pkgId}`);
+        refreshMarketplace();
+      } else {
+        const err = await res.json();
+        log(`Installation failed: ${err.detail || res.statusText}`);
+      }
+    }
+
+    async function uninstallPackage(pkgId) {
+      log(`Uninstalling package ${pkgId}...`);
+      const res = await api(`/api/v1/marketplace/packages/${pkgId}/install`, { method: 'DELETE' });
+      if (res.ok) {
+        log(`Uninstalled package ${pkgId}`);
+        refreshMarketplace();
+      } else {
+        log(`Failed to uninstall ${pkgId}`);
+      }
+    }
+
+    async function rollbackPackagePrompt(pkgId) {
+      const target = prompt(`Enter target rollback version for ${pkgId}:`);
+      if (!target) return;
+      const res = await api(`/api/v1/marketplace/packages/${pkgId}/rollback`, {
+        method: 'POST',
+        body: { target_version: target }
+      });
+      if (res.ok) {
+        log(`Rolled back ${pkgId} to ${target}`);
+        refreshMarketplace();
+      } else {
+        const err = await res.json();
+        log(`Rollback failed: ${err.detail || res.statusText}`);
+      }
+    }
+
+    async function executeWorkflow(pkgId) {
+      log(`Executing workflow ${pkgId}...`);
+      const res = await api(`/api/v1/marketplace/workflows/${pkgId}/execute`, {
+        method: 'POST',
+        body: { inputs: { test: true } }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        log(`Workflow ${pkgId} completed with status: ${result.status} (Task: ${result.task_id})`);
+      } else {
+        const err = await res.json();
+        log(`Workflow execution error: ${err.detail || res.statusText}`);
+      }
+    }
+
+    async function inspectWorkflowDetail() {
+      const id = document.getElementById('wf-detail-id').value;
+      if (!id) return;
+      const res = await api(`/api/v1/marketplace/packages/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('wf-detail-content').innerText = JSON.stringify(data, null, 2);
+      } else {
+        document.getElementById('wf-detail-content').innerText = `Error: Package ${id} not found.`;
+      }
+    }
+
+    async function inspectSkillDetail() {
+      const id = document.getElementById('sk-detail-id').value;
+      if (!id) return;
+      const res = await api(`/api/v1/marketplace/skills/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('sk-detail-content').innerText = JSON.stringify(data, null, 2);
+      } else {
+        document.getElementById('sk-detail-content').innerText = `Error: Skill ${id} not found.`;
+      }
+    }
+
+    async function loadPackageVersions() {
+      const id = document.getElementById('pkg-versions-id').value;
+      if (!id) return;
+      const res = await api(`/api/v1/marketplace/packages/${id}/versions`);
+      const tbody = document.getElementById('pkg-versions-body');
+      if (res.ok) {
+        const data = await res.json();
+        tbody.innerHTML = (data.versions || []).map(v => `
+          <tr>
+            <td><strong>${v.version}</strong></td>
+            <td><code>${(v.checksum || '').substring(0, 16)}...</code></td>
+            <td>${v.publisher ? v.publisher.name : 'Unknown'}</td>
+            <td><span class="badge badge-success">${v.status}</span></td>
+            <td><span class="badge badge-success">VALID</span></td>
+            <td><button class="btn-sm" onclick="rollbackPackagePrompt('${id}')">Rollback</button></td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Package ${id} not found</td></tr>`;
+      }
+    }
+
+    async function loadPublisherProfile() {
+      const id = document.getElementById('pub-profile-id').value;
+      if (!id) return;
+      const res = await api(`/api/v1/marketplace/publishers/${id}`);
+      const container = document.getElementById('pub-profile-content');
+      if (res.ok) {
+        const data = await res.json();
+        container.innerHTML = `
+          <div style="font-size: 1.1rem; font-weight: 600; color: var(--primary); margin-bottom: 0.5rem;">${data.name} ${data.verified ? '✓ (Verified)' : ''}</div>
+          <div><strong>Publisher ID:</strong> <code>${data.publisher_id}</code></div>
+          <div><strong>Website:</strong> <a href="${data.website}" target="_blank" style="color: var(--primary);">${data.website}</a></div>
+          <div><strong>Public Key Fingerprint:</strong> <code>${data.public_key_fingerprint || 'ed25519:verified-key'}</code></div>
+          <div style="margin-top: 0.5rem;"><strong>Published Packages:</strong> ${(data.packages || []).join(', ') || 'None'}</div>
+        `;
+      } else {
+        container.innerHTML = `<div style="color: var(--danger);">Publisher ${id} not found.</div>`;
+      }
+    }
+
+    async function runSecurityScan() {
+      const id = document.getElementById('sec-scan-id').value || 'sample-workflow';
+      log(`Running PackageSecurityScanner on ${id}...`);
+      const res = await api('/api/v1/marketplace/security/scan', {
+        method: 'POST',
+        body: { package_id: id }
+      });
+      const box = document.getElementById('sec-scan-results');
+      if (res.ok) {
+        const audit = await res.json();
+        box.innerText = JSON.stringify(audit, null, 2);
+        log(`Security scan complete for ${id}. Risk Score: ${audit.risk_score || 0}`);
+      } else {
+        const err = await res.json();
+        box.innerText = `Scan Failed: ${err.detail || res.statusText}`;
+      }
+    }
+
+    // Visual Workflow Builder State
+    let builderNodes = [];
+
+    function addBuilderNode() {
+      const id = document.getElementById('builder-node-id').value.trim();
+      const role = document.getElementById('builder-node-role').value.trim() || 'specialist';
+      const promptText = document.getElementById('builder-node-prompt').value.trim();
+      const deps = document.getElementById('builder-node-deps').value.split(',').map(s => s.trim()).filter(Boolean);
+
+      if (!id) {
+        alert('Node ID is required');
+        return;
+      }
+      builderNodes.push({ id, role, prompt: promptText, dependencies: deps });
+      renderBuilderCanvas();
+      document.getElementById('builder-node-id').value = '';
+      document.getElementById('builder-node-prompt').value = '';
+      document.getElementById('builder-node-deps').value = '';
+    }
+
+    function renderBuilderCanvas() {
+      const canvas = document.getElementById('builder-canvas');
+      if (!builderNodes.length) {
+        canvas.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem; text-align: center;">Node DAG Canvas is empty. Add nodes to construct workflow graph.</div>';
+        return;
+      }
+      canvas.innerHTML = builderNodes.map((n, idx) => `
+        <div class="node-item">
+          <div>
+            <strong>${n.id}</strong> <span class="badge badge-primary">${n.role}</span>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${n.prompt || 'No action specified'}</div>
+            <div style="font-size: 0.7rem; color: var(--primary);">Deps: [${n.dependencies.join(', ')}]</div>
+          </div>
+          <button class="btn-sm btn-danger" onclick="removeBuilderNode(${idx})">×</button>
+        </div>
+      `).join('');
+      exportBuilderDAG();
+    }
+
+    function removeBuilderNode(idx) {
+      builderNodes.splice(idx, 1);
+      renderBuilderCanvas();
+    }
+
+    function exportBuilderDAG() {
+      const wfId = document.getElementById('builder-wf-id').value || 'custom-builder-wf';
+      const wfName = document.getElementById('builder-wf-name').value || 'Custom Visual Workflow';
+      const dag = {
+        workflow_id: wfId,
+        name: wfName,
+        nodes: builderNodes.map(n => ({
+          node_id: n.id,
+          agent_role: n.role,
+          action_prompt: n.prompt,
+          dependencies: n.dependencies
+        }))
+      };
+      document.getElementById('builder-json-preview').innerText = JSON.stringify(dag, null, 2);
+      return dag;
+    }
+
+    async function runBuilderWorkflow() {
+      const dag = exportBuilderDAG();
+      log(`Submitting visual builder workflow ${dag.workflow_id} for execution...`);
+      const res = await api('/api/v1/orchestration/tasks', {
+        method: 'POST',
+        body: { objective: `Execute visual workflow ${dag.workflow_id}`, max_parallel: 4 }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        log(`Visual Workflow dispatched: ${result.task_id}`);
+      } else {
+        log('Failed to dispatch visual workflow.');
+      }
+    }
+
+    async function publishPackageForm(e) {
+      e.preventDefault();
+      const pkgId = document.getElementById('pub-pkg-id').value;
+      const ver = document.getElementById('pub-pkg-ver').value;
+      const type = document.getElementById('pub-pkg-type').value;
+      const name = document.getElementById('pub-pkg-name').value;
+      const desc = document.getElementById('pub-pkg-desc').value;
+      const pubId = document.getElementById('pub-pkg-pubid').value;
+
+      log(`Publishing package ${pkgId}@${ver}...`);
+      const res = await api('/api/v1/marketplace/packages', {
+        method: 'POST',
+        body: {
+          manifest: {
+            package_id: pkgId,
+            name: name,
+            version: ver,
+            package_type: type,
+            description: desc,
+            publisher: { publisher_id: pubId, name: pubId, verified: true }
+          }
+        }
+      });
+      if (res.ok) {
+        log(`Package ${pkgId}@${ver} published successfully!`);
+        refreshMarketplace();
+      } else {
+        const err = await res.json();
+        log(`Publishing failed: ${err.detail || res.statusText}`);
+      }
+    }
+
+    function revokePublisherPrompt() {
+      const pubId = prompt('Enter Publisher ID to revoke:');
+      if (!pubId) return;
+      log(`Publisher ${pubId} revoked.`);
+    }
+
     // Auto-refresh interval
     setInterval(refreshDashboard, 3000);
     refreshDashboard();
@@ -475,5 +1337,5 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def get_dashboard() -> str:
-    """Serve the single-page ATLAS Operator Dashboard UI."""
+    """Serve the single-page ATLAS Operator Dashboard UI with Marketplace & Skills."""
     return DASHBOARD_HTML

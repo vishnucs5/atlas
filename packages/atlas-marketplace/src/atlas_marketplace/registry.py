@@ -44,7 +44,7 @@ class PackageRecord(BaseModel):
     manifest: PackageManifest
     status: PackageStatus = PackageStatus.ACTIVE
     published_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    archive_bytes: bytes
+    archive_bytes: bytes = Field(default=b"", exclude=True)
     download_count: int = 0
     tenant_id: str = "default"
     is_org_private: bool = False

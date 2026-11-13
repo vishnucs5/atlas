@@ -347,3 +347,40 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
   - Authored comprehensive 20-scenario Phase 7 acceptance suite (`tests/integration/test_phase7_acceptance.py`).
   - Updated `docs/CHANGELOG.md`, `docs/PROJECT_STATUS.md`, `docs/IMPLEMENTATION_PLAN.md`, and authored `docs/PHASE_7_ACCEPTANCE_REPORT.md`.
   - Monorepo full regression suite verified: 376/376 tests passing (100% green).
+
+---
+
+## Phase 8: Autonomous Workflow Marketplace & Skill Ecosystem (COMPLETE)
+
+**Target:** Implement Phase 8 of ATLAS: a production-oriented, extensible workflow marketplace and skill ecosystem. Allow developers and organizations to create, validate, package, version, publish, discover, install, execute, update, and manage reusable autonomous workflows and specialist skills without bypassing ATLAS policy controls or creating a disconnected engine.  
+**Status:** **100% COMPLETE (20/20 Acceptance Criteria Verified & 426/426 Tests Passing)**  
+**Completed Date:** 2026-11-13  
+**Roadmap Documents:** `docs/PHASE_8_PLAN.md`, `docs/PHASE_8_STATUS.md`, `docs/PHASE_8_ARCHITECTURE.md`, `docs/PHASE_8_SECURITY_MODEL.md`, `docs/PHASE_8_PACKAGE_SPECIFICATION.md`, `docs/PHASE_8_RISK_REGISTER.md`, `docs/PHASE_8_ACCEPTANCE_REPORT.md`  
+
+### Milestone Breakdown & Progress
+
+- [x] **Milestone 0: Baseline Verification, Workspace Setup & Architecture Scaffolding**
+  - Audited Phase 7 baseline (376 passing tests).
+  - Scaffolded `packages/atlas-marketplace` and `packages/atlas-skills` in UV workspace.
+  - Authored foundational planning and architectural documents: `docs/PHASE_8_PLAN.md`, `docs/PHASE_8_STATUS.md`, `docs/PHASE_8_ARCHITECTURE.md`, `docs/PHASE_8_SECURITY_MODEL.md`, `docs/PHASE_8_PACKAGE_SPECIFICATION.md`, `docs/PHASE_8_RISK_REGISTER.md` (`055145e`).
+- [x] **Milestone 1: Workflow Package System & Package Format (`.awp`)**
+  - Implemented `packages/atlas-marketplace/src/atlas_marketplace/models.py`: `PackageType`, `PermissionScope`, `PermissionDeclaration`, `ResourceLimits`, `PackageDependency`, `RetryPolicy`, `PublisherIdentity`, `WorkflowNodeDefinition`, `WorkflowGraphDefinition`, `PackageManifest`, and `WorkflowPackage`.
+  - Implemented `packages/atlas-marketplace/src/atlas_marketplace/package.py`: tar.gz packaging, SHA-256 integrity calculation, detached cryptographic signatures, Kahn's algorithm DAG cycle validation, and tamper-resistant archive extraction (`79cdcc5`).
+- [x] **Milestone 2: Skill SDK & Built-in Specialist Skills**
+  - Implemented `packages/atlas-skills/src/atlas_skills/models.py`: `SkillCapability`, `SkillParameter`, `SkillManifest`, and `SkillResult`.
+  - Implemented `packages/atlas-skills/src/atlas_skills/base.py`: `BaseSkill` with `on_load`/`on_unload` lifecycle hooks, `SkillContext`, `SkillLogger`, typed input validation, execution timeouts, and cancellation enforcement.
+  - Implemented built-in skills in `packages/atlas-skills/src/atlas_skills/builtins.py`: `CodeLinterSkill`, `DataAnalysisSkill`, and `TextSummarizerSkill` (`509d791`).
+- [x] **Milestone 3: Marketplace Registry Backend & Dependency Resolver**
+  - Implemented `packages/atlas-marketplace/src/atlas_marketplace/resolver.py`: SemVer constraint matching (caret `^`, tilde `~`, wildcard `*`, ranges), topological dependency resolution, cycle detection (`CircularDependencyError`), and conflict rejection (`IncompatibleDependencyError`).
+  - Implemented `packages/atlas-marketplace/src/atlas_marketplace/registry.py`: `MarketplaceRegistry` supporting multi-tenant publishing, search with capability/tag filters, pagination, package versioning, installation tracking, atomic rollback (`rollback_package`), deprecation, withdrawal, and publisher revocation (`53c2105`).
+- [x] **Milestone 4: Workflow Execution Engine & Runtime Integration**
+  - Extended `ActionFirewall` in `packages/atlas-policy` with domain inspectability properties (`blocked_domains`, `allowed_domains`).
+  - Implemented `packages/atlas-marketplace/src/atlas_marketplace/executor.py`: `WorkflowExecutor` translating declarative workflow DAGs into executable `TaskGraph` instances for `AgentSupervisor`, gating declared permissions through `ActionFirewall`, and validating deliverables with `IndependentReviewer` (`ad748a5`).
+- [x] **Milestone 5: Security Model, Supply Chain Defense & Sandboxing**
+  - Implemented `packages/atlas-marketplace/src/atlas_marketplace/security.py`: `PackageSecurityScanner` with privilege escalation detection (`PrivilegeEscalationError`), prompt injection defense against untrusted instructions (`UntrustedInstructionError`), and AST/regex inspection rejecting forbidden OS system calls (`SecurityViolationError`) (`e33b0f6`).
+- [x] **Milestone 6: REST API, Dashboard 14-Screen UI, Acceptance Suite & Final Audit**
+  - Mounted marketplace dependencies and endpoints in `apps/api`: implemented 13 REST API endpoints under `/api/v1/marketplace/*`.
+  - Extended Operator Dashboard (`apps/api/src/atlas_api/routes/dashboard.py`) with complete 14-screen interactive marketplace and visual workflow builder.
+  - Implemented comprehensive 20-scenario Phase 8 acceptance test suite in `tests/integration/test_phase8_acceptance.py`.
+  - Updated `docs/CHANGELOG.md`, `docs/PROJECT_STATUS.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/PHASE_8_STATUS.md`, and authored `docs/PHASE_8_ACCEPTANCE_REPORT.md`.
+  - Full monorepo regression suite verified: 426/426 tests passing (100% green rate).

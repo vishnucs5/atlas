@@ -2,9 +2,9 @@
 
 **Target Branch:** `feat/phase-8-workflow-marketplace`  
 **Base Commit (Phase 7):** `63a4dfd`  
-**Current Status:** **IN PROGRESS (Milestone 0 Completed)**  
+**Current Status:** **COMPLETED (All 7 Milestones & 20/20 Acceptance Criteria Verified)**  
 **Start Date:** 2026-11-13  
-**Passing Tests Baseline:** **376 / 376** (100% Green baseline from Phase 7)
+**Passing Tests:** **426 / 426** (100% Green baseline across monorepo)
 
 ---
 
@@ -17,8 +17,8 @@
 | **M2** | Skill SDK & Built-in Specialist Skills | **COMPLETED** | `packages/atlas-skills`, skill examples, tests | `509d791` |
 | **M3** | Marketplace Registry Backend & Dependency Resolver | **COMPLETED** | `atlas_marketplace/registry.py`, `resolver.py`, tests | `53c2105` |
 | **M4** | Workflow Execution Engine & Runtime Integration | **COMPLETED** | `atlas_marketplace/executor.py`, integration with `AgentSupervisor`, tests | `ad748a5` |
-| **M5** | Security Model, Supply Chain Defense & Sandboxing | **COMPLETED** | `atlas_marketplace/security.py`, signature & revocation tests | `[pending-commit]` |
-| **M6** | REST API, Dashboard 14-Screen UI, Acceptance Suite & Final Audit | **IN PROGRESS** | `apps/api/routes/marketplace.py`, `dashboard.py`, `test_phase8_acceptance.py` | *pending* |
+| **M5** | Security Model, Supply Chain Defense & Sandboxing | **COMPLETED** | `atlas_marketplace/security.py`, signature & revocation tests | `e33b0f6` |
+| **M6** | REST API, Dashboard 14-Screen UI, Acceptance Suite & Final Audit | **COMPLETED** | `apps/api/routes/marketplace.py`, `dashboard.py`, `test_phase8_acceptance.py` | *current* |
 
 ---
 
@@ -40,7 +40,7 @@
 - [x] **MP-14:** Workflow pause, resume, cancellation, and crash recovery verified with side-effect safety.
 - [x] **MP-15:** Supply chain security model prevents privilege escalation and blocks untrusted instruction hijacking.
 - [x] **MP-16:** Third-party skill code runs within sandboxed boundaries without control plane contamination.
-- [ ] **MP-17:** Complete versioned REST API (`/api/v1/marketplace/*`) exposed for all registry, package, and execution operations.
-- [ ] **MP-18:** Operator Dashboard integrates all 14 required marketplace views including visual workflow builder.
-- [ ] **MP-19:** Comprehensive Phase 8 acceptance test suite passing with 100% green rate.
-- [ ] **MP-20:** Full monorepo regression suite passes across all phases (Phases 1–8).
+- [x] **MP-17:** Complete versioned REST API (`/api/v1/marketplace/*`) exposed for all registry, package, and execution operations.
+- [x] **MP-18:** Operator Dashboard integrates all 14 required marketplace views including visual workflow builder.
+- [x] **MP-19:** Comprehensive Phase 8 acceptance test suite passing with 100% green rate.
+- [x] **MP-20:** Full monorepo regression suite passes across all phases (Phases 1–8).

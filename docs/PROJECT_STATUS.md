@@ -1,9 +1,50 @@
 # Project Status: ATLAS
 
-**Current Phase:** Phase 7 (Multi-Agent Intelligence & Autonomous Orchestration) — **100% COMPLETE (20/20 Acceptance Criteria)**  
-**Previous Phases:** Phase 1 (Foundation) — **100% COMPLETE**; Phase 2 (Browser Runtime) — **100% COMPLETE**; Phase 3 (Model Adapters & Planning) — **100% COMPLETE**; Phase 4 (Durable Execution & Recovery) — **100% COMPLETE**; Phase 5 (Production Runtime Integration) — **100% COMPLETE**; Phase 6 (Production Hardening) — **100% COMPLETE**; Phase 6.1 (PostgreSQL Integration) — **100% COMPLETE**  
+**Current Phase:** Phase 8 (Autonomous Workflow Marketplace & Skill Ecosystem) — **100% COMPLETE (20/20 Acceptance Criteria)**  
+**Previous Phases:** Phase 1 (Foundation) — **100% COMPLETE**; Phase 2 (Browser Runtime) — **100% COMPLETE**; Phase 3 (Model Adapters & Planning) — **100% COMPLETE**; Phase 4 (Durable Execution & Recovery) — **100% COMPLETE**; Phase 5 (Production Runtime Integration) — **100% COMPLETE**; Phase 6 (Production Hardening) — **100% COMPLETE**; Phase 6.1 (PostgreSQL Integration) — **100% COMPLETE**; Phase 7 (Multi-Agent Intelligence & Autonomous Orchestration) — **100% COMPLETE**  
 **Date:** 2026-11-13  
-**Overall Status:** GREEN (**376/376 Tests Passing across 11 packages and apps**)
+**Overall Status:** GREEN (**426/426 Tests Passing across 13 packages and apps**)
+
+---
+
+## Phase 8 Milestone Progress Summary (Autonomous Workflow Marketplace & Skill Ecosystem)
+
+| Milestone | Title | Package / Component | Status | Commit Hash |
+| :--- | :--- | :--- | :---: | :---: |
+| **M0** | Audit, Baseline Verification & Phase 8 Architecture Plan | `docs/PHASE_8_PLAN.md`, `docs/PHASE_8_ARCHITECTURE.md`, `docs/PHASE_8_SECURITY_MODEL.md` | **COMPLETED** | `055145e` |
+| **M1** | Workflow Package System & Package Format (`.awp`, Manifest, Integrity, Signature) | `packages/atlas-marketplace/src/atlas_marketplace/models.py`, `package.py` | **COMPLETED** | `79cdcc5` |
+| **M2** | Skill SDK & Built-in Specialist Skills (`BaseSkill`, Linter, Analyzer, Summarizer) | `packages/atlas-skills`, `builtins.py`, `base.py` | **COMPLETED** | `509d791` |
+| **M3** | Marketplace Registry Backend & Dependency Resolver (Topological, Cycles, Rollback) | `packages/atlas-marketplace/src/atlas_marketplace/registry.py`, `resolver.py` | **COMPLETED** | `53c2105` |
+| **M4** | Workflow Execution Engine & Runtime Integration (`WorkflowExecutor`, `ActionFirewall`) | `packages/atlas-marketplace/src/atlas_marketplace/executor.py` | **COMPLETED** | `ad748a5` |
+| **M5** | Security Model, Supply Chain Defense & Sandboxing (`PackageSecurityScanner`) | `packages/atlas-marketplace/src/atlas_marketplace/security.py` | **COMPLETED** | `e33b0f6` |
+| **M6** | REST API, Dashboard 14-Screen UI, Acceptance Suite & Final Audit | `apps/api/src/atlas_api/routes/marketplace.py`, `dashboard.py`, `tests/integration/test_phase8_acceptance.py` | **COMPLETED** | *current* |
+
+---
+
+## Phase 8 Acceptance Tracker (20/20 Criteria Verified)
+
+- [x] **MP-01:** Workflow package format defined with Pydantic validation, SemVer, input/output schemas, and DAG graph.
+- [x] **MP-02:** Package integrity verified via SHA-256 digests and cryptographic signatures (HMAC-SHA256/Ed25519).
+- [x] **MP-03:** Skill SDK implemented with `BaseSkill`, typed inputs/outputs, lifecycle hooks, and error contracts.
+- [x] **MP-04:** Built-in specialist skills authored and executable via explicit ATLAS interfaces.
+- [x] **MP-05:** Dependency resolver implements SemVer constraint satisfaction and transitive dependency resolution.
+- [x] **MP-06:** Dependency resolver detects and strictly rejects version conflicts and dependency cycles.
+- [x] **MP-07:** Marketplace Registry backend supports local and organizational registries with search, filtering, and pagination.
+- [x] **MP-08:** Registry supports package publishing, versioning, installation tracking, deprecation, and withdrawal.
+- [x] **MP-09:** Package installation enforces signature verification, permission review, and dependency installation.
+- [x] **MP-10:** Package updates, version rollback, and safe uninstallation verified.
+- [x] **MP-11:** Workflow execution engine translates workflow DAG into executable `TaskGraph` for `AgentSupervisor`.
+- [x] **MP-12:** All workflow and skill computer actions are strictly gated by `ActionFirewall.evaluate()`.
+- [x] **MP-13:** Independent QA Reviewer deterministically validates workflow completion deliverables before terminal state.
+- [x] **MP-14:** Workflow pause, resume, cancellation, and crash recovery verified with side-effect safety.
+- [x] **MP-15:** Supply chain security model prevents privilege escalation and blocks untrusted instruction hijacking.
+- [x] **MP-16:** Third-party skill code runs within sandboxed boundaries without control plane contamination.
+- [x] **MP-17:** Complete versioned REST API (`/api/v1/marketplace/*`) exposed for all registry, package, and execution operations.
+- [x] **MP-18:** Operator Dashboard integrates all 14 required marketplace views including visual workflow builder.
+- [x] **MP-19:** Comprehensive Phase 8 acceptance test suite passing with 100% green rate (20/20 scenarios).
+- [x] **MP-20:** Full monorepo regression suite passes across all phases (Phases 1–8: 426/426 tests passed).
+
+---
 
 ---
 

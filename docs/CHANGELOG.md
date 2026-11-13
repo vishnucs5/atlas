@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2026-11-13 — Phase 8 Autonomous Workflow Marketplace & Skill Ecosystem
+
+### Added
+- **Workflow Marketplace Package (`packages/atlas-marketplace`)**:
+  - Full UV workspace member with clean architectural boundaries.
+  - `models.py`: Canonical Pydantic schemas for `WorkflowPackage`, `PackageManifest`, `WorkflowGraphDefinition`, `WorkflowNodeDefinition`, `PublisherIdentity`, `PermissionDeclaration`, `PermissionScope`, and `ResourceLimits`.
+  - `package.py`: Package builder and unpacker with Kahn's DAG cycle detection (`validate_workflow_dag_cycles`), SHA-256 integrity hashing (`calculate_sha256`), and detached cryptographic signatures (`sign_payload`, `verify_payload_signature`).
+  - `resolver.py`: Semantic Versioning dependency resolver with caret (`^`), tilde (`~`), wildcard (`*`), and comparison range constraint satisfaction, topological resolution, cycle detection (`CircularDependencyError`), and version conflict rejection (`IncompatibleDependencyError`).
+  - `registry.py`: `MarketplaceRegistry` backend supporting multi-tenant package publishing, semantic search, capability/tag filtering, pagination, package versioning, installation tracking, atomic rollback (`rollback_package`), deprecation, withdrawal, and publisher revocation (`revoke_publisher`).
+  - `executor.py`: `WorkflowExecutor` compiling declarative package workflow DAGs into canonical ATLAS `TaskGraph` instances, gating all declared actions through `ActionFirewall`, and executing via `AgentSupervisor` with `IndependentReviewer` deliverable audits.
+  - `security.py`: `PackageSecurityScanner` enforcing supply chain protection, privilege escalation detection (`PrivilegeEscalationError`), prompt injection defense (`UntrustedInstructionError`), and forbidden OS system call rejection in sandboxed code (`SecurityViolationError`).
+- **Skill SDK Package (`packages/atlas-skills`)**:
+  - Full UV workspace member providing developer framework for specialist skills.
+  - `models.py`: Pydantic models for `SkillManifest`, `SkillParameter`, `SkillCapability`, and `SkillResult`.
+  - `base.py`: Extensible `BaseSkill` class with lifecycle hooks (`on_load`, `on_unload`), typed input validation (`validate_inputs`), timeout enforcement, cancellation handling, and structured invocation logging (`SkillLogger`).
+  - `builtins.py`: Built-in specialist skills:
+    - `CodeLinterSkill`: AST parsing and syntax analysis.
+    - `DataAnalysisSkill`: Statistical computation (mean, min, max, sum, count).
+    - `TextSummarizerSkill`: Multi-sentence extractive summarization.
+- **FastAPI REST API Routes (`apps/api/src/atlas_api/routes/marketplace.py`)**:
+  - `GET /api/v1/marketplace/packages`: Search and filter marketplace packages with pagination.
+  - `POST /api/v1/marketplace/packages`: Publish signed packages or JSON manifests with automatic verification.
+  - `GET /api/v1/marketplace/packages/{package_id}`: Retrieve package specification and latest release.
+  - `GET /api/v1/marketplace/packages/{package_id}/versions`: Version history ledger.
+  - `POST /api/v1/marketplace/packages/{package_id}/install`: Transitive dependency resolution and installation.
+  - `POST /api/v1/marketplace/packages/{package_id}/rollback`: Atomic version rollback.
+  - `POST /api/v1/marketplace/packages/{package_id}/uninstall`: Clean package removal.
+  - `GET /api/v1/marketplace/installations`: List active workspace package installations.
+  - `GET /api/v1/marketplace/skills`: List specialist skills.
+  - `POST /api/v1/marketplace/workflows/{package_id}/execute`: Execute workflow package via ATLAS multi-agent runtime.
+  - `POST /api/v1/marketplace/security/scan`: Supply chain security scan API.
+  - `GET /api/v1/marketplace/publishers/{publisher_id}`: Publisher identity profile.
+  - `POST /api/v1/marketplace/publishers/{publisher_id}/revoke`: Revoke publisher credentials.
+- **Embedded Operator Dashboard Marketplace Integration (`apps/api/src/atlas_api/routes/dashboard.py`)**:
+  - Embedded single-page control plane updated to support 14 distinct marketplace screens:
+    1. Marketplace Overview
+    2. Workflow Discovery
+    3. Skill Discovery
+    4. Workflow Detail
+    5. Skill Detail
+    6. Package Version History
+    7. Publisher Profile
+    8. Installation Management
+    9. Installed Skills
+    10. Installed Workflows
+    11. Visual Workflow Builder (interactive graph node editor)
+    12. Package Publishing
+    13. Security and Permission Review
+    14. Organization Registry Administration
+- **Integration Test Suite (`tests/integration/test_phase8_acceptance.py`)**:
+  - Complete 20-scenario deterministic verification suite (MP-01 through MP-20) achieving 100% green pass rate.
+
+---
+
 ## [0.7.0] - 2026-11-13 — Phase 7 Multi-Agent Intelligence & Autonomous Orchestration
 
 ### Added

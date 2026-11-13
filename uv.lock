@@ -84,8 +84,10 @@ version = "0.1.0"
 source = { editable = "apps/api" }
 dependencies = [
     { name = "atlas-core" },
+    { name = "atlas-marketplace" },
     { name = "atlas-observability" },
     { name = "atlas-orchestration" },
+    { name = "atlas-skills" },
     { name = "atlas-storage" },
     { name = "fastapi" },
     { name = "httpx" },
@@ -95,8 +97,10 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "atlas-marketplace", editable = "packages/atlas-marketplace" },
     { name = "atlas-observability", editable = "packages/atlas-observability" },
     { name = "atlas-orchestration", editable = "packages/atlas-orchestration" },
+    { name = "atlas-skills", editable = "packages/atlas-skills" },
     { name = "atlas-storage", editable = "packages/atlas-storage" },
     { name = "fastapi", specifier = ">=0.110.0" },
     { name = "httpx", specifier = ">=0.27.0" },

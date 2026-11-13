@@ -13,6 +13,8 @@ dependencies = [
     "atlas-storage",
     "atlas-observability",
     "atlas-orchestration",
+    "atlas-marketplace",
+    "atlas-skills",
     "fastapi>=0.110.0",
     "httpx>=0.27.0",
     "pydantic>=2.7.0",
@@ -23,6 +25,8 @@ atlas-core = { workspace = true }
 atlas-storage = { workspace = true }
 atlas-observability = { workspace = true }
 atlas-orchestration = { workspace = true }
+atlas-marketplace = { workspace = true }
+atlas-skills = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/atlas_api"]
