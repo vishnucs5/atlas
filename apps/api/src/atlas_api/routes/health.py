@@ -4,8 +4,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from atlas_observability import get_logger
+from atlas_observability.metrics import REGISTRY
 from fastapi import APIRouter, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 logger = get_logger("atlas.api.health")
@@ -129,3 +130,24 @@ def get_readyz(request: Request) -> JSONResponse:
         },
     )
     return JSONResponse(status_code=status_code, content=payload.model_dump())
+
+
+@router.get("/metrics", summary="Prometheus Metrics Exposition")
+def get_metrics(request: Request) -> PlainTextResponse:
+    """Return runtime operational metrics in Prometheus text exposition format."""
+    runtime = getattr(request.app.state, "runtime", None)
+    if runtime is not None:
+        try:
+            active_tasks = sum(1 for t in runtime._running_async_tasks.values() if not t.done())
+            REGISTRY.set_gauge("atlas_active_tasks", float(active_tasks))
+
+            pending_approvals = len(runtime.approval_mgr.list_requests(status="PENDING"))
+            REGISTRY.set_gauge("atlas_pending_approvals", float(pending_approvals))
+
+            active_workers = len(runtime.worker_registry.list_healthy(max_age_seconds=30.0))
+            REGISTRY.set_gauge("atlas_active_workers", float(active_workers))
+        except Exception as exc:
+            logger.debug("Failed refreshing runtime gauge metrics: %s", exc)
+
+    content = REGISTRY.export_prometheus_text()
+    return PlainTextResponse(content=content, media_type="text/plain; version=0.0.4; charset=utf-8")

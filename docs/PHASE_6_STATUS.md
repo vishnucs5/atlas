@@ -18,7 +18,7 @@
 | **M2** | Reliability Engineering (Subprocess crash, fencing, DB locks, side-effect safety, backup/restore) | **COMPLETED** | `action_ledger.py`, `recovery.py`, `backup.py`, fault injection tests | `bb583fa` |
 | **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | **COMPLETED** | `atlas-agent/runtime.py`, `atlas-api`, benchmark scripts | `008a932` |
 | **M4** | Production Deployment (Docker Compose multi-service, Windows worker Session 0 check, .env.example) | **COMPLETED** | `compose.yaml`, `Dockerfile`, Windows worker guides | `eee7a6b` |
-| **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | NOT STARTED | `atlas-observability`, `/metrics`, `/dashboard` | - |
+| **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | **COMPLETED** | `atlas-observability`, `/metrics`, `/dashboard` | In Progress |
 | **M6** | Release Readiness & 28-Scenario Acceptance Suite | NOT STARTED | 28 acceptance scenarios, `CHANGELOG.md`, `PHASE_6_ACCEPTANCE_REPORT.md` | - |
 
 ---
@@ -47,8 +47,8 @@
 - [x] **Scenario 20:** Graceful shutdown preserves task consistency and releases resources.
 - [x] **Scenario 21:** Concurrent tasks respect resource limits and bounded concurrency.
 - [x] **Scenario 22:** Queue overload applies backpressure (429 / 503).
-- [ ] **Scenario 23:** API and dashboard show consistent task and worker state.
-- [ ] **Scenario 24:** Event stream reconnects without losing required sequenced events.
+- [x] **Scenario 23:** API and dashboard show consistent task and worker state.
+- [x] **Scenario 24:** Event stream reconnects without losing required sequenced events.
 - [x] **Scenario 25:** Windows interactive worker validates its desktop execution session (non-Session 0).
 - [x] **Scenario 26:** Clean deployment starts successfully from scratch.
 - [x] **Scenario 27:** Database migration and rollback procedures work reliably.

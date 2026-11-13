@@ -13,8 +13,11 @@ from atlas_observability.logging import (
     mask_secrets,
     unbind_context,
 )
+from atlas_observability.metrics import REGISTRY, MetricsRegistry
 
 __all__ = [
+    "MetricsRegistry",
+    "REGISTRY",
     "StructuredJsonFormatter",
     "StructuredLogger",
     "bind_context",
