@@ -70,7 +70,7 @@ All capabilities were designed and implemented strictly in alignment with the **
 | **M3** | Inter-Agent Communication Protocol & Shared Memory Engine | `f9319e7` | `packages/atlas-orchestration/src/atlas_orchestration/messaging.py`, `packages/atlas-orchestration/src/atlas_orchestration/memory.py` | **COMPLETED** |
 | **M4** | Specialist Agents & Capability-Based Routing | `55a40dd` | `packages/atlas-orchestration/src/atlas_orchestration/specialist.py` | **COMPLETED** |
 | **M5** | Agent Supervisor, Independent QA Reviewer & Recovery | `858b3b0` | `packages/atlas-orchestration/src/atlas_orchestration/supervisor.py`, `reviewer.py`, `recovery.py` | **COMPLETED** |
-| **M6** | REST API, Dashboard Integration & End-to-End Acceptance Suite | `[current]` | `apps/api/src/atlas_api/routes/orchestration.py`, `tests/integration/test_phase7_acceptance.py` | **COMPLETED** |
+| **M6** | REST API, Dashboard Integration & End-to-End Acceptance Suite | `15d2ccc` | `apps/api/src/atlas_api/routes/orchestration.py`, `tests/integration/test_phase7_acceptance.py` | **COMPLETED** |
 
 ---
 

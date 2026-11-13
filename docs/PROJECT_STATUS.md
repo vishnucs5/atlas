@@ -17,7 +17,7 @@
 | **M3** | Inter-Agent Communication Protocol & Shared Memory Engine | `packages/atlas-orchestration/src/atlas_orchestration/messaging.py`, `packages/atlas-orchestration/src/atlas_orchestration/memory.py` | **COMPLETED** | `f9319e7` |
 | **M4** | Specialist Agents & Capability-Based Routing | `packages/atlas-orchestration/src/atlas_orchestration/specialist.py` | **COMPLETED** | `55a40dd` |
 | **M5** | Agent Supervisor, Independent QA Reviewer & Recovery | `packages/atlas-orchestration/src/atlas_orchestration/supervisor.py`, `reviewer.py`, `recovery.py` | **COMPLETED** | `858b3b0` |
-| **M6** | REST API, Dashboard Integration & End-to-End Acceptance Suite | `apps/api/src/atlas_api/routes/orchestration.py`, `tests/integration/test_phase7_acceptance.py` | **COMPLETED** | *pending* |
+| **M6** | REST API, Dashboard Integration & End-to-End Acceptance Suite | `apps/api/src/atlas_api/routes/orchestration.py`, `tests/integration/test_phase7_acceptance.py` | **COMPLETED** | `15d2ccc` |
 
 ---
 
