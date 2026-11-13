@@ -44,6 +44,12 @@ from atlas_marketplace.resolver import (
     matches_constraint,
     parse_semver,
 )
+from atlas_marketplace.security import (
+    PackageSecurityScanner,
+    PrivilegeEscalationError,
+    SecurityViolationError,
+    UntrustedInstructionError,
+)
 
 __version__ = "0.1.0"
 
@@ -58,6 +64,7 @@ __all__ = [
     "PackageIntegrityError",
     "PackageManifest",
     "PackageRecord",
+    "PackageSecurityScanner",
     "PackageSignatureError",
     "PackageStatus",
     "PackageType",
@@ -65,9 +72,12 @@ __all__ = [
     "PermissionDeclaration",
     "PermissionDeniedError",
     "PermissionScope",
+    "PrivilegeEscalationError",
     "PublisherIdentity",
     "ResourceLimits",
     "RetryPolicy",
+    "SecurityViolationError",
+    "UntrustedInstructionError",
     "WorkflowExecutionError",
     "WorkflowExecutionResult",
     "WorkflowExecutor",

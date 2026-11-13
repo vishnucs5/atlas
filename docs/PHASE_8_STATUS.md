@@ -16,9 +16,9 @@
 | **M1** | Workflow Package System & Package Format | **COMPLETED** | `packages/atlas-marketplace/src/atlas_marketplace/models.py`, `package.py`, tests | `79cdcc5` |
 | **M2** | Skill SDK & Built-in Specialist Skills | **COMPLETED** | `packages/atlas-skills`, skill examples, tests | `509d791` |
 | **M3** | Marketplace Registry Backend & Dependency Resolver | **COMPLETED** | `atlas_marketplace/registry.py`, `resolver.py`, tests | `53c2105` |
-| **M4** | Workflow Execution Engine & Runtime Integration | **COMPLETED** | `atlas_marketplace/executor.py`, integration with `AgentSupervisor`, tests | `[pending-commit]` |
-| **M5** | Security Model, Supply Chain Defense & Sandboxing | **IN PROGRESS** | `atlas_marketplace/security.py`, signature & revocation tests | *pending* |
-| **M6** | REST API, Dashboard 14-Screen UI, Acceptance Suite & Final Audit | **PENDING** | `apps/api/routes/marketplace.py`, `dashboard.py`, `test_phase8_acceptance.py` | *pending* |
+| **M4** | Workflow Execution Engine & Runtime Integration | **COMPLETED** | `atlas_marketplace/executor.py`, integration with `AgentSupervisor`, tests | `ad748a5` |
+| **M5** | Security Model, Supply Chain Defense & Sandboxing | **COMPLETED** | `atlas_marketplace/security.py`, signature & revocation tests | `[pending-commit]` |
+| **M6** | REST API, Dashboard 14-Screen UI, Acceptance Suite & Final Audit | **IN PROGRESS** | `apps/api/routes/marketplace.py`, `dashboard.py`, `test_phase8_acceptance.py` | *pending* |
 
 ---
 
@@ -38,8 +38,8 @@
 - [x] **MP-12:** All workflow and skill computer actions are strictly gated by `ActionFirewall.evaluate()`.
 - [x] **MP-13:** Independent QA Reviewer deterministically validates workflow completion deliverables before terminal state.
 - [x] **MP-14:** Workflow pause, resume, cancellation, and crash recovery verified with side-effect safety.
-- [ ] **MP-15:** Supply chain security model prevents privilege escalation and blocks untrusted instruction hijacking.
-- [ ] **MP-16:** Third-party skill code runs within sandboxed boundaries without control plane contamination.
+- [x] **MP-15:** Supply chain security model prevents privilege escalation and blocks untrusted instruction hijacking.
+- [x] **MP-16:** Third-party skill code runs within sandboxed boundaries without control plane contamination.
 - [ ] **MP-17:** Complete versioned REST API (`/api/v1/marketplace/*`) exposed for all registry, package, and execution operations.
 - [ ] **MP-18:** Operator Dashboard integrates all 14 required marketplace views including visual workflow builder.
 - [ ] **MP-19:** Comprehensive Phase 8 acceptance test suite passing with 100% green rate.
