@@ -18,7 +18,7 @@
 | **M2** | Reliability Engineering (Subprocess crash, fencing, DB locks, side-effect safety, backup/restore) | **COMPLETED** | `action_ledger.py`, `recovery.py`, `backup.py`, fault injection tests | `bb583fa` |
 | **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | **COMPLETED** | `atlas-agent/runtime.py`, `atlas-api`, benchmark scripts | `008a932` |
 | **M4** | Production Deployment (Docker Compose multi-service, Windows worker Session 0 check, .env.example) | **COMPLETED** | `compose.yaml`, `Dockerfile`, Windows worker guides | `eee7a6b` |
-| **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | **COMPLETED** | `atlas-observability`, `/metrics`, `/dashboard` | In Progress |
+| **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | **COMPLETED** | `atlas-observability`, `/metrics`, `/dashboard` | `addf096` |
 | **M6** | Release Readiness & 28-Scenario Acceptance Suite | NOT STARTED | 28 acceptance scenarios, `CHANGELOG.md`, `PHASE_6_ACCEPTANCE_REPORT.md` | - |
 
 ---
