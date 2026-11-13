@@ -44,6 +44,10 @@ from atlas_agent.safety import SafetyEngine
 logger = logging.getLogger("atlas.runtime")
 
 
+class QueueBackpressureError(Exception):
+    """Raised when the runtime task queue exceeds capacity, signaling HTTP 429/503 backpressure."""
+
+
 class HermeticFallbackAdapter(ModelAdapter):
     """Hermetic local fallback adapter used when no external API credentials are provided."""
 
@@ -106,7 +110,14 @@ class ProductionRuntime(AtlasRuntime):
         safety_engine: SafetyEngine | None = None,
         agent_loop: AutonomousAgentLoop | None = None,
         artifacts_dir: str | Path = "artifacts",
+        max_concurrent_tasks: int = 50,
+        max_queue_depth: int = 100,
+        task_timeout_seconds: float = 300.0,
     ) -> None:
+        self.max_concurrent_tasks = max_concurrent_tasks
+        self.max_queue_depth = max_queue_depth
+        self.task_timeout_seconds = task_timeout_seconds
+
         # Storage & persistence
         self.storage = storage or SQLiteStorage(":memory:")
         self.storage.initialize()
@@ -263,6 +274,12 @@ class ProductionRuntime(AtlasRuntime):
         budget: PlanBudget | None = None,
     ) -> Task:
         """Submit and initialize a new task through the complete 14-state machine."""
+        active_count = sum(1 for t in self._running_async_tasks.values() if not t.done())
+        if active_count >= self.max_queue_depth:
+            raise QueueBackpressureError(
+                f"Task queue capacity exceeded ({active_count}/{self.max_queue_depth}). Backpressure active."
+            )
+
         if not self._initialized:
             await self.initialize()
 
@@ -337,7 +354,20 @@ class ProductionRuntime(AtlasRuntime):
         try:
             if not self._initialized:
                 await self.initialize()
-            task = await self.loop.run(task, session, budget=budget)
+            timeout = float(task.metadata.get("timeout_seconds") or self.task_timeout_seconds)
+            try:
+                task = await asyncio.wait_for(
+                    self.loop.run(task, session, budget=budget),
+                    timeout=timeout,
+                )
+            except TimeoutError:
+                await self._transition_task(
+                    task,
+                    TaskStatus.FAILED,
+                    session_id=session.session_id,
+                    reason=f"Task execution exceeded timeout limit of {timeout} seconds",
+                )
+                return task
 
             # Check if task paused for human approval
             if task.status == TaskStatus.WAITING_APPROVAL:

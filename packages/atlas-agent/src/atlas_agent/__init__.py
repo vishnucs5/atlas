@@ -16,7 +16,7 @@ from atlas_agent.planner import (
     StepStatus,
     StructuredPlanner,
 )
-from atlas_agent.runtime import ProductionRuntime
+from atlas_agent.runtime import ProductionRuntime, QueueBackpressureError
 from atlas_agent.safety import (
     ActionLoopDetectedError,
     BudgetExhaustedError,
@@ -34,6 +34,7 @@ __all__ = [
     "PlanStatus",
     "PlanStep",
     "ProductionRuntime",
+    "QueueBackpressureError",
     "ReplanBudgetExceededError",
     "SafetyEngine",
     "StepStatus",

@@ -2,6 +2,7 @@
 
 from typing import Annotated, Any
 
+from atlas_agent.runtime import QueueBackpressureError
 from atlas_core.contracts.task import Task, TaskRequest
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
@@ -41,8 +42,15 @@ async def submit_task(
     task_request.metadata["owner_id"] = user.user_id
     task_request.metadata["owner_role"] = user.role.value
     runtime = _get_runtime(request)
-    task = await runtime.submit_task(task_request, wait_until_complete=wait)
-    return task
+    try:
+        task = await runtime.submit_task(task_request, wait_until_complete=wait)
+        return task
+    except QueueBackpressureError as qb_err:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(qb_err),
+            headers={"Retry-After": "5"},
+        ) from qb_err
 
 
 @router.get("", response_model=list[Task])

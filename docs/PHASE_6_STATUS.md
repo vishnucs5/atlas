@@ -16,7 +16,7 @@
 | **M0** | Phase 5 Acceptance Audit & Baseline Verification | **COMPLETED** | `PHASE_6_PLAN.md`, `PHASE_6_STATUS.md`, `PHASE_6_RISK_REGISTER.md`, M0 Audit | `ff07700` |
 | **M1** | Security Hardening (Auth, RBAC, Exact Approvals, SSRF, Filesystem, Threat Model) | **COMPLETED** | `atlas-api/auth.py`, `firewall.py`, `approval_manager.py`, `SECURITY_THREAT_MODEL.md` | `902f769` |
 | **M2** | Reliability Engineering (Subprocess crash, fencing, DB locks, side-effect safety, backup/restore) | **COMPLETED** | `action_ledger.py`, `recovery.py`, `backup.py`, fault injection tests | `bb583fa` |
-| **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | NOT STARTED | `atlas-agent/runtime.py`, `atlas-api`, benchmark scripts | - |
+| **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | **COMPLETED** | `atlas-agent/runtime.py`, `atlas-api`, benchmark scripts | In Progress |
 | **M4** | Production Deployment (Docker Compose multi-service, Windows worker Session 0 check, .env.example) | NOT STARTED | `compose.yaml`, `Dockerfile`, Windows worker guides | - |
 | **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | NOT STARTED | `atlas-observability`, `/metrics`, `/dashboard` | - |
 | **M6** | Release Readiness & 28-Scenario Acceptance Suite | NOT STARTED | 28 acceptance scenarios, `CHANGELOG.md`, `PHASE_6_ACCEPTANCE_REPORT.md` | - |
@@ -45,8 +45,8 @@
 - [x] **Scenario 18:** Unknown external action outcome is reconciled before retry.
 - [x] **Scenario 19:** Database backup restores successfully with data integrity.
 - [x] **Scenario 20:** Graceful shutdown preserves task consistency and releases resources.
-- [ ] **Scenario 21:** Concurrent tasks respect resource limits and bounded concurrency.
-- [ ] **Scenario 22:** Queue overload applies backpressure (429 / 503).
+- [x] **Scenario 21:** Concurrent tasks respect resource limits and bounded concurrency.
+- [x] **Scenario 22:** Queue overload applies backpressure (429 / 503).
 - [ ] **Scenario 23:** API and dashboard show consistent task and worker state.
 - [ ] **Scenario 24:** Event stream reconnects without losing required sequenced events.
 - [ ] **Scenario 25:** Windows interactive worker validates its desktop execution session (non-Session 0).
