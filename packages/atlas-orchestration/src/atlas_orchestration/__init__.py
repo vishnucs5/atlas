@@ -23,6 +23,16 @@ from atlas_orchestration.registry import (
     AgentRegistry,
     AgentUnavailableError,
 )
+from atlas_orchestration.specialist import (
+    BrowserSpecialist,
+    CodingSpecialist,
+    DataAnalysisSpecialist,
+    DesktopSpecialist,
+    PolicyViolationError,
+    QASpecialist,
+    ResearchSpecialist,
+    SpecialistAgent,
+)
 
 __version__ = "0.1.0"
 
@@ -32,14 +42,22 @@ __all__ = [
     "AgentNotFoundError",
     "AgentRegistry",
     "AgentUnavailableError",
+    "BrowserSpecialist",
     "CircularDelegationError",
+    "CodingSpecialist",
     "CyclicDependencyError",
+    "DataAnalysisSpecialist",
+    "DesktopSpecialist",
     "DuplicateMessageError",
     "ExpiredMessageError",
     "InvalidNodeStateError",
     "MemoryAccessDeniedError",
     "NodeNotFoundError",
+    "PolicyViolationError",
+    "QASpecialist",
+    "ResearchSpecialist",
     "SharedMemoryEngine",
+    "SpecialistAgent",
     "TaskGraphEngine",
     "UnauthorizedCrossTaskCommunicationError",
 ]

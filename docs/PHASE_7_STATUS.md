@@ -16,7 +16,7 @@
 | **M1** | Core Multi-Agent Contracts & Agent Registry | **COMPLETED** | `atlas_core/contracts/agent.py`, `atlas_orchestration/registry.py`, tests | `5662558` |
 | **M2** | Task Graph Engine & Versioned DAG | **COMPLETED** | `atlas_core/contracts/graph.py`, `atlas_orchestration/graph_engine.py`, tests | `583cd7b` |
 | **M3** | Inter-Agent Communication Protocol & Shared Memory Engine | **COMPLETED** | `atlas_orchestration/messaging.py`, `atlas_orchestration/memory.py`, tests | `ea73c4e` |
-| **M4** | Specialist Agents & Capability-Based Routing | **PENDING** | Specialist agent implementations, model routing, tests | *pending* |
+| **M4** | Specialist Agents & Capability-Based Routing | **COMPLETED** | Specialist agent implementations, model routing, tests | `6f4fe75` |
 | **M5** | Agent Supervisor, Independent QA Reviewer & Recovery | **PENDING** | `atlas_orchestration/supervisor.py`, `reviewer.py`, `recovery.py`, tests | *pending* |
 | **M6** | REST API, Dashboard Integration & End-to-End Acceptance Suite | **PENDING** | `apps/api/routes/orchestration.py`, `test_phase7_acceptance.py`, acceptance report | *pending* |
 
@@ -32,9 +32,9 @@
 - [x] **MA-06:** Communication protocol blocks unauthorized cross-task messaging.
 - [x] **MA-07:** Shared Memory Engine partitions task-scoped, agent-scoped, and project-scoped knowledge.
 - [x] **MA-08:** Shared Memory Engine isolates untrusted web/model content from overriding policy or instructions.
-- [ ] **MA-09:** Modular Specialist Agents implemented: Research, Browser, Desktop, Coding, Data Analysis, QA.
-- [ ] **MA-10:** Specialist agents strictly reuse existing ATLAS execution contracts (`ComputerAction`, `ActionFirewall`, drivers).
-- [ ] **MA-11:** Model Router routes specialist requests by capabilities, context limits, availability, and budgets.
+- [x] **MA-09:** Modular Specialist Agents implemented: Research, Browser, Desktop, Coding, Data Analysis, QA.
+- [x] **MA-10:** Specialist agents strictly reuse existing ATLAS execution contracts (`ComputerAction`, `ActionFirewall`, drivers).
+- [x] **MA-11:** Model Router routes specialist requests by capabilities, context limits, availability, and budgets.
 - [ ] **MA-12:** Agent Supervisor performs hierarchical decomposition, subtask dispatch, parallel scheduling, and cancellation propagation.
 - [ ] **MA-13:** Independent QA Reviewer evaluates deliverables, evidence, and policy compliance before task completion.
 - [ ] **MA-14:** Reviewer rejection triggers structured replanning and corrective subtask dispatch.
