@@ -15,7 +15,7 @@
 |---|---|:---:|---|:---:|
 | **M0** | Phase 5 Acceptance Audit & Baseline Verification | **COMPLETED** | `PHASE_6_PLAN.md`, `PHASE_6_STATUS.md`, `PHASE_6_RISK_REGISTER.md`, M0 Audit | `ff07700` |
 | **M1** | Security Hardening (Auth, RBAC, Exact Approvals, SSRF, Filesystem, Threat Model) | **COMPLETED** | `atlas-api/auth.py`, `firewall.py`, `approval_manager.py`, `SECURITY_THREAT_MODEL.md` | `902f769` |
-| **M2** | Reliability Engineering (Subprocess crash, fencing, DB locks, side-effect safety, backup/restore) | **COMPLETED** | `action_ledger.py`, `recovery.py`, `backup.py`, fault injection tests | In Progress |
+| **M2** | Reliability Engineering (Subprocess crash, fencing, DB locks, side-effect safety, backup/restore) | **COMPLETED** | `action_ledger.py`, `recovery.py`, `backup.py`, fault injection tests | `bb583fa` |
 | **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | NOT STARTED | `atlas-agent/runtime.py`, `atlas-api`, benchmark scripts | - |
 | **M4** | Production Deployment (Docker Compose multi-service, Windows worker Session 0 check, .env.example) | NOT STARTED | `compose.yaml`, `Dockerfile`, Windows worker guides | - |
 | **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | NOT STARTED | `atlas-observability`, `/metrics`, `/dashboard` | - |
