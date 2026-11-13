@@ -335,6 +335,8 @@ class ProductionRuntime(AtlasRuntime):
     ) -> Task:
         """Internal worker executing the autonomous agent loop and managing terminal transitions."""
         try:
+            if not self._initialized:
+                await self.initialize()
             task = await self.loop.run(task, session, budget=budget)
 
             # Check if task paused for human approval

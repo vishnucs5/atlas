@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-Driver Abstraction & Desktop Automation (`packages/atlas-browser`)**:
   - `DriverRegistry` enabling capability-based dynamic routing to `PlaywrightBrowserDriver` and `DesktopDriver`.
   - `DesktopDriver` implementing `ComputerDriver` with cross-platform window management, pointer/keyboard actions, accessibility extraction, and display capture.
+  - Native Windows interactive session automation with primary monitor resolution auto-detection via `user32.GetSystemMetrics`, native application process spawning and lifecycle management, cursor positioning, and clean resource teardown.
 - **Human-in-the-Loop Approval Workflow (`packages/atlas-coordination`)**:
   - `ApprovalManager` pausing tasks in `WAITING_APPROVAL` whenever high-risk actions are proposed, resuming on approval and cancelling on rejection.
   - Expiration monitoring and deterministic status transitions (`PENDING`, `GRANTED`, `DENIED`, `EXPIRED`).
