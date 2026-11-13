@@ -1,9 +1,56 @@
 # Project Status: ATLAS
 
-**Current Phase:** Phase 5 (Production Runtime Integration & Orchestration) — **100% COMPLETE (10/10 ACs)**  
-**Previous Phases:** Phase 1 (Foundation) — **100% COMPLETE (14/14 ACs)**; Phase 2 (Browser Runtime) — **100% COMPLETE (9/9 ACs)**; Phase 3 (Model Adapters & Planning) — **100% COMPLETE (10/10 ACs)**; Phase 4 (Durable Execution & Recovery) — **100% COMPLETE (10/10 ACs)**  
-**Date:** 2026-11-12  
-**Overall Status:** GREEN (**230/230 Tests Passing across 10 packages**)
+**Current Phase:** Phase 6 (Production Hardening, Security & Release Readiness) — **100% COMPLETE (28/28 Scenarios)**  
+**Previous Phases:** Phase 1 (Foundation) — **100% COMPLETE**; Phase 2 (Browser Runtime) — **100% COMPLETE**; Phase 3 (Model Adapters & Planning) — **100% COMPLETE**; Phase 4 (Durable Execution & Recovery) — **100% COMPLETE**; Phase 5 (Production Runtime Integration) — **100% COMPLETE**  
+**Date:** 2026-11-13  
+**Overall Status:** GREEN (**285/285 Tests Passing across 10 packages and apps**)
+
+---
+
+## Phase 6 Milestone Progress Summary
+
+| Milestone | Title | Package / Component | Status | Commit Hash |
+| :--- | :--- | :--- | :---: | :---: |
+| **M0** | Phase 5 Acceptance Audit & Baseline Verification | `docs/` | **COMPLETED** | `ff07700` |
+| **M1** | Security Hardening (Auth, RBAC, Exact Approvals, SSRF, Filesystem, Threat Model) | `atlas-api`, `atlas-policy`, `atlas-coordination`, `docs` | **COMPLETED** | `902f769` |
+| **M2** | Reliability Engineering (Subprocess crash, fencing, DB locks, side-effect safety, backup/restore) | `atlas-coordination`, `atlas-storage` | **COMPLETED** | `bb583fa` |
+| **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | `atlas-agent`, `atlas-api` | **COMPLETED** | `008a932` |
+| **M4** | Production Deployment (Docker Compose multi-service, Windows worker Session 0 check, .env.example) | `compose.yaml`, `atlas-browser`, `atlas-cli` | **COMPLETED** | `eee7a6b` |
+| **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | `atlas-observability`, `atlas-api` | **COMPLETED** | `addf096` |
+| **M6** | Release Readiness & 28-Scenario Acceptance Suite | `tests/integration/test_phase6_acceptance.py`, `docs/` | **COMPLETED** | Pending |
+
+---
+
+## Phase 6 Acceptance Tracker (28/28 Scenarios Verified)
+
+- [x] **Scenario 01**: Unauthorized API request is rejected (401).
+- [x] **Scenario 02**: Unauthorized user cannot access another user's task (403/404).
+- [x] **Scenario 03**: Viewer role cannot execute privileged actions (403).
+- [x] **Scenario 04**: Worker authentication is validated.
+- [x] **Scenario 05**: Expired approval is rejected.
+- [x] **Scenario 06**: Modified action parameters invalidate approval.
+- [x] **Scenario 07**: Approval cannot be replayed or reused.
+- [x] **Scenario 08**: Private-network SSRF attempt is blocked.
+- [x] **Scenario 09**: Redirect to a prohibited destination is blocked.
+- [x] **Scenario 10**: Filesystem path traversal is blocked.
+- [x] **Scenario 11**: Symlink escape is blocked.
+- [x] **Scenario 12**: Destructive terminal command requires appropriate authorization.
+- [x] **Scenario 13**: Secrets are redacted from logs, traces, and events.
+- [x] **Scenario 14**: Sensitive input is not exposed in artifacts.
+- [x] **Scenario 15**: Worker crash is detected and recovered.
+- [x] **Scenario 16**: Stale worker cannot commit (fencing token rejection).
+- [x] **Scenario 17**: Duplicate action delivery is idempotent and safe.
+- [x] **Scenario 18**: Unknown external action outcome is reconciled before retry.
+- [x] **Scenario 19**: Database backup restores successfully with data integrity.
+- [x] **Scenario 20**: Graceful shutdown preserves task consistency and releases resources.
+- [x] **Scenario 21**: Concurrent tasks respect resource limits and bounded concurrency.
+- [x] **Scenario 22**: Queue overload applies backpressure (429 / 503).
+- [x] **Scenario 23**: API and dashboard show consistent task and worker state.
+- [x] **Scenario 24**: Event stream reconnects without losing required sequenced events.
+- [x] **Scenario 25**: Windows interactive worker validates its desktop execution session (non-Session 0).
+- [x] **Scenario 26**: Clean deployment starts successfully from scratch.
+- [x] **Scenario 27**: Database migration and rollback procedures work reliably.
+- [x] **Scenario 28**: Full previous-phase regression suite passes (Phases 1–5).
 
 ---
 

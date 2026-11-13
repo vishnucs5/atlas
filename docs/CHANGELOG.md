@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-11-13 — Phase 6 Production Hardening, Security & Release Readiness Release
+
+### Added
+- **Security Hardening & Threat Defense (M1)**:
+  - Cryptographically bound approvals (`ApprovalManager`): SHA-256 parameter hashing and cryptographic action signatures binding task ID, action ID, canonical parameters, risk level, and policy version.
+  - Parameter tampering detection (`ApprovalSecurityError`) and atomic single-use consumption lock (`consumed = True`) preventing replay attacks.
+  - Multi-tier SSRF filter (`ActionFirewall`): DNS socket resolution, loopback (`127.0.0.0/8`, `::1`), private RFC1918 subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local (`169.254.0.0/16`), and cloud metadata blocking (`169.254.169.254`, `metadata.google.internal`).
+  - Redirect hop inspection (`validate_redirect`) preventing SSRF pivoting across HTTP redirects.
+  - Filesystem containment (`ArtifactManager`): Blocking Windows UNC paths (`\\server\share`, `//server/share`), blocking Windows reserved device names (`CON`, `PRN`, `AUX`, `NUL`, `COM1-9`, `LPT1-9`), symlink escape protection, and zip bomb decompression guards (`safe_extract_archive`).
+  - Timing attack defense: Constant-time API key verification (`hmac.compare_digest`), dynamic token revocation registry (`revoke_token`), token expiration, and cross-user private task isolation.
+  - Comprehensive threat model: Authored `docs/SECURITY_THREAT_MODEL.md` under STRIDE methodology.
+- **Reliability Engineering & Disaster Recovery (M2)**:
+  - Online live SQLite backup and restore utilities (`create_sqlite_backup`, `verify_sqlite_backup`, `restore_sqlite_backup`) with SHA-256 metadata sidecars and page integrity validation.
+  - External side-effect safety: Non-idempotent actions in `UNKNOWN` state cannot be blindly retried without explicit reconciliation (`NonIdempotentActionUncertaintyError`).
+  - Worker crash resilience and monotonic fencing tokens (`StaleWorkerError`).
+  - Corrupted checkpoint detection and automated rollback to last verified state (`rollback_to_last_valid`).
+- **Performance, Scalability & Backpressure (M3)**:
+  - Task queue backpressure: Bounded queue capacity (`max_queue_depth`) rejecting saturated submissions with `QueueBackpressureError` and RFC6585 HTTP 429 Too Many Requests (`Retry-After: 5`).
+  - Execution timeouts (`task_timeout_seconds`) with clean transition to `FAILED` and resource teardown.
+  - Verified persistence throughput (> 200 tasks/sec) and low latency.
+- **Production Deployment & Environment (M4)**:
+  - Updated multi-service `compose.yaml` with PostgreSQL database service (`atlas-postgres`), API server, worker pool, healthchecks, and persistent volumes.
+  - Windows interactive worker verification: `DesktopDriver.validate_interactive_session()` guarding against Windows Session 0 service isolation.
+  - Environment template `.env.example` documenting all configuration keys.
+- **Observability & Operations (M5)**:
+  - Prometheus metrics exposition (`/metrics`): thread-safe `MetricsRegistry` reporting `atlas_tasks_total`, `atlas_action_executions_total`, `atlas_policy_evaluations_total`, `atlas_queue_backpressure_rejections_total`, `atlas_active_workers`, `atlas_pending_approvals`, and `atlas_active_tasks`.
+  - Structured JSON audit logging and multi-pattern secret scrubbing.
+  - Verified real-time state consistency across API, Dashboard, and SSE stream.
+- **Release Readiness & Acceptance Suite (M6)**:
+  - Complete 28-scenario acceptance suite (`tests/integration/test_phase6_acceptance.py`) covering all Phase 6 requirements with 100% pass rate.
+  - Updated documentation: `docs/PHASE_6_STATUS.md`, `docs/PROJECT_STATUS.md`, `docs/IMPLEMENTATION_PLAN.md`, and `docs/PHASE_6_ACCEPTANCE_REPORT.md`.
+
+---
+
 ## [0.5.0] - 2026-11-12 — Phase 5 Production Runtime Integration & Orchestration Release
 
 ### Added
