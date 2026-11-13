@@ -1,5 +1,11 @@
 """ATLAS Storage - Event-Sourced Storage Engine and Database Interfaces."""
 
+from atlas_storage.backup import (
+    BackupIntegrityError,
+    create_sqlite_backup,
+    restore_sqlite_backup,
+    verify_sqlite_backup,
+)
 from atlas_storage.interfaces import (
     ActionLedgerStoreProtocol,
     ActionNotFoundError,
@@ -29,6 +35,7 @@ from atlas_storage.sqlite import (
 __all__ = [
     "ActionLedgerStoreProtocol",
     "ActionNotFoundError",
+    "BackupIntegrityError",
     "CheckpointNotFoundError",
     "CheckpointStoreProtocol",
     "CorruptedCheckpointError",
@@ -46,4 +53,7 @@ __all__ = [
     "TaskNotFoundError",
     "TaskStoreProtocol",
     "WorkerStoreProtocol",
+    "create_sqlite_backup",
+    "restore_sqlite_backup",
+    "verify_sqlite_backup",
 ]

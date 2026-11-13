@@ -159,6 +159,11 @@ class SQLiteStorage(
             if parent_dir and not os.path.exists(parent_dir):
                 os.makedirs(parent_dir, exist_ok=True)
 
+    @property
+    def db_path(self) -> str:
+        """Return the underlying SQLite database file path."""
+        return self._db_path
+
     def _get_connection(self) -> sqlite3.Connection:
         if self._conn is None:
             self._conn = sqlite3.connect(
