@@ -25,6 +25,8 @@ from atlas_core.contracts.ledger import (
     ActionExecutionRecord,
     ActionExecutionStatus,
 )
+from atlas_core.contracts.memory import MemoryEntry, MemoryScope
+from atlas_core.contracts.message import AgentMessage, AgentMessageType
 from atlas_core.contracts.model import (
     ContentPart,
     ImagePart,
@@ -76,6 +78,8 @@ __all__ = [
     "AgentCapability",
     "AgentDescriptor",
     "AgentLease",
+    "AgentMessage",
+    "AgentMessageType",
     "AgentStatus",
     "ApprovalRequest",
     "ApprovalStatus",
@@ -89,6 +93,8 @@ __all__ = [
     "FailureClassification",
     "ImagePart",
     "LeaseStatus",
+    "MemoryEntry",
+    "MemoryScope",
     "ModelCapabilities",
     "ModelError",
     "ModelMessage",
