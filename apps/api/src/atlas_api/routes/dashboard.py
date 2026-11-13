@@ -172,6 +172,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <h2>Active Workers</h2>
       <div class="stat-val" id="stat-workers">0</div>
     </div>
+    <div class="card">
+      <h2>Specialist Agents</h2>
+      <div class="stat-val" id="stat-agents" style="color: var(--primary);">0</div>
+    </div>
   </div>
 
   <div class="grid" style="grid-template-columns: 2fr 1fr;">
@@ -235,6 +239,42 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     </div>
   </div>
 
+  <div class="grid" style="grid-template-columns: 2fr 1fr;">
+    <div class="card">
+      <h2>Autonomous Specialist Agents</h2>
+      <table id="agents-table">
+        <thead>
+          <tr>
+            <th>Agent ID</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Capabilities</th>
+            <th>Status</th>
+            <th>Tokens Used</th>
+          </tr>
+        </thead>
+        <tbody id="agents-body">
+          <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No specialist agents loaded</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Submit Multi-Agent DAG Task</h2>
+      <form id="ma-task-form" onsubmit="submitMultiAgentTask(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div>
+          <label style="font-size: 0.75rem; color: var(--text-muted);">Autonomous Objective</label>
+          <input type="text" id="ma-task-obj" placeholder="e.g. Research and build consensus algorithm" required style="width: 100%;">
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; color: var(--text-muted);">Max Concurrency</label>
+          <input type="number" id="ma-task-parallel" value="4" min="1" max="16" style="width: 100%;">
+        </div>
+        <button type="submit">Dispatch Multi-Agent DAG</button>
+      </form>
+    </div>
+  </div>
+
   <div class="card">
     <h2>Event Stream Log</h2>
     <div class="log-box" id="event-log">// Ready. Waiting for task events...</div>
@@ -264,10 +304,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
     async function refreshDashboard() {
       try {
-        const [tRes, aRes, wRes] = await Promise.all([
+        const [tRes, aRes, wRes, agRes] = await Promise.all([
           api('/api/v1/tasks'),
           api('/api/v1/approvals'),
-          api('/api/v1/workers')
+          api('/api/v1/workers'),
+          api('/api/v1/orchestration/agents')
         ]);
 
         if (tRes.ok) {
@@ -284,6 +325,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         if (wRes.ok) {
           const workers = await wRes.json();
           document.getElementById('stat-workers').innerText = workers.length;
+        }
+        if (agRes && agRes.ok) {
+          const agents = await agRes.json();
+          document.getElementById('stat-agents').innerText = agents.length;
+          renderAgents(agents);
         }
       } catch (e) {
         log('Error refreshing dashboard: ' + e);
@@ -330,6 +376,43 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           </td>
         </tr>
       `).join('');
+    }
+
+    function renderAgents(agents) {
+      const tbody = document.getElementById('agents-body');
+      if (!agents || !agents.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No specialist agents loaded</td></tr>';
+        return;
+      }
+      tbody.innerHTML = agents.map(ag => `
+        <tr>
+          <td><code>${ag.agent_id}</code></td>
+          <td><strong>${ag.name}</strong></td>
+          <td>${ag.role}</td>
+          <td><span class="badge badge-primary">${ag.capabilities.join(', ')}</span></td>
+          <td><span class="badge badge-${ag.status === 'READY' ? 'success' : (ag.status === 'BUSY' ? 'warning' : 'danger')}">${ag.status}</span></td>
+          <td><code>${ag.budget ? ag.budget.tokens_used : 0}</code></td>
+        </tr>
+      `).join('');
+    }
+
+    async function submitMultiAgentTask(e) {
+      e.preventDefault();
+      const obj = document.getElementById('ma-task-obj').value;
+      const par = parseInt(document.getElementById('ma-task-parallel').value || '4', 10);
+      const res = await api('/api/v1/orchestration/tasks', {
+        method: 'POST',
+        body: { objective: obj, max_parallel: par, execute_async: false }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        log('Multi-Agent DAG Completed: ' + result.task_id + ' (Graph: ' + result.graph_id + ')');
+        document.getElementById('ma-task-obj').value = '';
+        refreshDashboard();
+      } else {
+        const err = await res.json();
+        log('Multi-Agent DAG Failed: ' + (err.detail || res.statusText));
+      }
     }
 
     async function submitTask(e) {

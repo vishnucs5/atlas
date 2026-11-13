@@ -216,13 +216,17 @@ class AgentSupervisor:
 
         # 3. Independent QA Review Gate
         if enforce_review and not graph.has_failures():
-            review = self.reviewer.evaluate_task_graph(
-                graph, required_outputs=required_outputs
-            )
+            review = self.reviewer.evaluate_task_graph(graph, required_outputs=required_outputs)
             if review.verdict == ReviewVerdict.REJECTED:
                 raise ReviewRejectionError(review.feedback)
 
         return graph
+
+    def get_task_graph(self, task_id: str) -> TaskGraph | None:
+        """Retrieve active or completed task graph by task ID."""
+        with self._lock:
+            engine = self._active_graphs.get(task_id)
+            return engine.graph if engine else None
 
     def cancel_task(self, task_id: str, reason: str = "Cancelled by supervisor") -> None:
         """Propagate cancellation across all active agents and subtask nodes."""

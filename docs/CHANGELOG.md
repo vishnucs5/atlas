@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-11-13 — Phase 7 Multi-Agent Intelligence & Autonomous Orchestration
+
+### Added
+- **Multi-Agent Orchestration Package (`packages/atlas-orchestration`)**:
+  - Full workspace member integrated into UV workspace with clean dependency boundaries to `atlas-core`, `atlas-policy`, `atlas-storage`, and `atlas-coordination`.
+- **Core Multi-Agent Contracts (`packages/atlas-core`) (M1)**:
+  - Agent capability taxonomy: `RESEARCH`, `BROWSER`, `DESKTOP`, `CODE`, `DATA_ANALYSIS`, `QUALITY_ASSURANCE`, `SUPERVISOR`, `GENERAL`.
+  - Pydantic models for `AgentDescriptor`, `AgentLease`, `AgentBudget` with token/step utilization tracking, and lease fencing tokens.
+- **Agent Registry (`AgentRegistry`) (M1)**:
+  - Dynamic specialist registration, capability discovery, heartbeat liveness tracking, and lease acquisition with fencing tokens.
+  - Concurrency caps (`max_concurrent_tasks`) and strict budget caps (`AgentBudgetExhaustedError`).
+- **Task Graph Engine (`TaskGraphEngine`) (M2)**:
+  - Versioned dependency DAG model (`TaskGraph`, `TaskNode`) supporting sequential, parallel, and conditional dependencies.
+  - Cycle detection using Kahn's algorithm (`CyclicDependencyError`) and topological batch scheduling (`get_execution_batches`).
+  - Cascading failure cancellation and dynamic DAG replanning (`replan`).
+- **Inter-Agent Communication Protocol (`AgentMessageRouter`) (M3)**:
+  - Typed envelopes (`AgentMessage`, `AgentMessageType`) with cryptographic message IDs, correlation IDs, and timestamps.
+  - Replay prevention via deduplication registry (`DuplicateMessageError`).
+  - Strict TTL deadline enforcement (`ExpiredMessageError`).
+  - Circular delegation prevention with cycle detection and depth capping (`CircularDelegationError`).
+  - Cross-task communication barriers preventing unauthorized context leakage (`UnauthorizedCrossTaskCommunicationError`).
+- **Scoped Shared Memory Engine (`SharedMemoryEngine`) (M3)**:
+  - Three-tier memory scoping: `TASK_SCOPED`, `AGENT_SCOPED`, and `PROJECT_SCOPED`.
+  - Role-based access control and agent privacy isolation (`MemoryAccessDeniedError`).
+  - Untrusted external web content marking (`is_untrusted`) and prompt sanitization preventing indirect prompt injection attacks.
+  - Structured text context summarization (`summarize_task_context`) for model prompt injection.
+- **Specialist Agents Suite (`SpecialistAgent`) (M4)**:
+  - Modular specialist implementations: `ResearchSpecialist`, `BrowserSpecialist`, `DesktopSpecialist`, `CodingSpecialist`, `DataAnalysisSpecialist`, and `QASpecialist`.
+  - Mandatory policy firewall gating (`ActionFirewall.evaluate()`) on all computer actions; raises `PolicyViolationError` on blocked domains/actions.
+  - Strict budget enforcement preventing runaway token consumption.
+- **Agent Supervisor, QA Reviewer & Recovery Manager (M5)**:
+  - `AgentSupervisor`: Hierarchical 3-stage task decomposition (Research -> Code -> QA), parallel batch execution, and cancellation propagation.
+  - `IndependentReviewer`: Deterministic verification of deliverables, evidence, and completed state (`ReviewVerdict.APPROVED` vs `REJECTED`).
+  - Structured replanning and review rejection gates (`ReviewRejectionError`).
+  - `MultiAgentRecoveryManager`: Crash detection, expired lease eviction, subtask reassignment, and strict non-idempotent action uncertainty safety (`NonIdempotentActionUncertaintyError`).
+- **FastAPI Orchestration Endpoints & Dashboard Integration (M6)**:
+  - REST endpoints under `/api/v1/orchestration`:
+    - `GET /api/v1/orchestration/agents`
+    - `POST /api/v1/orchestration/agents`
+    - `POST /api/v1/orchestration/tasks`
+    - `GET /api/v1/orchestration/tasks/{task_id}/graph`
+    - `GET /api/v1/orchestration/tasks/{task_id}/messages`
+    - `GET /api/v1/orchestration/tasks/{task_id}/memory`
+    - `POST /api/v1/orchestration/tasks/{task_id}/cancel`
+  - Operator Dashboard integration: Multi-agent fleet table, DAG dispatch interface, and active specialist counter.
+- **Comprehensive End-to-End Acceptance Test Suite (M6)**:
+  - 20 deterministic acceptance scenarios in `tests/integration/test_phase7_acceptance.py` achieving 100% green rate.
+  - Monorepo regression suite: 376 tests passing across Phases 1–7.
+
+---
+
 ## [0.6.1] - 2026-11-13 — Phase 6.1 PostgreSQL Production Integration & Independent Release Audit
 
 ### Added

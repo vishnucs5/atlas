@@ -77,15 +77,17 @@ class AgentRegistry:
                 results.append(agent)
             return results
 
-    def heartbeat(self, agent_id: str) -> None:
-        """Record a heartbeat timestamp for an active agent."""
+    def heartbeat(self, agent_id: str, status: AgentStatus | None = None) -> None:
+        """Record a heartbeat timestamp and optional status update for an active agent."""
         with self._lock:
             agent = self._agents.get(agent_id)
             if not agent:
                 raise AgentNotFoundError(f"Agent '{agent_id}' is not registered.")
             now = datetime.now(UTC)
             agent.last_heartbeat_at = now
-            if agent.status == AgentStatus.UNHEALTHY:
+            if status is not None:
+                agent.status = status
+            elif agent.status == AgentStatus.UNHEALTHY:
                 agent.status = (
                     AgentStatus.IDLE if agent.current_task_count == 0 else AgentStatus.BUSY
                 )
