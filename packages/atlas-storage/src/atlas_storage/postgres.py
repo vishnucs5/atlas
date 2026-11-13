@@ -1001,7 +1001,10 @@ class PostgresStorage(
 
                     if existing:
                         current_lease = self._row_to_lease(existing)
-                        if current_lease.is_active and current_lease.worker_id != worker_id:
+                        if (
+                            current_lease.worker_id != worker_id
+                            and not current_lease.is_expired(now)
+                        ):
                             raise StorageError(
                                 f"Task '{task_id}' is actively leased to worker '{current_lease.worker_id}' "
                                 f"until {current_lease.expires_at}."
@@ -1095,7 +1098,7 @@ class PostgresStorage(
                         raise StorageError(
                             f"Worker '{worker_id}' does not own lease '{lease_id}' (owned by '{lease.worker_id}')."
                         )
-                    if not lease.is_active:
+                    if lease.is_expired(now):
                         raise LeaseExpiredError(f"Worker lease '{lease_id}' has expired.")
 
                     cur.execute(
@@ -1146,7 +1149,8 @@ class PostgresStorage(
                     if not row:
                         return None
                     lease = self._row_to_lease(row)
-                    return lease if lease.is_active else None
+                    now = datetime.now(UTC)
+                    return None if lease.is_expired(now) else lease
         except Exception as exc:
             raise StorageError(f"Failed to get active lease for task '{task_id}': {exc}") from exc
 
