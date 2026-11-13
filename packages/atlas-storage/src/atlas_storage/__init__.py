@@ -24,6 +24,7 @@ from atlas_storage.interfaces import (
 )
 from atlas_storage.postgres import (
     PostgresConfig,
+    PostgresStorage,
     PostgresStorageSpec,
     PostgresTaskStoreInterface,
 )
@@ -43,6 +44,7 @@ __all__ = [
     "LeaseExpiredError",
     "OptimisticLockError",
     "PostgresConfig",
+    "PostgresStorage",
     "PostgresStorageSpec",
     "PostgresTaskStoreInterface",
     "SQLiteStorage",

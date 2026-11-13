@@ -2,6 +2,7 @@
 
 import os
 from contextlib import asynccontextmanager
+from typing import Any
 
 from atlas_agent.runtime import ProductionRuntime
 from atlas_observability import get_logger
@@ -25,20 +26,36 @@ API_VERSION = "0.1.0"
 async def lifespan(app: FastAPI):
     """Lifecycle manager handling startup and shutdown initialization."""
     logger.info("Initializing ATLAS API service", extra={"version": API_VERSION})
+    db_url = os.getenv("ATLAS_DATABASE_URL")
     db_path = os.getenv("ATLAS_DB_PATH", ":memory:")
-    storage: SQLiteStorage | None = None
+    storage: Any = None
     try:
-        storage = SQLiteStorage(db_path)
-        storage.initialize()
+        if db_url and (db_url.startswith("postgresql://") or db_url.startswith("postgres://")):
+            from atlas_storage.postgres import PostgresStorage
+
+            storage = PostgresStorage(db_url)
+            storage.initialize()
+            logger.info(
+                "PostgresStorage initialized",
+                extra={"db_target": db_url.split("@")[-1] if "@" in db_url else "configured"},
+            )
+        else:
+            storage = SQLiteStorage(db_path)
+            storage.initialize()
+            logger.info("SQLiteStorage initialized", extra={"db_path": db_path})
+
         app.state.storage = storage
         runtime = ProductionRuntime(storage=storage)
         await runtime.initialize()
         app.state.runtime = runtime
-        logger.info("ProductionRuntime initialized", extra={"db_path": db_path})
+        logger.info("ProductionRuntime initialized successfully")
     except Exception as exc:
         logger.error("Failed to initialize storage or runtime", extra={"error": str(exc)})
         app.state.storage = None
         app.state.runtime = None
+        if db_url and (db_url.startswith("postgresql://") or db_url.startswith("postgres://")):
+            # Never silently swallow PostgreSQL failure when explicitly configured
+            raise
 
     yield
 

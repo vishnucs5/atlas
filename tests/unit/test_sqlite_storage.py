@@ -11,6 +11,7 @@ from atlas_storage.interfaces import (
     EventStoreProtocol,
     OptimisticLockError,
     SequenceCollisionError,
+    StorageError,
     TaskNotFoundError,
     TaskStoreProtocol,
 )
@@ -414,6 +415,7 @@ def test_postgres_storage_spec():
         password="secret_password",
         min_pool_size=5,
         max_pool_size=20,
+        connect_timeout_seconds=0.5,
     )
     spec = PostgresStorageSpec(config=config)
     ddl = spec.get_schema_ddl()
@@ -421,41 +423,7 @@ def test_postgres_storage_spec():
     assert "CREATE TABLE IF NOT EXISTS execution_events" in ddl
     assert spec.dsn == "postgresql://atlas_user:secret_password@localhost:5432/atlas"
 
-    # Verify abstract interface
+    # Verify interface raises StorageError when configured host is unavailable
     interface = PostgresTaskStoreInterface(config=config)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(StorageError):
         interface.initialize()
-    with pytest.raises(NotImplementedError):
-        interface.save_task(
-            Task(
-                task_id="t_pg",
-                objective="pg test",
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-        )
-    with pytest.raises(NotImplementedError):
-        interface.get_task("t_pg")
-    with pytest.raises(NotImplementedError):
-        interface.update_task_status("t_pg", TaskStatus.RUNNING)
-    with pytest.raises(NotImplementedError):
-        interface.list_tasks()
-    with pytest.raises(NotImplementedError):
-        interface.append_event(
-            ExecutionEvent(
-                event_id="e_pg",
-                task_id="t_pg",
-                sequence=1,
-                event_type=EventType.TASK_CREATED,
-                timestamp=datetime.now(UTC),
-                correlation_id="c_pg",
-            )
-        )
-    with pytest.raises(NotImplementedError):
-        interface.get_events("t_pg")
-    with pytest.raises(NotImplementedError):
-        interface.get_latest_event("t_pg")
-    with pytest.raises(NotImplementedError):
-        interface.append_events([])
-    with pytest.raises(NotImplementedError):
-        interface.get_latest_sequence("t_pg")

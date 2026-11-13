@@ -33,6 +33,7 @@ package = false
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
+    "embedded-postgres>=18.0.0",
 ]
 
 [tool.pytest.ini_options]

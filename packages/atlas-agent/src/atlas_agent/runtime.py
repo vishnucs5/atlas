@@ -33,6 +33,7 @@ from atlas_core.runtime.interface import AtlasRuntime
 from atlas_models.adapter import ModelAdapter
 from atlas_models.router import ModelRouter
 from atlas_policy.firewall import ActionFirewall
+from atlas_storage.postgres import PostgresStorage
 from atlas_storage.sqlite import SQLiteStorage
 from atlas_verification.engine import VerificationEngine
 
@@ -95,7 +96,7 @@ class ProductionRuntime(AtlasRuntime):
 
     def __init__(
         self,
-        storage: SQLiteStorage | None = None,
+        storage: SQLiteStorage | PostgresStorage | Any | None = None,
         driver: ComputerDriver | None = None,
         model_router: ModelRouter | None = None,
         action_firewall: ActionFirewall | None = None,

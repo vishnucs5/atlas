@@ -12,8 +12,8 @@
 
 | Milestone | Subsystem / Scope | Status | Assigned Target | Commit Hash |
 |---|---|:---:|---|:---:|
-| **M0** | Audit, Baseline Verification & Phase 6.1 Plan | **COMPLETED** | `PHASE_6_1_PLAN.md`, `PHASE_6_1_STATUS.md`, Repository Audit | *pending* |
-| **M1** | PostgreSQL Storage Backend (`PostgresStorage`, connection pooling, transactions, migrations) | **IN PROGRESS** | `packages/atlas-storage/src/atlas_storage/postgres.py`, API injection | *pending* |
+| **M0** | Audit, Baseline Verification & Phase 6.1 Plan | **COMPLETED** | `PHASE_6_1_PLAN.md`, `PHASE_6_1_STATUS.md`, Repository Audit | `342bd61` |
+| **M1** | PostgreSQL Storage Backend (`PostgresStorage`, connection pooling, transactions, migrations) | **COMPLETED** | `packages/atlas-storage/src/atlas_storage/postgres.py`, API injection | *pending* |
 | **M2** | Live PostgreSQL Integration Test Suite (15 scenarios against native PostgreSQL) | **PENDING** | `tests/integration/test_postgres_storage_e2e.py` | *pending* |
 | **M3** | PostgreSQL Backup & Restore Engine, SHA-256 sidecars & Operations Guide | **PENDING** | `packages/atlas-storage/src/atlas_storage/backup.py`, `docs/POSTGRESQL_OPERATIONS.md` | *pending* |
 | **M4** | Adversarial Security Verification & Residual Threat Audit | **PENDING** | `tests/unit/test_security_adversarial.py`, `docs/SECURITY_THREAT_MODEL.md` | *pending* |
