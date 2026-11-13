@@ -14,7 +14,7 @@
 |---|---|:---:|---|:---:|
 | **M0** | Audit, Baseline Verification & Phase 7 Architecture | **COMPLETED** | `docs/PHASE_7_PLAN.md`, `docs/PHASE_7_STATUS.md`, `docs/PHASE_7_ARCHITECTURE.md`, `docs/PHASE_7_RISK_REGISTER.md` | `2ffab9e` |
 | **M1** | Core Multi-Agent Contracts & Agent Registry | **COMPLETED** | `atlas_core/contracts/agent.py`, `atlas_orchestration/registry.py`, tests | `5662558` |
-| **M2** | Task Graph Engine & Versioned DAG | **PENDING** | `atlas_core/contracts/graph.py`, `atlas_orchestration/graph_engine.py`, tests | *pending* |
+| **M2** | Task Graph Engine & Versioned DAG | **COMPLETED** | `atlas_core/contracts/graph.py`, `atlas_orchestration/graph_engine.py`, tests | `583cd7b` |
 | **M3** | Inter-Agent Communication Protocol & Shared Memory Engine | **PENDING** | `atlas_orchestration/messaging.py`, `atlas_orchestration/memory.py`, tests | *pending* |
 | **M4** | Specialist Agents & Capability-Based Routing | **PENDING** | Specialist agent implementations, model routing, tests | *pending* |
 | **M5** | Agent Supervisor, Independent QA Reviewer & Recovery | **PENDING** | `atlas_orchestration/supervisor.py`, `reviewer.py`, `recovery.py`, tests | *pending* |
@@ -25,8 +25,8 @@
 ## Phase 7 Acceptance Criteria Tracker
 
 - [x] **MA-01:** Agent Registry implements registration, capability declarations, health monitoring, budgets, and concurrency limits.
-- [ ] **MA-02:** Task Graph Engine implements versioned DAG, sequential and parallel dependencies, and conditional branching.
-- [ ] **MA-03:** Task Graph Engine strictly detects and rejects cyclic dependencies (topological sort).
+- [x] **MA-02:** Task Graph Engine implements versioned DAG, sequential and parallel dependencies, and conditional branching.
+- [x] **MA-03:** Task Graph Engine strictly detects and rejects cyclic dependencies (topological sort).
 - [ ] **MA-04:** Inter-agent messaging enforces typed schemas, cryptographic IDs, provenance, and TTL expiration.
 - [ ] **MA-05:** Communication protocol prevents circular delegation loops (`CircularDelegationError`).
 - [ ] **MA-06:** Communication protocol blocks unauthorized cross-task messaging.

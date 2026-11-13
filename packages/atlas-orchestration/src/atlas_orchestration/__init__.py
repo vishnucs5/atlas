@@ -1,5 +1,11 @@
 """ATLAS Multi-Agent Intelligence and Autonomous Orchestration Engine."""
 
+from atlas_orchestration.graph_engine import (
+    CyclicDependencyError,
+    InvalidNodeStateError,
+    NodeNotFoundError,
+    TaskGraphEngine,
+)
 from atlas_orchestration.registry import (
     AgentBudgetExhaustedError,
     AgentNotFoundError,
@@ -14,4 +20,8 @@ __all__ = [
     "AgentNotFoundError",
     "AgentRegistry",
     "AgentUnavailableError",
+    "CyclicDependencyError",
+    "InvalidNodeStateError",
+    "NodeNotFoundError",
+    "TaskGraphEngine",
 ]

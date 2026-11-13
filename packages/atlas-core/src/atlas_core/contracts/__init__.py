@@ -15,6 +15,12 @@ from atlas_core.contracts.agent import (
 )
 from atlas_core.contracts.checkpoint import Checkpoint
 from atlas_core.contracts.event import EventType, ExecutionEvent
+from atlas_core.contracts.graph import (
+    DependencyType,
+    NodeStatus,
+    TaskGraph,
+    TaskNode,
+)
 from atlas_core.contracts.ledger import (
     ActionExecutionRecord,
     ActionExecutionStatus,
@@ -76,6 +82,7 @@ __all__ = [
     "Checkpoint",
     "ComputerAction",
     "ContentPart",
+    "DependencyType",
     "EventType",
     "ExecutionEvent",
     "ExpectedState",
@@ -87,6 +94,7 @@ __all__ = [
     "ModelMessage",
     "ModelRequest",
     "ModelResponse",
+    "NodeStatus",
     "Observation",
     "PolicyDecision",
     "PolicyDecisionType",
@@ -98,6 +106,8 @@ __all__ = [
     "Session",
     "SessionStatus",
     "Task",
+    "TaskGraph",
+    "TaskNode",
     "TaskPriority",
     "TaskRequest",
     "TaskStatus",
