@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-marketplace"
+version = "0.1.0"
+description = "Autonomous Workflow Marketplace, Package Format, Dependency Resolution, and Registry for ATLAS"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "atlas-policy",
+    "atlas-storage",
+    "atlas-coordination",
+    "atlas-orchestration",
+    "pydantic>=2.7.0",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+atlas-policy = { workspace = true }
+atlas-storage = { workspace = true }
+atlas-coordination = { workspace = true }
+atlas-orchestration = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_marketplace"]

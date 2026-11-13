@@ -1,0 +1,46 @@
+# ATLAS Phase 8 Status Tracker: Workflow Marketplace & Skill Ecosystem
+
+**Target Branch:** `feat/phase-8-workflow-marketplace`  
+**Base Commit (Phase 7):** `63a4dfd`  
+**Current Status:** **IN PROGRESS (Milestone 0 Completed)**  
+**Start Date:** 2026-11-13  
+**Passing Tests Baseline:** **376 / 376** (100% Green baseline from Phase 7)
+
+---
+
+## Phase 8 Milestone Progress Ledger
+
+| Milestone | Subsystem / Scope | Status | Assigned Target | Commit Hash |
+|---|---|:---:|---|:---:|
+| **M0** | Audit, Baseline Verification & Phase 8 Architecture Scaffolding | **COMPLETED** | `docs/PHASE_8_*.md`, workspace configuration | `[pending-commit]` |
+| **M1** | Workflow Package System & Package Format | **PENDING** | `packages/atlas-marketplace/src/atlas_marketplace/models.py`, `package.py`, tests | *pending* |
+| **M2** | Skill SDK & Built-in Specialist Skills | **PENDING** | `packages/atlas-skills`, skill examples, tests | *pending* |
+| **M3** | Marketplace Registry Backend & Dependency Resolver | **PENDING** | `atlas_marketplace/registry.py`, `resolver.py`, tests | *pending* |
+| **M4** | Workflow Execution Engine & Runtime Integration | **PENDING** | `atlas_marketplace/executor.py`, integration with `AgentSupervisor`, tests | *pending* |
+| **M5** | Security Model, Supply Chain Defense & Sandboxing | **PENDING** | `atlas_marketplace/security.py`, signature & revocation tests | *pending* |
+| **M6** | REST API, Dashboard 14-Screen UI, Acceptance Suite & Final Audit | **PENDING** | `apps/api/routes/marketplace.py`, `dashboard.py`, `test_phase8_acceptance.py` | *pending* |
+
+---
+
+## Phase 8 Acceptance Criteria Tracker
+
+- [ ] **MP-01:** Workflow package format defined with Pydantic validation, SemVer, input/output schemas, and DAG graph.
+- [ ] **MP-02:** Package integrity verified via SHA-256 digests and cryptographic signatures (HMAC-SHA256/Ed25519).
+- [ ] **MP-03:** Skill SDK implemented with `BaseSkill`, typed inputs/outputs, lifecycle hooks, and error contracts.
+- [ ] **MP-04:** Built-in specialist skills authored and executable via explicit ATLAS interfaces.
+- [ ] **MP-05:** Dependency resolver implements SemVer constraint satisfaction and transitive dependency resolution.
+- [ ] **MP-06:** Dependency resolver detects and strictly rejects version conflicts and dependency cycles.
+- [ ] **MP-07:** Marketplace Registry backend supports local and organizational registries with search, filtering, and pagination.
+- [ ] **MP-08:** Registry supports package publishing, versioning, installation tracking, deprecation, and withdrawal.
+- [ ] **MP-09:** Package installation enforces signature verification, permission review, and dependency installation.
+- [ ] **MP-10:** Package updates, version rollback, and safe uninstallation verified.
+- [ ] **MP-11:** Workflow execution engine translates workflow DAG into executable `TaskGraph` for `AgentSupervisor`.
+- [ ] **MP-12:** All workflow and skill computer actions are strictly gated by `ActionFirewall.evaluate()`.
+- [ ] **MP-13:** Independent QA Reviewer deterministically validates workflow completion deliverables before terminal state.
+- [ ] **MP-14:** Workflow pause, resume, cancellation, and crash recovery verified with side-effect safety.
+- [ ] **MP-15:** Supply chain security model prevents privilege escalation and blocks untrusted instruction hijacking.
+- [ ] **MP-16:** Third-party skill code runs within sandboxed boundaries without control plane contamination.
+- [ ] **MP-17:** Complete versioned REST API (`/api/v1/marketplace/*`) exposed for all registry, package, and execution operations.
+- [ ] **MP-18:** Operator Dashboard integrates all 14 required marketplace views including visual workflow builder.
+- [ ] **MP-19:** Comprehensive Phase 8 acceptance test suite passing with 100% green rate.
+- [ ] **MP-20:** Full monorepo regression suite passes across all phases (Phases 1–8).

@@ -1,0 +1,11 @@
+# ATLAS Phase 8 Risk Register: Workflow Marketplace & Skill Ecosystem
+
+| Risk ID | Category | Risk Description | Severity | Likelihood | Impact | Mitigation Strategy | Owner |
+|---|---|---|:---:|:---:|:---:|---|---|
+| **R-01** | Supply Chain | Malicious package submitted with tampered payload or altered checksums | HIGH | MEDIUM | CRITICAL | Every package extraction requires per-file SHA-256 verification and cryptographic signature validation against active publisher keys. | Marketplace Security |
+| **R-02** | Security | Workflow attempts privilege escalation by requesting forbidden domains | HIGH | LOW | HIGH | Declarative permissions are checked at installation time and evaluated dynamically against `ActionFirewall.evaluate()`. Unauthorized network or file access is blocked. | Policy Engine |
+| **R-03** | Reliability | Malicious or poorly designed workflow contains circular dependencies | MEDIUM | MEDIUM | MEDIUM | `TaskGraphEngine` and `DependencyResolver` run Kahn's algorithm cycle detection during package validation. Circular DAGs are rejected immediately. | Graph Engine |
+| **R-04** | Security | Indirect prompt injection through third-party skill descriptions or outputs | HIGH | MEDIUM | HIGH | All package metadata, instructions, and skill outputs are flagged `is_untrusted=True` in `SharedMemoryEngine` and wrapped in safety delimiters. | Memory Engine |
+| **R-05** | Reliability | Transitive dependency conflicts or incompatible SemVer ranges crash workflow | MEDIUM | HIGH | MEDIUM | Deterministic `DependencyResolver` validates compatibility bounds before installation, rejecting broken or conflicting dependency trees. | Package Resolver |
+| **R-06** | Financial | Unbounded parallel execution exhausts LLM token budgets or worker leases | HIGH | MEDIUM | HIGH | Strict resource limits in manifest (`max_tokens`, `max_steps`, `timeout_seconds`) are enforced by `AgentSupervisor` and specialist agents (`AgentBudgetExhaustedError`). | Supervisor Engine |
+| **R-07** | Operational | Broken update breaks active production workflows | MEDIUM | LOW | HIGH | Atomic version rollback (`rollback_package`) and version locking per installation ensure clean recovery to previous verified version. | Registry Manager |

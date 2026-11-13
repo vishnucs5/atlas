@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-skills"
+version = "0.1.0"
+description = "ATLAS Skill SDK - Framework for Building and Executing Autonomous Specialist Skills"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "pydantic>=2.7.0",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_skills"]

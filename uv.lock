@@ -10,12 +10,14 @@ members = [
     "atlas-cli",
     "atlas-coordination",
     "atlas-core",
+    "atlas-marketplace",
     "atlas-models",
     "atlas-monorepo",
     "atlas-observability",
     "atlas-observation",
     "atlas-orchestration",
     "atlas-policy",
+    "atlas-skills",
     "atlas-storage",
     "atlas-verification",
 ]
@@ -178,6 +180,29 @@ dependencies = [
 requires-dist = [{ name = "pydantic", specifier = ">=2.7.0" }]
 
 [[package]]
+name = "atlas-marketplace"
+version = "0.1.0"
+source = { editable = "packages/atlas-marketplace" }
+dependencies = [
+    { name = "atlas-coordination" },
+    { name = "atlas-core" },
+    { name = "atlas-orchestration" },
+    { name = "atlas-policy" },
+    { name = "atlas-storage" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-coordination", editable = "packages/atlas-coordination" },
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "atlas-orchestration", editable = "packages/atlas-orchestration" },
+    { name = "atlas-policy", editable = "packages/atlas-policy" },
+    { name = "atlas-storage", editable = "packages/atlas-storage" },
+    { name = "pydantic", specifier = ">=2.7.0" },
+]
+
+[[package]]
 name = "atlas-models"
 version = "0.1.0"
 source = { editable = "packages/atlas-models" }
@@ -272,6 +297,21 @@ requires-dist = [
 name = "atlas-policy"
 version = "0.1.0"
 source = { editable = "packages/atlas-policy" }
+dependencies = [
+    { name = "atlas-core" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "pydantic", specifier = ">=2.7.0" },
+]
+
+[[package]]
+name = "atlas-skills"
+version = "0.1.0"
+source = { editable = "packages/atlas-skills" }
 dependencies = [
     { name = "atlas-core" },
     { name = "pydantic" },
