@@ -22,6 +22,7 @@ members = [
     "packages/atlas-models",
     "packages/atlas-agent",
     "packages/atlas-coordination",
+    "packages/atlas-orchestration",
     "apps/api",
     "apps/cli",
 ]
@@ -49,6 +50,7 @@ pythonpath = [
     "packages/atlas-models/src",
     "packages/atlas-agent/src",
     "packages/atlas-coordination/src",
+    "packages/atlas-orchestration/src",
     "apps/api/src",
     "apps/cli/src",
 ]
@@ -68,6 +70,7 @@ extraPaths = [
     "packages/atlas-models/src",
     "packages/atlas-agent/src",
     "packages/atlas-coordination/src",
+    "packages/atlas-orchestration/src",
     "apps/api/src",
     "apps/cli/src",
 ]
