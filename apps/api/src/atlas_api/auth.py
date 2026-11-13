@@ -1,6 +1,9 @@
 """Authentication and Role-Based Access Control (RBAC) for the ATLAS REST API."""
 
+import hashlib
+import hmac
 import os
+import time
 from enum import StrEnum
 from typing import Annotated
 
@@ -22,6 +25,7 @@ class AuthenticatedUser(BaseModel):
 
     role: Role
     token_preview: str
+    user_id: str
 
 
 # Configurable API keys per role
@@ -39,6 +43,31 @@ ROLE_PERMISSIONS: dict[Role, set[Role]] = {
     Role.WORKER: {Role.WORKER, Role.VIEWER},
     Role.VIEWER: {Role.VIEWER},
 }
+
+# Token revocation and expiration registry
+_REVOKED_TOKENS: set[str] = set()
+_TOKEN_EXPIRATIONS: dict[str, float] = {}
+
+
+def revoke_token(token: str) -> None:
+    """Revoke an active API token."""
+    _REVOKED_TOKENS.add(token.strip())
+
+
+def is_token_revoked(token: str) -> bool:
+    """Check if an API token has been explicitly revoked."""
+    return token.strip() in _REVOKED_TOKENS
+
+
+def set_token_expiry(token: str, expires_at: float) -> None:
+    """Set an explicit UNIX epoch expiration timestamp for a token."""
+    _TOKEN_EXPIRATIONS[token.strip()] = expires_at
+
+
+def reset_token_registry() -> None:
+    """Reset the token revocation and expiration registries (for testing)."""
+    _REVOKED_TOKENS.clear()
+    _TOKEN_EXPIRATIONS.clear()
 
 
 def _extract_token(
@@ -61,7 +90,7 @@ def get_current_user(
     x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
     api_key: Annotated[str | None, Query(alias="api_key")] = None,
 ) -> AuthenticatedUser:
-    """Validate API token and resolve client role."""
+    """Validate API token and resolve client role using constant-time comparison."""
     token = _extract_token(authorization, x_api_key, api_key)
     if not token:
         raise HTTPException(
@@ -70,10 +99,37 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Match token to configured keys
+    if is_token_revoked(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key or token has been revoked.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if token in _TOKEN_EXPIRATIONS and time.time() > _TOKEN_EXPIRATIONS[token]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key or token has expired.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Constant-time comparison against configured keys to defeat timing side-channel attacks
+    token_bytes = token.encode("utf-8")
+    matched_role: Role | None = None
     for role, key in DEFAULT_KEYS.items():
-        if token == key:
-            return AuthenticatedUser(role=role, token_preview=token[:4] + "***")
+        key_bytes = key.encode("utf-8")
+        if hmac.compare_digest(token_bytes, key_bytes):
+            matched_role = role
+            break
+
+    if matched_role is not None:
+        user_hash = hashlib.sha256(token_bytes).hexdigest()[:8]
+        user_id = f"user_{matched_role.value}_{user_hash}"
+        return AuthenticatedUser(
+            role=matched_role,
+            token_preview=token[:4] + "***",
+            user_id=user_id,
+        )
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

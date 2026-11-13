@@ -9,7 +9,10 @@ from atlas_coordination.action_ledger import (
 from atlas_coordination.approval_manager import (
     ApprovalManager,
     ApprovalRequest,
+    ApprovalSecurityError,
     ApprovalStatus,
+    compute_action_signature,
+    compute_parameter_hash,
 )
 from atlas_coordination.artifact_manager import (
     ArtifactManager,
@@ -28,6 +31,7 @@ __all__ = [
     "ActionLedger",
     "ApprovalManager",
     "ApprovalRequest",
+    "ApprovalSecurityError",
     "ApprovalStatus",
     "ArtifactManager",
     "ArtifactSecurityError",
@@ -41,7 +45,9 @@ __all__ = [
     "WorkerLeaseManager",
     "WorkerRegistryManager",
     "WorkerScheduler",
+    "compute_action_signature",
     "compute_idempotency_key",
+    "compute_parameter_hash",
     "is_action_idempotent",
     "redact_secrets",
 ]

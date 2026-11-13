@@ -21,6 +21,16 @@ _SENSITIVE_KEY_PATTERN = re.compile(
 )
 REDACTED_SENTINEL = "***REDACTED***"
 
+# Raw token patterns to scrub from unstructured strings
+_RAW_TOKEN_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(r"sk-[a-zA-Z0-9_\-]{20,}"),
+    re.compile(r"sk-ant-[a-zA-Z0-9_\-]{20,}"),
+    re.compile(r"gh[pousr]_[a-zA-Z0-9]{36,}"),
+    re.compile(r"AKIA[0-9A-Z]{16}"),
+    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----"),
+    re.compile(r"eyJ[a-zA-Z0-9_\-]{10,}\.eyJ[a-zA-Z0-9_\-]{10,}\.[a-zA-Z0-9_\-]+"),
+]
+
 
 def redact_secrets(data: Any) -> Any:
     """Recursively redact sensitive key-values and authorization tokens from dicts, lists, and strings."""
@@ -37,10 +47,16 @@ def redact_secrets(data: Any) -> Any:
     elif isinstance(data, tuple):
         return tuple(redact_secrets(item) for item in data)
     elif isinstance(data, str):
-        # Redact bearer token headers if found in string
-        if "Bearer " in data or "bearer " in data:
-            return re.sub(r"(?i)bearer\s+[a-zA-Z0-9_\-\.]+", "Bearer " + REDACTED_SENTINEL, data)
-        return data
+        result = data
+        if "Bearer " in result or "bearer " in result:
+            result = re.sub(
+                r"(?i)bearer\s+[a-zA-Z0-9_\-\.]+",
+                "Bearer " + REDACTED_SENTINEL,
+                result,
+            )
+        for pattern in _RAW_TOKEN_PATTERNS:
+            result = pattern.sub(REDACTED_SENTINEL, result)
+        return result
     return data
 
 

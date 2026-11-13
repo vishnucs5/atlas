@@ -30,6 +30,13 @@ async def list_task_artifacts(
 ) -> list[dict[str, Any]]:
     """List all artifacts (screenshots, logs, DOM snapshots) captured for a task."""
     runtime = _get_runtime(request)
+    task = await runtime.get_task(task_id)
+    if task and task.metadata.get("private") and user.role != Role.ADMIN:
+        if task.metadata.get("owner_id") != user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: You do not have permission to access artifacts of this private task.",
+            )
     return runtime.artifact_mgr.list_artifacts(task_id)
 
 
@@ -44,6 +51,13 @@ async def get_task_artifact(
 ) -> Response:
     """Retrieve the raw binary or textual content of a named task artifact."""
     runtime = _get_runtime(request)
+    task = await runtime.get_task(task_id)
+    if task and task.metadata.get("private") and user.role != Role.ADMIN:
+        if task.metadata.get("owner_id") != user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: You do not have permission to access artifacts of this private task.",
+            )
     try:
         data, content_type = runtime.artifact_mgr.read_artifact(task_id, name)
         return Response(content=data, media_type=content_type)

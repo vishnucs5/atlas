@@ -8,6 +8,31 @@ from typing import Any
 
 from atlas_coordination.checkpoint_manager import redact_secrets
 
+WINDOWS_RESERVED_NAMES = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+}
+
 
 class ArtifactSecurityError(Exception):
     """Raised when an artifact operation violates security or containment policies."""
@@ -24,6 +49,8 @@ class ArtifactManager:
     1. Path containment: Strictly prevents path traversal attacks (.. or absolute paths).
     2. File size limits: Rejects oversized payload storage.
     3. Secret scrubbing: Redacts passwords, API tokens, and credentials from textual artifacts.
+    4. UNC path and reserved name blocking: Rejects Windows device names and UNC shares.
+    5. Symlink escape protection: Asserts real destination does not escape designated directory.
     """
 
     def __init__(
@@ -41,21 +68,40 @@ class ArtifactManager:
         if ".." in clean_task_id or not clean_task_id:
             raise ArtifactSecurityError(f"Invalid task_id: '{task_id}'")
 
-        # Reject any traversal sequence in name
+        # 1. Reject UNC paths (\\server\share or //server/share)
+        if name.startswith(("//", "\\\\")) or "\\\\" in name:
+            raise ArtifactSecurityError(f"UNC path is prohibited: '{name}'")
+
+        # 2. Reject any traversal sequence in name
         if ".." in name or os.path.isabs(name) or name.startswith(("/", "\\")):
             raise ArtifactSecurityError(f"Path traversal detected in artifact name: '{name}'")
+
+        # 3. Reject Windows reserved device names
+        stem = Path(name).stem.upper()
+        if stem in WINDOWS_RESERVED_NAMES:
+            raise ArtifactSecurityError(f"Windows reserved device filename is prohibited: '{name}'")
 
         # Resolve destination path
         task_dir = (self.base_dir / clean_task_id).resolve()
         dest_path = (task_dir / name).resolve()
 
-        # Strict containment check
+        # 4. Strict containment check
         try:
             dest_path.relative_to(task_dir)
         except ValueError as err:
             raise ArtifactSecurityError(
                 f"Resolved path '{dest_path}' escapes task directory '{task_dir}'."
             ) from err
+
+        # 5. Symlink escape check
+        if dest_path.is_symlink():
+            target_resolved = dest_path.resolve()
+            try:
+                target_resolved.relative_to(task_dir)
+            except ValueError as err:
+                raise ArtifactSecurityError(
+                    f"Symlink '{dest_path}' resolves outside task directory: '{target_resolved}'."
+                ) from err
 
         return dest_path
 
@@ -172,3 +218,50 @@ class ArtifactManager:
         if meta_path.is_file():
             meta_path.unlink()
         return deleted
+
+    def safe_extract_archive(
+        self,
+        task_id: str,
+        archive_name: str,
+        max_uncompressed_bytes: int = 50 * 1024 * 1024,
+    ) -> list[str]:
+        """Safely extract zip archive members, preventing directory traversal and zip bombs."""
+        import zipfile
+
+        archive_path = self._resolve_safe_path(task_id, archive_name)
+        if not archive_path.exists():
+            raise FileNotFoundError(f"Archive '{archive_name}' not found for task '{task_id}'.")
+
+        extract_dir = (archive_path.parent / f"extracted_{archive_path.stem}").resolve()
+        extract_dir.mkdir(parents=True, exist_ok=True)
+        extracted_files: list[str] = []
+        total_size = 0
+
+        with zipfile.ZipFile(archive_path, "r") as zf:
+            for member in zf.infolist():
+                if (
+                    ".." in member.filename
+                    or os.path.isabs(member.filename)
+                    or member.filename.startswith(("/", "\\"))
+                ):
+                    raise ArtifactSecurityError(
+                        f"Archive entry contains traversal sequence: '{member.filename}'"
+                    )
+                target = (extract_dir / member.filename).resolve()
+                try:
+                    target.relative_to(extract_dir)
+                except ValueError as err:
+                    raise ArtifactSecurityError(
+                        f"Archive entry escapes destination: '{member.filename}'"
+                    ) from err
+
+                total_size += member.file_size
+                if total_size > max_uncompressed_bytes:
+                    raise ArtifactSecurityError(
+                        f"Archive extraction exceeded size limit ({max_uncompressed_bytes} bytes). Potential zip bomb."
+                    )
+
+                zf.extract(member, extract_dir)
+                extracted_files.append(str(target.relative_to(extract_dir)))
+
+        return extracted_files

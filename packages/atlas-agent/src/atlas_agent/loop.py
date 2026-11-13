@@ -198,9 +198,36 @@ class AutonomousAgentLoop:
             # Check if there is an approved action resuming from WAITING_APPROVAL
             if "pending_approval_action" in task.metadata:
                 pending_dict = task.metadata.pop("pending_approval_action")
+                tc_id = pending_dict.pop("_tool_call_id", None)
+                req_id = pending_dict.pop("_approval_request_id", None)
                 action = ComputerAction.model_validate(pending_dict)
-                tc_id = action.parameters.get("_tool_call_id", f"tc_{action.action_id}")
+                if not tc_id:
+                    tc_id = action.parameters.get("_tool_call_id", f"tc_{action.action_id}")
                 tc_name = action.action_type.replace(".", "_")
+
+                # Enforce exact-bound cryptographic parameter verification and prevent replay
+                if self._approval_mgr and req_id:
+                    try:
+                        self._approval_mgr.validate_action(req_id, action)
+                        self._approval_mgr.mark_consumed(req_id)
+                    except Exception as sec_err:
+                        await self._emit_event(
+                            task.task_id,
+                            session.session_id,
+                            EventType.ACTION_FAILED,
+                            {
+                                "action_id": action.action_id,
+                                "error": f"Approval Security Violation: {sec_err}",
+                            },
+                            step_corr_id,
+                        )
+                        await self._transition_task(
+                            task,
+                            TaskStatus.FAILED,
+                            session_id=session.session_id,
+                            reason=f"Approval security validation failed: {sec_err}",
+                        )
+                        return task
 
                 await self._emit_event(
                     task.task_id,
@@ -437,7 +464,9 @@ class AutonomousAgentLoop:
 
                 # Store pending action data in metadata so it can be resumed
                 action_data = action.model_dump()
-                action_data["parameters"]["_tool_call_id"] = tc_id
+                action_data["_tool_call_id"] = tc_id
+                if req_id:
+                    action_data["_approval_request_id"] = req_id
                 task.metadata["pending_approval_action"] = action_data
 
                 payload: dict[str, Any] = {

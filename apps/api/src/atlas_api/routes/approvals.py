@@ -71,7 +71,7 @@ async def grant_approval(
 ) -> Any:
     """Grant authorization for elevated action and resume task execution."""
     runtime = _get_runtime(request)
-    operator_id = f"operator_{user.role.value}"
+    operator_id = user.user_id
     reason = payload.reason if payload else None
     try:
         updated_task = await runtime.grant_approval(
@@ -98,7 +98,7 @@ async def deny_approval(
 ) -> Any:
     """Deny authorization for elevated action and terminate task safely."""
     runtime = _get_runtime(request)
-    operator_id = f"operator_{user.role.value}"
+    operator_id = user.user_id
     reason = payload.reason if payload else None
     try:
         updated_task = await runtime.deny_approval(

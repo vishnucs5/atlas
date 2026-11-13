@@ -1,11 +1,14 @@
 """Action Firewall and Policy Engine for the ATLAS computer-use runtime."""
 
+import ipaddress
 import re
+import socket
+import uuid
 from collections.abc import Sequence
 from typing import Any
 from urllib.parse import urlparse
 
-from atlas_core.contracts.action import ComputerAction
+from atlas_core.contracts.action import ActionTarget, ComputerAction
 from atlas_core.contracts.policy import PolicyDecision, PolicyDecisionType, RiskLevel
 from pydantic import BaseModel, ConfigDict
 
@@ -58,6 +61,52 @@ class PolicyRule(BaseModel):
 
 
 MALFORMED_DOMAIN_TOKEN_PREFIX = "<malformed:"
+
+
+def is_ip_restricted(ip_str: str) -> tuple[bool, str]:
+    """Check if an IP address belongs to loopback, private, link-local, or cloud metadata ranges."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        if ip.is_loopback:
+            return True, "loopback address"
+        if ip.is_private:
+            return True, "private RFC1918/unique-local address"
+        if ip.is_link_local:
+            return True, "link-local address"
+        if ip.is_reserved:
+            return True, "reserved address"
+        if ip.is_unspecified:
+            return True, "unspecified address"
+        if ip.is_multicast:
+            return True, "multicast address"
+        if str(ip) in ("169.254.169.254", "fd00:ec2::254"):
+            return True, "cloud instance metadata service"
+    except ValueError:
+        pass
+    return False, ""
+
+
+def resolve_and_validate_destination(domain_or_ip: str) -> tuple[bool, str]:
+    """Resolve domain via DNS and verify that no resolved address maps to private/restricted ranges."""
+    clean = domain_or_ip.strip().lower().rstrip(".")
+    if clean in ("metadata.google.internal", "instance-data", "metadata"):
+        return True, "cloud instance metadata hostname"
+
+    restricted, reason = is_ip_restricted(clean)
+    if restricted:
+        return True, reason
+
+    try:
+        addr_info = socket.getaddrinfo(clean, None)
+        for entry in addr_info:
+            sockaddr = entry[4]
+            ip_str = sockaddr[0]
+            restricted, reason = is_ip_restricted(ip_str)
+            if restricted:
+                return True, f"resolved IP '{ip_str}' is {reason}"
+    except (socket.gaierror, socket.herror, TimeoutError, OSError):
+        pass
+    return False, ""
 
 
 def _extract_domains_from_action(action: ComputerAction) -> list[str]:
@@ -161,12 +210,16 @@ class ActionFirewall:
         rules: list[PolicyRule] | None = None,
         default_decision: PolicyDecisionType = PolicyDecisionType.ALLOW,
         default_risk_level: RiskLevel = RiskLevel.LOW,
+        block_private_networks: bool = False,
+        allow_localhost: bool = False,
     ) -> None:
         self._allowed_domains: list[str] = list(allowed_domains) if allowed_domains else []
         self._blocked_domains: list[str] = list(blocked_domains) if blocked_domains else []
         self._rules: list[PolicyRule] = list(rules) if rules else []
         self._default_decision = default_decision
         self._default_risk_level = default_risk_level
+        self._block_private_networks = block_private_networks
+        self._allow_localhost = allow_localhost
 
         self._build_default_category_rules()
 
@@ -408,6 +461,24 @@ class ActionFirewall:
                         reason=f"Target domain '{domain}' is not in allowed domains list.",
                         rules_evaluated=rules_evaluated,
                     )
+                # Check SSRF and private network restrictions
+                if self._block_private_networks:
+                    restricted, reason = resolve_and_validate_destination(domain)
+                    if restricted:
+                        is_local = "loopback" in reason or domain in (
+                            "localhost",
+                            "127.0.0.1",
+                            "::1",
+                        )
+                        if is_local and self._allow_localhost:
+                            pass  # Explicitly permitted
+                        else:
+                            return PolicyDecision(
+                                decision=PolicyDecisionType.DENY,
+                                risk_level=RiskLevel.CRITICAL,
+                                reason=f"Target destination '{domain}' is restricted by network policy: {reason}.",
+                                rules_evaluated=rules_evaluated,
+                            )
 
         # Gate 2: Destructive Command Detection
         rules_evaluated.append("destructive_command_protection")
@@ -452,3 +523,25 @@ class ActionFirewall:
             reason="No specific policy rule matched; evaluated with default policy.",
             rules_evaluated=rules_evaluated,
         )
+
+    def validate_redirect(self, from_url: str, to_url: str) -> PolicyDecision:
+        """Validate a navigation redirect against domain and SSRF policies."""
+        mock_action = ComputerAction(
+            action_id=str(uuid.uuid4()),
+            task_id="redirect_validation",
+            session_id="redirect_validation",
+            action_type="browser.navigate",
+            target=ActionTarget(strategy="url", value=to_url),
+            parameters={"url": to_url, "redirected_from": from_url},
+            idempotency_key=str(uuid.uuid4()),
+        )
+        decision = self.evaluate(mock_action)
+        if decision.decision != PolicyDecisionType.ALLOW:
+            # Enrich reason to indicate redirect security failure
+            return PolicyDecision(
+                decision=decision.decision,
+                risk_level=decision.risk_level,
+                reason=f"Redirect from '{from_url}' to '{to_url}' violated policy: {decision.reason}",
+                rules_evaluated=decision.rules_evaluated,
+            )
+        return decision

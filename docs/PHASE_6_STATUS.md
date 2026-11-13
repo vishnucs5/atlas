@@ -13,8 +13,8 @@
 
 | Milestone | Subsystem / Scope | Status | Assigned Target | Commit Hash |
 |---|---|:---:|---|:---:|
-| **M0** | Phase 5 Acceptance Audit & Baseline Verification | **IN PROGRESS** | `PHASE_6_PLAN.md`, `PHASE_6_STATUS.md`, `PHASE_6_RISK_REGISTER.md`, M0 Audit | Pending |
-| **M1** | Security Hardening (Auth, RBAC, Exact Approvals, SSRF, Filesystem, Threat Model) | NOT STARTED | `atlas-api/auth.py`, `firewall.py`, `approval_manager.py`, `SECURITY_THREAT_MODEL.md` | - |
+| **M0** | Phase 5 Acceptance Audit & Baseline Verification | **COMPLETED** | `PHASE_6_PLAN.md`, `PHASE_6_STATUS.md`, `PHASE_6_RISK_REGISTER.md`, M0 Audit | `ff07700` |
+| **M1** | Security Hardening (Auth, RBAC, Exact Approvals, SSRF, Filesystem, Threat Model) | **COMPLETED** | `atlas-api/auth.py`, `firewall.py`, `approval_manager.py`, `SECURITY_THREAT_MODEL.md` | In Progress |
 | **M2** | Reliability Engineering (Subprocess crash, fencing, DB locks, side-effect safety, backup/restore) | NOT STARTED | `action_ledger.py`, `recovery.py`, `backup.py`, fault injection tests | - |
 | **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | NOT STARTED | `atlas-agent/runtime.py`, `atlas-api`, benchmark scripts | - |
 | **M4** | Production Deployment (Docker Compose multi-service, Windows worker Session 0 check, .env.example) | NOT STARTED | `compose.yaml`, `Dockerfile`, Windows worker guides | - |
@@ -25,20 +25,20 @@
 
 ## 28 Required Acceptance Scenarios Checklist
 
-- [ ] **Scenario 01:** Unauthorized API request is rejected (401).
-- [ ] **Scenario 02:** Unauthorized user cannot access another user's task (403/404).
-- [ ] **Scenario 03:** Viewer role cannot execute privileged actions (403).
-- [ ] **Scenario 04:** Worker authentication is validated.
-- [ ] **Scenario 05:** Expired approval is rejected.
-- [ ] **Scenario 06:** Modified action parameters invalidate approval.
-- [ ] **Scenario 07:** Approval cannot be replayed or reused.
-- [ ] **Scenario 08:** Private-network SSRF attempt is blocked.
-- [ ] **Scenario 09:** Redirect to a prohibited destination is blocked.
-- [ ] **Scenario 10:** Filesystem path traversal is blocked.
-- [ ] **Scenario 11:** Symlink escape is blocked.
-- [ ] **Scenario 12:** Destructive terminal command requires appropriate authorization.
-- [ ] **Scenario 13:** Secrets are redacted from logs, traces, and events.
-- [ ] **Scenario 14:** Sensitive input is not exposed in artifacts.
+- [x] **Scenario 01:** Unauthorized API request is rejected (401).
+- [x] **Scenario 02:** Unauthorized user cannot access another user's task (403/404).
+- [x] **Scenario 03:** Viewer role cannot execute privileged actions (403).
+- [x] **Scenario 04:** Worker authentication is validated.
+- [x] **Scenario 05:** Expired approval is rejected.
+- [x] **Scenario 06:** Modified action parameters invalidate approval.
+- [x] **Scenario 07:** Approval cannot be replayed or reused.
+- [x] **Scenario 08:** Private-network SSRF attempt is blocked.
+- [x] **Scenario 09:** Redirect to a prohibited destination is blocked.
+- [x] **Scenario 10:** Filesystem path traversal is blocked.
+- [x] **Scenario 11:** Symlink escape is blocked.
+- [x] **Scenario 12:** Destructive terminal command requires appropriate authorization.
+- [x] **Scenario 13:** Secrets are redacted from logs, traces, and events.
+- [x] **Scenario 14:** Sensitive input is not exposed in artifacts.
 - [ ] **Scenario 15:** Worker crash is detected and recovered.
 - [ ] **Scenario 16:** Stale worker cannot commit (fencing token rejection).
 - [ ] **Scenario 17:** Duplicate action delivery is idempotent and safe.
@@ -52,7 +52,7 @@
 - [ ] **Scenario 25:** Windows interactive worker validates its desktop execution session (non-Session 0).
 - [ ] **Scenario 26:** Clean deployment starts successfully from scratch.
 - [ ] **Scenario 27:** Database migration and rollback procedures work reliably.
-- [ ] **Scenario 28:** Full previous-phase regression suite passes (Phases 1–5).
+- [x] **Scenario 28:** Full previous-phase regression suite passes (Phases 1–5).
 
 ---
 

@@ -36,6 +36,10 @@ async def submit_task(
     wait: Annotated[bool, Query(description="Wait for initial step completion")] = False,
 ) -> Any:
     """Submit a new task for autonomous execution."""
+    if task_request.metadata is None:
+        task_request.metadata = {}
+    task_request.metadata["owner_id"] = user.user_id
+    task_request.metadata["owner_role"] = user.role.value
     runtime = _get_runtime(request)
     task = await runtime.submit_task(task_request, wait_until_complete=wait)
     return task
@@ -53,7 +57,15 @@ async def list_tasks(
 ) -> Any:
     """List tasks in reverse chronological order."""
     runtime = _get_runtime(request)
-    return await runtime.list_tasks(limit=limit, offset=offset)
+    tasks = await runtime.list_tasks(limit=limit, offset=offset)
+    # If user is not admin, filter out private tasks owned by other users
+    if user.role != Role.ADMIN:
+        return [
+            t
+            for t in tasks
+            if not t.metadata.get("private") or t.metadata.get("owner_id") == user.user_id
+        ]
+    return tasks
 
 
 @router.get("/{task_id}", response_model=Task)
@@ -72,6 +84,12 @@ async def get_task(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Task '{task_id}' not found."
         )
+    if task.metadata.get("private") and user.role != Role.ADMIN:
+        if task.metadata.get("owner_id") != user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: You do not have permission to access this private task.",
+            )
     return task
 
 
@@ -84,6 +102,13 @@ async def pause_task(
 ) -> Any:
     """Pause an active task."""
     runtime = _get_runtime(request)
+    task = await runtime.get_task(task_id)
+    if task and task.metadata.get("private") and user.role != Role.ADMIN:
+        if task.metadata.get("owner_id") != user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: You do not have permission to modify this private task.",
+            )
     reason = payload.reason if payload else None
     try:
         return await runtime.pause_task(task_id, reason=reason)
@@ -106,6 +131,13 @@ async def resume_task(
 ) -> Any:
     """Resume a paused task."""
     runtime = _get_runtime(request)
+    task = await runtime.get_task(task_id)
+    if task and task.metadata.get("private") and user.role != Role.ADMIN:
+        if task.metadata.get("owner_id") != user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: You do not have permission to modify this private task.",
+            )
     try:
         return await runtime.resume_task(task_id, wait_until_complete=wait)
     except KeyError as k_err:
@@ -127,6 +159,13 @@ async def cancel_task(
 ) -> Any:
     """Cancel an active or pending task."""
     runtime = _get_runtime(request)
+    task = await runtime.get_task(task_id)
+    if task and task.metadata.get("private") and user.role != Role.ADMIN:
+        if task.metadata.get("owner_id") != user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: You do not have permission to modify this private task.",
+            )
     reason = payload.reason if payload else None
     try:
         return await runtime.cancel_task(task_id, reason=reason)
