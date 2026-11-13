@@ -422,6 +422,16 @@ class ActionFirewall:
         self._rules = [r for r in self._rules if r.rule_id != rule_id]
         return len(self._rules) < initial_len
 
+    @property
+    def blocked_domains(self) -> list[str]:
+        """Return list of explicitly blocked domains."""
+        return list(self._blocked_domains)
+
+    @property
+    def allowed_domains(self) -> list[str]:
+        """Return list of explicitly allowed domains."""
+        return list(self._allowed_domains)
+
     def get_rules(self) -> list[PolicyRule]:
         """Return all user-defined policy rules."""
         return list(self._rules)

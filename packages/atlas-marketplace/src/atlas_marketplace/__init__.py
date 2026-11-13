@@ -1,5 +1,11 @@
 """ATLAS Workflow Marketplace & Package System."""
 
+from atlas_marketplace.executor import (
+    PermissionDeniedError,
+    WorkflowExecutionError,
+    WorkflowExecutionResult,
+    WorkflowExecutor,
+)
 from atlas_marketplace.models import (
     PackageDependency,
     PackageManifest,
@@ -57,10 +63,14 @@ __all__ = [
     "PackageType",
     "PackageValidationError",
     "PermissionDeclaration",
+    "PermissionDeniedError",
     "PermissionScope",
     "PublisherIdentity",
     "ResourceLimits",
     "RetryPolicy",
+    "WorkflowExecutionError",
+    "WorkflowExecutionResult",
+    "WorkflowExecutor",
     "WorkflowGraphDefinition",
     "WorkflowNodeDefinition",
     "WorkflowPackage",
