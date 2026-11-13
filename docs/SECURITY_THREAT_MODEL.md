@@ -1,7 +1,7 @@
 # ATLAS Security Threat Model & Defense Architecture
 
-**Document Version:** 1.0.0  
-**Phase:** Phase 6 — Production Hardening, Security & Release Readiness  
+**Document Version:** 1.1.0  
+**Phase:** Phase 6.1 — PostgreSQL Production Integration & Independent Release Audit  
 **Target:** Autonomous Task & Lifecycle Automation System (ATLAS)  
 **Status:** Approved & Implemented  
 
@@ -140,6 +140,7 @@ Logs, checkpoints, task events, and error messages are scrubbed through a centra
 - AWS Access Keys: `AKIA[0-9A-Z]{16}`
 - Asymmetric Private Keys: `-----BEGIN [A-Z ]*PRIVATE KEY-----`
 - JSON Web Tokens: `eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+`
+- Database & Service URIs: `://[^:\s@]+:[^@\s]+@` (scrubs passwords in connection URLs)
 - Sensitive Dictionary Keys: `password`, `secret`, `api_key`, `access_token`, `authorization`, `private_key`.
 
 ---
@@ -175,3 +176,13 @@ While ATLAS provides deterministic policy enforcement, the following residual ri
 | **SEC-INV-09** | Secret keys in checkpoints/events are redacted | `tests/unit/test_security_hardening.py` | Verified |
 | **SEC-INV-10** | Revoked API token returns 401 Unauthorized | `tests/unit/test_security_hardening.py` | Verified |
 | **SEC-INV-11** | Cross-tenant access to private task returns 403 Forbidden | `tests/unit/test_security_hardening.py` | Verified |
+| **SEC-ADV-01** | DNS rebinding returning metadata/private IP is blocked | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-02** | Multi-hop redirect chains leading to internal/loopback endpoints blocked | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-03** | IPv6 loopback, link-local, ULA, and IPv4-mapped IPv6 blocked | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-04** | Windows UNC paths (`\\` and `//`) blocked in artifact manager | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-05** | Directory traversal outside artifact storage root prohibited | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-06** | Action parameter modification post-approval rejected | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-07** | Consumed approval token replay rejected | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-08** | Immediate revocation of API bearer tokens enforced at endpoint | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-09** | Database connection string password scrubbed from error logs | `tests/unit/test_security_adversarial.py` | Verified |
+| **SEC-ADV-10** | Concurrent approval consumption race condition safety | `tests/unit/test_security_adversarial.py` | Verified |

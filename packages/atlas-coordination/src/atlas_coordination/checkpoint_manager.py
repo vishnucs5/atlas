@@ -21,6 +21,9 @@ _SENSITIVE_KEY_PATTERN = re.compile(
 )
 REDACTED_SENTINEL = "***REDACTED***"
 
+# Match database / service URIs containing credentials: scheme://user:pass@host
+_URI_CREDENTIAL_PATTERN = re.compile(r"(://[^:\s@]+):([^@\s]+)@")
+
 # Raw token patterns to scrub from unstructured strings
 _RAW_TOKEN_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"sk-[a-zA-Z0-9_\-]{20,}"),
@@ -54,6 +57,7 @@ def redact_secrets(data: Any) -> Any:
                 "Bearer " + REDACTED_SENTINEL,
                 result,
             )
+        result = _URI_CREDENTIAL_PATTERN.sub(r"\1:" + REDACTED_SENTINEL + "@", result)
         for pattern in _RAW_TOKEN_PATTERNS:
             result = pattern.sub(REDACTED_SENTINEL, result)
         return result
