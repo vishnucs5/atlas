@@ -1,0 +1,61 @@
+# ATLAS Phase 6 Status Tracker: Production Hardening & Release Readiness
+
+**Target Branch:** `feat/phase-6-production-hardening`  
+**Base Commit (Phase 5):** `06b5cdb`  
+**Current Status:** **IN PROGRESS (M0 Baseline Audit & Architecture Setup)**  
+**Start Date:** 2026-11-13  
+**Passing Tests:** **230 / 230** (100% Green baseline)  
+**Code Quality:** Ruff Linting & Formatting 100% Clean across all 181 files
+
+---
+
+## Phase 6 Milestone Progress Ledger
+
+| Milestone | Subsystem / Scope | Status | Assigned Target | Commit Hash |
+|---|---|:---:|---|:---:|
+| **M0** | Phase 5 Acceptance Audit & Baseline Verification | **IN PROGRESS** | `PHASE_6_PLAN.md`, `PHASE_6_STATUS.md`, `PHASE_6_RISK_REGISTER.md`, M0 Audit | Pending |
+| **M1** | Security Hardening (Auth, RBAC, Exact Approvals, SSRF, Filesystem, Threat Model) | NOT STARTED | `atlas-api/auth.py`, `firewall.py`, `approval_manager.py`, `SECURITY_THREAT_MODEL.md` | - |
+| **M2** | Reliability Engineering (Subprocess crash, fencing, DB locks, side-effect safety, backup/restore) | NOT STARTED | `action_ledger.py`, `recovery.py`, `backup.py`, fault injection tests | - |
+| **M3** | Performance & Scalability (Benchmarks, queue backpressure, quotas, rate limiting) | NOT STARTED | `atlas-agent/runtime.py`, `atlas-api`, benchmark scripts | - |
+| **M4** | Production Deployment (Docker Compose multi-service, Windows worker Session 0 check, .env.example) | NOT STARTED | `compose.yaml`, `Dockerfile`, Windows worker guides | - |
+| **M5** | Observability & Operations (Structured logs, Prometheus metrics, audit events, dashboards) | NOT STARTED | `atlas-observability`, `/metrics`, `/dashboard` | - |
+| **M6** | Release Readiness & 28-Scenario Acceptance Suite | NOT STARTED | 28 acceptance scenarios, `CHANGELOG.md`, `PHASE_6_ACCEPTANCE_REPORT.md` | - |
+
+---
+
+## 28 Required Acceptance Scenarios Checklist
+
+- [ ] **Scenario 01:** Unauthorized API request is rejected (401).
+- [ ] **Scenario 02:** Unauthorized user cannot access another user's task (403/404).
+- [ ] **Scenario 03:** Viewer role cannot execute privileged actions (403).
+- [ ] **Scenario 04:** Worker authentication is validated.
+- [ ] **Scenario 05:** Expired approval is rejected.
+- [ ] **Scenario 06:** Modified action parameters invalidate approval.
+- [ ] **Scenario 07:** Approval cannot be replayed or reused.
+- [ ] **Scenario 08:** Private-network SSRF attempt is blocked.
+- [ ] **Scenario 09:** Redirect to a prohibited destination is blocked.
+- [ ] **Scenario 10:** Filesystem path traversal is blocked.
+- [ ] **Scenario 11:** Symlink escape is blocked.
+- [ ] **Scenario 12:** Destructive terminal command requires appropriate authorization.
+- [ ] **Scenario 13:** Secrets are redacted from logs, traces, and events.
+- [ ] **Scenario 14:** Sensitive input is not exposed in artifacts.
+- [ ] **Scenario 15:** Worker crash is detected and recovered.
+- [ ] **Scenario 16:** Stale worker cannot commit (fencing token rejection).
+- [ ] **Scenario 17:** Duplicate action delivery is idempotent and safe.
+- [ ] **Scenario 18:** Unknown external action outcome is reconciled before retry.
+- [ ] **Scenario 19:** Database backup restores successfully with data integrity.
+- [ ] **Scenario 20:** Graceful shutdown preserves task consistency and releases resources.
+- [ ] **Scenario 21:** Concurrent tasks respect resource limits and bounded concurrency.
+- [ ] **Scenario 22:** Queue overload applies backpressure (429 / 503).
+- [ ] **Scenario 23:** API and dashboard show consistent task and worker state.
+- [ ] **Scenario 24:** Event stream reconnects without losing required sequenced events.
+- [ ] **Scenario 25:** Windows interactive worker validates its desktop execution session (non-Session 0).
+- [ ] **Scenario 26:** Clean deployment starts successfully from scratch.
+- [ ] **Scenario 27:** Database migration and rollback procedures work reliably.
+- [ ] **Scenario 28:** Full previous-phase regression suite passes (Phases 1–5).
+
+---
+
+## Active Risks & Blockers
+
+- See [`docs/PHASE_6_RISK_REGISTER.md`](PHASE_6_RISK_REGISTER.md) for full risk inventory and mitigations.
