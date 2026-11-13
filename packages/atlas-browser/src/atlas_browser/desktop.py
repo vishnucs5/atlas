@@ -65,6 +65,39 @@ class DesktopDriver(ComputerDriver):
             logger.debug("Could not detect native Windows screen metrics: %s", exc)
         return (1920, 1080)
 
+    @staticmethod
+    def get_windows_session_id() -> int | None:
+        """Query active Windows session ID using kernel32.ProcessIdToSessionId."""
+        if sys.platform != "win32":
+            return None
+        try:
+            import ctypes
+
+            session_id = ctypes.c_uint32()
+            res = ctypes.windll.kernel32.ProcessIdToSessionId(
+                ctypes.windll.kernel32.GetCurrentProcessId(),
+                ctypes.byref(session_id),
+            )
+            if res:
+                return int(session_id.value)
+        except Exception as exc:
+            logger.debug("Failed to query ProcessIdToSessionId: %s", exc)
+        return None
+
+    @classmethod
+    def validate_interactive_session(cls) -> tuple[bool, str]:
+        """Validate whether worker process runs in an interactive user session vs Windows Session 0."""
+        if sys.platform != "win32":
+            return True, "Non-Windows platform"
+        session_id = cls.get_windows_session_id()
+        if session_id == 0:
+            return (
+                False,
+                "Process is running in Windows Session 0 (service isolation session). "
+                "Interactive GUI/desktop automation is not possible in Session 0.",
+            )
+        return True, f"Interactive Windows session confirmed (Session ID: {session_id})"
+
     async def connect(self, config: dict[str, Any] | None = None) -> Any:
         """Initialize desktop environment connection and virtual desktop surface."""
         cfg = config or {}

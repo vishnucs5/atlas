@@ -1,4 +1,23 @@
 services:
+  atlas-postgres:
+    image: postgres:16-alpine
+    container_name: atlas-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=atlas
+      - POSTGRES_PASSWORD=atlas_password_production
+      - POSTGRES_DB=atlas_production
+    ports:
+      - "5432:5432"
+    volumes:
+      - atlas_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas_production"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   atlas-api:
     build:
       context: .
@@ -6,16 +25,24 @@ services:
     image: atlas-runtime:latest
     container_name: atlas-api
     restart: unless-stopped
+    depends_on:
+      atlas-postgres:
+        condition: service_healthy
     ports:
       - "8000:8000"
     environment:
       - ATLAS_HOME=/data
       - ATLAS_DB_PATH=/data/atlas.db
+      - ATLAS_DATABASE_URL=postgresql://atlas:atlas_password_production@atlas-postgres:5432/atlas_production
       - ATLAS_ARTIFACTS_DIR=/data/artifacts
       - ATLAS_API_KEY_ADMIN=admin-key
       - ATLAS_API_KEY_OPERATOR=operator-key
       - ATLAS_API_KEY_WORKER=worker-key
       - ATLAS_API_KEY_VIEWER=viewer-key
+      - ATLAS_BLOCK_PRIVATE_NETWORKS=true
+      - ATLAS_ALLOW_LOCALHOST=false
+      - ATLAS_MAX_QUEUE_DEPTH=100
+      - ATLAS_TASK_TIMEOUT_SECONDS=300
     volumes:
       - atlas_data:/data
     healthcheck:
@@ -32,15 +59,21 @@ services:
     depends_on:
       atlas-api:
         condition: service_healthy
+      atlas-postgres:
+        condition: service_healthy
     environment:
       - ATLAS_HOME=/data
       - ATLAS_DB_PATH=/data/atlas.db
+      - ATLAS_DATABASE_URL=postgresql://atlas:atlas_password_production@atlas-postgres:5432/atlas_production
       - ATLAS_ARTIFACTS_DIR=/data/artifacts
       - ATLAS_API_KEY_WORKER=worker-key
+      - ATLAS_BLOCK_PRIVATE_NETWORKS=true
     volumes:
       - atlas_data:/data
     command: ["atlas", "worker", "run", "--capabilities", "desktop,browser", "--heartbeat-interval", "5.0", "--poll-interval", "1.0"]
 
 volumes:
   atlas_data:
+    driver: local
+  atlas_postgres_data:
     driver: local

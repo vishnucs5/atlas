@@ -58,6 +58,16 @@ class WorkerDaemon:
         self.storage = SQLiteStorage(self.db_path)
         self.storage.initialize()
 
+        if sys.platform == "win32" and "desktop" in self.capabilities:
+            from atlas_browser.desktop import DesktopDriver
+
+            is_interactive, msg = DesktopDriver.validate_interactive_session()
+            if not is_interactive:
+                print(f"[!] WARNING: {msg}")
+                logger.warning(msg)
+            else:
+                print(f"[+] {msg}")
+
         self.runtime = ProductionRuntime(storage=self.storage)
         await self.runtime.initialize()
 
