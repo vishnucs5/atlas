@@ -269,3 +269,42 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Milestone 6: Release Readiness & 28-Scenario Acceptance Suite**
   - Implemented 28-scenario executable acceptance test suite (`tests/integration/test_phase6_acceptance.py`).
   - Documented release in `docs/CHANGELOG.md` and authored comprehensive `docs/PHASE_6_ACCEPTANCE_REPORT.md`.
+
+---
+
+## Phase 6.1: PostgreSQL Production Integration & Independent Release Audit (COMPLETE)
+
+**Target:** Elevate PostgreSQL from DDL specifications into a fully operational, battle-tested production storage backend behind the standard ATLAS storage protocols. Ensure zero mocks or SQLite substitutes for PostgreSQL verification, implement live native PostgreSQL integration suites, automated backup/restore with SHA-256 sidecars, adversarial security audit (10 attack vectors), reproducible performance benchmarks, and clean deployment verification.  
+**Status:** **100% COMPLETE (18/18 Acceptance Criteria Verified & 320/320 Tests Passing)**  
+**Completed Date:** 2026-11-13  
+**Roadmap Documents:** `docs/PHASE_6_1_PLAN.md`, `docs/PHASE_6_1_STATUS.md`, `docs/POSTGRESQL_OPERATIONS.md`, `docs/BENCHMARKS.md`, `docs/SECURITY_THREAT_MODEL.md`, `docs/PHASE_6_1_ACCEPTANCE_REPORT.md`  
+
+### Milestone Breakdown & Progress
+
+- [x] **Milestone 0: Audit, Baseline Verification & Phase 6.1 Plan**
+  - Audited existing storage contracts, PostgreSQL DDL, API injection, and baseline test suite (285 passing tests).
+  - Authored `docs/PHASE_6_1_PLAN.md` and `docs/PHASE_6_1_STATUS.md` (`342bd61`).
+- [x] **Milestone 1: Operational PostgreSQL Storage Backend**
+  - Implemented `PostgresStorage` in `packages/atlas-storage/src/atlas_storage/postgres.py` with `ConnectionPool`, atomic transactions, optimistic locking (`OptimisticLockError`), unique event sequence collision rejection (`SequenceCollisionError`), worker leases with monotonic fencing tokens (`StaleWorkerError`), checkpoint persistence with SHA-256 integrity verification (`CorruptedCheckpointError`), and action ledger idempotency deduplication with UNKNOWN state safety.
+  - Updated API lifespan in `apps/api/src/atlas_api/main.py` with fail-fast initialization on unreachable PostgreSQL (zero silent fallback) (`0bebf9f`).
+- [x] **Milestone 2: Live Native PostgreSQL Integration Test Suite**
+  - Implemented 14 enterprise integration test scenarios in `tests/integration/test_postgres_storage_e2e.py` running against native PostgreSQL 18.6 clusters via `embedded-postgres`.
+  - Verified DDL idempotency, CRUD, optimistic concurrency, atomic rollback, lease fencing generations, duplicate action deduplication, UNKNOWN side-effect safety, and cross-tenant isolation (`f83b960`).
+- [x] **Milestone 3: PostgreSQL Backup & Disaster Recovery Engine & Operations Guide**
+  - Implemented `create_postgres_backup()`, `verify_postgres_backup()`, `restore_postgres_backup()`, and `clean_old_backups()` in `packages/atlas-storage/src/atlas_storage/backup.py`.
+  - Added native `pg_dump`/`psql` execution, cryptographic SHA-256 sidecars, connection string credential redaction, pre-restore validation, and table row assertions.
+  - Implemented 6 end-to-end backup/restore integration tests (`tests/integration/test_postgres_backup_restore_e2e.py`).
+  - Authored comprehensive enterprise operations manual: `docs/POSTGRESQL_OPERATIONS.md` (`021f0c7`).
+- [x] **Milestone 4: Adversarial Security Verification & Residual Threat Audit**
+  - Implemented 10 advanced adversarial security tests in `tests/unit/test_security_adversarial.py` covering DNS rebinding, multi-hop redirect SSRF, IPv6 loopback/link-local/ULA/mapped addresses, Windows SMB UNC paths, directory traversal, approval tampering, replay prevention, token revocation, and concurrent approval consumption races.
+  - Added database URI credential redaction pattern (`://user:pass@host`) to `redact_secrets()`.
+  - Updated `docs/SECURITY_THREAT_MODEL.md` (v1.1.0) with residual threat analysis and verification matrix (`901aa6b`).
+- [x] **Milestone 5: Reproducible Storage Benchmarks & Deployment Lifecycle Verification**
+  - Implemented reproducible benchmark suite in `tests/integration/test_storage_benchmarks.py` comparing SQLite and PostgreSQL.
+  - Measured task insertion throughput (SQLite ~24,900 ops/sec, PostgreSQL ~1,910 ops/sec), event append latency (PostgreSQL p99 4.545ms vs. 50ms SLA target), checkpoint sealing (1,029 writes/sec, 2,145 reads/sec), and 5-worker concurrency scaling (2,456 concurrent ops/sec).
+  - Verified clean deployment lifecycle with FastAPI, PostgreSQL readiness (`/readyz`), task REST operations, Prometheus metrics (`/metrics`), and leak-free graceful shutdown.
+  - Authored comprehensive empirical performance report: `docs/BENCHMARKS.md` (`78dd229`).
+- [x] **Milestone 6: Release Readiness, Changelog & Final Acceptance Report**
+  - Updated `docs/CHANGELOG.md` with version 0.6.1 additions.
+  - Authored final audit report: `docs/PHASE_6_1_ACCEPTANCE_REPORT.md`.
+  - Completed full regression suite (320 tests passed).

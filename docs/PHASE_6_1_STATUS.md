@@ -17,8 +17,8 @@
 | **M2** | Live PostgreSQL Integration Test Suite (15 scenarios against native PostgreSQL) | **COMPLETED** | `tests/integration/test_postgres_storage_e2e.py` | `f83b960` |
 | **M3** | PostgreSQL Backup & Restore Engine, SHA-256 sidecars & Operations Guide | **COMPLETED** | `packages/atlas-storage/src/atlas_storage/backup.py`, `docs/POSTGRESQL_OPERATIONS.md` | `021f0c7` |
 | **M4** | Adversarial Security Verification & Residual Threat Audit | **COMPLETED** | `tests/unit/test_security_adversarial.py`, `docs/SECURITY_THREAT_MODEL.md` | `901aa6b` |
-| **M5** | Reproducible Performance Benchmarks & Clean Deployment Verification | **COMPLETED** | `tests/integration/test_storage_benchmarks.py`, `docs/BENCHMARKS.md` | `26d0604` |
-| **M6** | Release Readiness, Changelog & Final Phase 6.1 Acceptance Report | **PENDING** | `docs/PHASE_6_1_ACCEPTANCE_REPORT.md`, `docs/CHANGELOG.md` | *pending* |
+| **M5** | Reproducible Performance Benchmarks & Clean Deployment Verification | **COMPLETED** | `tests/integration/test_storage_benchmarks.py`, `docs/BENCHMARKS.md` | `78dd229` |
+| **M6** | Release Readiness, Changelog & Final Phase 6.1 Acceptance Report | **COMPLETED** | `docs/PHASE_6_1_ACCEPTANCE_REPORT.md`, `docs/CHANGELOG.md` | `3570c4a` |
 
 ---
 
@@ -41,4 +41,4 @@
 - [x] **PG-15:** Reproducible performance benchmark comparing SQLite and PostgreSQL under identical workloads.
 - [x] **PG-16:** Complete stack clean deployment verification with PostgreSQL.
 - [x] **PG-17:** Comprehensive operations guide (`docs/POSTGRESQL_OPERATIONS.md`).
-- [ ] **PG-18:** Full regression suite passes across monorepo (100% green).
+- [x] **PG-18:** Full regression suite passes across monorepo (100% green: 320/320 passed).

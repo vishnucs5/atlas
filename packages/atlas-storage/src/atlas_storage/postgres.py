@@ -1001,9 +1001,8 @@ class PostgresStorage(
 
                     if existing:
                         current_lease = self._row_to_lease(existing)
-                        if (
-                            current_lease.worker_id != worker_id
-                            and not current_lease.is_expired(now)
+                        if current_lease.worker_id != worker_id and not current_lease.is_expired(
+                            now
                         ):
                             raise StorageError(
                                 f"Task '{task_id}' is actively leased to worker '{current_lease.worker_id}' "

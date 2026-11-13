@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.1] - 2026-11-13 — Phase 6.1 PostgreSQL Production Integration & Independent Release Audit
+
+### Added
+- **Full Operational PostgreSQL Backend (`PostgresStorage`) (M1)**:
+  - Enterprise implementation conforming to all 5 storage protocols: `TaskStoreProtocol`, `EventStoreProtocol`, `CheckpointStoreProtocol`, `ActionLedgerStoreProtocol`, and `WorkerStoreProtocol`.
+  - High-performance connection pooling via `psycopg_pool.ConnectionPool` with configurable min/max bounds and timeout controls.
+  - Strict atomic transactions, optimistic locking with monotonic versioning (`OptimisticLockError`), unique event sequence collision rejection (`SequenceCollisionError`).
+  - Worker lease fencing tokens with generation enforcement (`StaleWorkerError`) and foreign key validation against registered workers.
+  - Checkpoint persistence with SHA-256 integrity verification (`CorruptedCheckpointError`).
+  - Action ledger idempotency deduplication with UNKNOWN state protection (`NonIdempotentActionUncertaintyError`).
+  - API lifespan storage injection: dynamically boots `PostgresStorage` when `ATLAS_DATABASE_URL` is set, failing fast without silent SQLite substitution.
+- **Native PostgreSQL Integration Test Suite (M2)**:
+  - 14 live end-to-end integration test scenarios running on native physical PostgreSQL via `embedded-postgres` binary cluster (`tests/integration/test_postgres_storage_e2e.py`).
+  - Verifies DDL idempotency, optimistic concurrency, sequence rollback, lease fencing, checkpoint tamper detection, and cross-tenant isolation.
+- **PostgreSQL Backup & Disaster Recovery Engine (M3)**:
+  - Online database dump and restore utilities (`create_postgres_backup`, `verify_postgres_backup`, `restore_postgres_backup`, `clean_old_backups`) supporting native `pg_dump`/`psql` binaries and logical SQL fallback.
+  - SHA-256 metadata sidecars, database password scrubbing (`_sanitize_dsn`), pre-restore validation, and post-restore table row assertions.
+  - Comprehensive operations manual: `docs/POSTGRESQL_OPERATIONS.md`.
+- **Adversarial Security Hardening (M4)**:
+  - 10 adversarial attack scenarios tested and verified (`tests/unit/test_security_adversarial.py`): DNS rebinding, multi-hop redirect SSRF, IPv6 loopback/link-local/ULA/mapped addresses, Windows SMB UNC paths, directory traversal, approval tampering, approval replay, API bearer token revocation, and concurrent approval race conditions.
+  - Enhanced secret redaction engine with URI password scrubber (`://user:pass@host`).
+  - Updated `docs/SECURITY_THREAT_MODEL.md` (v1.1.0) with residual threat analysis and verification matrix.
+- **Reproducible Performance Benchmarks & Clean Deployment Verification (M5)**:
+  - Benchmark test suite (`tests/integration/test_storage_benchmarks.py`) and performance report (`docs/BENCHMARKS.md`).
+  - Task insertion throughput: SQLite ~24,900 ops/sec; PostgreSQL ~1,910 ops/sec.
+  - Event append latency percentiles: SQLite p99 0.099ms; PostgreSQL p99 4.545ms (well under the 50ms SLA).
+  - Checkpoint sealing: PostgreSQL 1,029 writes/sec and 2,145 reads/sec.
+  - Concurrency scaling: 5 parallel workers achieving 2,456 concurrent ops/sec.
+  - Clean deployment lifecycle: FastAPI startup, health/readiness, REST API operations, Prometheus metrics, and leak-free graceful shutdown verified on PostgreSQL.
+
+---
+
 ## [0.6.0] - 2026-11-13 — Phase 6 Production Hardening, Security & Release Readiness Release
 
 ### Added

@@ -1,9 +1,46 @@
 # Project Status: ATLAS
 
-**Current Phase:** Phase 6 (Production Hardening, Security & Release Readiness) — **100% COMPLETE (28/28 Scenarios)**  
-**Previous Phases:** Phase 1 (Foundation) — **100% COMPLETE**; Phase 2 (Browser Runtime) — **100% COMPLETE**; Phase 3 (Model Adapters & Planning) — **100% COMPLETE**; Phase 4 (Durable Execution & Recovery) — **100% COMPLETE**; Phase 5 (Production Runtime Integration) — **100% COMPLETE**  
+**Current Phase:** Phase 6.1 (PostgreSQL Production Integration & Independent Release Audit) — **100% COMPLETE (18/18 Acceptance Criteria)**  
+**Previous Phases:** Phase 1 (Foundation) — **100% COMPLETE**; Phase 2 (Browser Runtime) — **100% COMPLETE**; Phase 3 (Model Adapters & Planning) — **100% COMPLETE**; Phase 4 (Durable Execution & Recovery) — **100% COMPLETE**; Phase 5 (Production Runtime Integration) — **100% COMPLETE**; Phase 6 (Production Hardening) — **100% COMPLETE**  
 **Date:** 2026-11-13  
-**Overall Status:** GREEN (**285/285 Tests Passing across 10 packages and apps**)
+**Overall Status:** GREEN (**320/320 Tests Passing across 10 packages and apps**)
+
+---
+
+## Phase 6.1 Milestone Progress Summary (PostgreSQL Integration & Independent Release Audit)
+
+| Milestone | Title | Package / Component | Status | Commit Hash |
+| :--- | :--- | :--- | :---: | :---: |
+| **M0** | Audit, Baseline Verification & Phase 6.1 Plan | `docs/` | **COMPLETED** | `342bd61` |
+| **M1** | PostgreSQL Storage Backend (`PostgresStorage`, connection pooling, transactions, migrations) | `atlas-storage`, `atlas-api` | **COMPLETED** | `0bebf9f` |
+| **M2** | Live Native PostgreSQL Integration Test Suite (14 scenarios) | `tests/integration/test_postgres_storage_e2e.py` | **COMPLETED** | `f83b960` |
+| **M3** | PostgreSQL Backup & Restore Engine, SHA-256 sidecars & Operations Guide | `atlas-storage`, `docs/POSTGRESQL_OPERATIONS.md` | **COMPLETED** | `021f0c7` |
+| **M4** | Adversarial Security Verification & Residual Threat Audit (10 attack vectors) | `tests/unit/test_security_adversarial.py`, `docs/SECURITY_THREAT_MODEL.md` | **COMPLETED** | `901aa6b` |
+| **M5** | Reproducible Performance Benchmarks & Clean Deployment Verification | `tests/integration/test_storage_benchmarks.py`, `docs/BENCHMARKS.md` | **COMPLETED** | `78dd229` |
+| **M6** | Release Readiness, Changelog & Final Acceptance Report | `docs/PHASE_6_1_ACCEPTANCE_REPORT.md`, `docs/CHANGELOG.md` | **COMPLETED** | *current* |
+
+---
+
+## Phase 6.1 Acceptance Tracker (18/18 Criteria Verified)
+
+- [x] **PG-01:** `PostgresStorage` implements `TaskStoreProtocol`, `EventStoreProtocol`, `CheckpointStoreProtocol`, `ActionLedgerStoreProtocol`, `WorkerStoreProtocol`.
+- [x] **PG-02:** Connection pooling via `psycopg_pool.ConnectionPool` with configurable min/max size and timeouts.
+- [x] **PG-03:** Schema auto-creation and migration management with idempotent initialization.
+- [x] **PG-04:** Strict transaction management with automatic rollback on error.
+- [x] **PG-05:** Atomic task state transitions and optimistic concurrency checking (`OptimisticLockError`).
+- [x] **PG-06:** Event sequence integrity and unique constraint collision rejection (`SequenceCollisionError`).
+- [x] **PG-07:** Worker leases with monotonic fencing token generation rejection (`StaleWorkerError`).
+- [x] **PG-08:** Action ledger idempotency deduplication and UNKNOWN state safety (`NonIdempotentActionUncertaintyError`).
+- [x] **PG-09:** Checkpoint persistence with SHA-256 integrity hash verification and corruption rollback.
+- [x] **PG-10:** Clear startup failure when PostgreSQL database is configured but unreachable (zero silent SQLite fallback).
+- [x] **PG-11:** Live PostgreSQL integration test suite passing against physical PostgreSQL instance (`test_postgres_storage_e2e.py`).
+- [x] **PG-12:** Documented and executable PostgreSQL backup procedure with SHA-256 sidecars (`test_postgres_backup_restore_e2e.py`).
+- [x] **PG-13:** Documented and executable PostgreSQL restore procedure into clean database with data integrity validation.
+- [x] **PG-14:** Adversarial security suite passing (DNS rebinding, SSRF redirects, Windows UNC, approval tampering, secret redaction).
+- [x] **PG-15:** Reproducible performance benchmark comparing SQLite and PostgreSQL under identical workloads (`docs/BENCHMARKS.md`).
+- [x] **PG-16:** Complete stack clean deployment verification with PostgreSQL.
+- [x] **PG-17:** Comprehensive operations guide (`docs/POSTGRESQL_OPERATIONS.md`).
+- [x] **PG-18:** Full regression suite passes across monorepo (100% green: 320 tests passed).
 
 ---
 
