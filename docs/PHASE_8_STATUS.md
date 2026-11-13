@@ -12,9 +12,9 @@
 
 | Milestone | Subsystem / Scope | Status | Assigned Target | Commit Hash |
 |---|---|:---:|---|:---:|
-| **M0** | Audit, Baseline Verification & Phase 8 Architecture Scaffolding | **COMPLETED** | `docs/PHASE_8_*.md`, workspace configuration | `[pending-commit]` |
-| **M1** | Workflow Package System & Package Format | **PENDING** | `packages/atlas-marketplace/src/atlas_marketplace/models.py`, `package.py`, tests | *pending* |
-| **M2** | Skill SDK & Built-in Specialist Skills | **PENDING** | `packages/atlas-skills`, skill examples, tests | *pending* |
+| **M0** | Audit, Baseline Verification & Phase 8 Architecture Scaffolding | **COMPLETED** | `docs/PHASE_8_*.md`, workspace configuration | `055145e` |
+| **M1** | Workflow Package System & Package Format | **COMPLETED** | `packages/atlas-marketplace/src/atlas_marketplace/models.py`, `package.py`, tests | `[pending-commit]` |
+| **M2** | Skill SDK & Built-in Specialist Skills | **IN PROGRESS** | `packages/atlas-skills`, skill examples, tests | *pending* |
 | **M3** | Marketplace Registry Backend & Dependency Resolver | **PENDING** | `atlas_marketplace/registry.py`, `resolver.py`, tests | *pending* |
 | **M4** | Workflow Execution Engine & Runtime Integration | **PENDING** | `atlas_marketplace/executor.py`, integration with `AgentSupervisor`, tests | *pending* |
 | **M5** | Security Model, Supply Chain Defense & Sandboxing | **PENDING** | `atlas_marketplace/security.py`, signature & revocation tests | *pending* |
@@ -24,8 +24,8 @@
 
 ## Phase 8 Acceptance Criteria Tracker
 
-- [ ] **MP-01:** Workflow package format defined with Pydantic validation, SemVer, input/output schemas, and DAG graph.
-- [ ] **MP-02:** Package integrity verified via SHA-256 digests and cryptographic signatures (HMAC-SHA256/Ed25519).
+- [x] **MP-01:** Workflow package format defined with Pydantic validation, SemVer, input/output schemas, and DAG graph.
+- [x] **MP-02:** Package integrity verified via SHA-256 digests and cryptographic signatures (HMAC-SHA256/Ed25519).
 - [ ] **MP-03:** Skill SDK implemented with `BaseSkill`, typed inputs/outputs, lifecycle hooks, and error contracts.
 - [ ] **MP-04:** Built-in specialist skills authored and executable via explicit ATLAS interfaces.
 - [ ] **MP-05:** Dependency resolver implements SemVer constraint satisfaction and transitive dependency resolution.
