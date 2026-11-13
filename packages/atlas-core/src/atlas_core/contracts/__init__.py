@@ -6,6 +6,13 @@ from atlas_core.contracts.action import (
     ComputerAction,
     ExpectedState,
 )
+from atlas_core.contracts.agent import (
+    AgentBudget,
+    AgentCapability,
+    AgentDescriptor,
+    AgentLease,
+    AgentStatus,
+)
 from atlas_core.contracts.checkpoint import Checkpoint
 from atlas_core.contracts.event import EventType, ExecutionEvent
 from atlas_core.contracts.ledger import (
@@ -59,6 +66,11 @@ __all__ = [
     "ActionExecutionStatus",
     "ActionResult",
     "ActionTarget",
+    "AgentBudget",
+    "AgentCapability",
+    "AgentDescriptor",
+    "AgentLease",
+    "AgentStatus",
     "ApprovalRequest",
     "ApprovalStatus",
     "Checkpoint",
