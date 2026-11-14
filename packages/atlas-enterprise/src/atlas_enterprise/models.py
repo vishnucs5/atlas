@@ -319,3 +319,49 @@ class IntegrationConnectorRecord(TenantOwnedResource):
     rate_limit_rpm: int = 60
     retry_max_attempts: int = 3
     is_active: bool = True
+
+
+class AuditRecord(TenantOwnedResource):
+    """Immutable audit trail record cryptographically bound to previous hash."""
+
+    record_id: str
+    sequence: int
+    event_type: str
+    actor_id: str
+    actor_type: str  # USER, AGENT, SERVICE
+    action: str
+    target_resource_id: str | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    previous_hash: str
+    record_hash: str
+
+
+class CostRecord(TenantOwnedResource):
+    """Measured operational resource and model cost attribution record."""
+
+    record_id: str
+    task_id: str
+    agent_id: str | None = None
+    model_name: str
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    compute_duration_ms: int = 0
+    token_cost_usd: float = 0.0
+    compute_cost_usd: float = 0.0
+    total_cost_usd: float = 0.0
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class DepartmentBudget(TenantOwnedResource):
+    """Departmental financial budget envelope with spending cap enforcement."""
+
+    budget_id: str
+    department_id: str
+    allocated_usd: float = 10_000.0
+    spent_usd: float = 0.0
+    alert_threshold_pct: float = 80.0
+    hard_cap_enabled: bool = True
+    period_start: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    period_end: datetime = Field(default_factory=lambda: datetime.now(UTC))
