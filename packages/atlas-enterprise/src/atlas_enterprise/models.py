@@ -283,3 +283,39 @@ class EnterprisePolicyEnvelope(TenantOwnedResource):
     max_cost_per_task_usd: float = 100.0
     rules: list[dict[str, Any]] = Field(default_factory=list)
     is_active: bool = True
+
+
+class ConnectorType(StrEnum):
+    """Supported enterprise integration categories."""
+
+    CRM = "CRM"
+    ERP = "ERP"
+    PROJECT_MANAGEMENT = "PROJECT_MANAGEMENT"
+    COMMUNICATION = "COMMUNICATION"
+    CLOUD_STORAGE = "CLOUD_STORAGE"
+    WEBHOOK = "WEBHOOK"
+
+
+class ConnectorStatus(StrEnum):
+    """Lifecycle and verification status of an enterprise connector."""
+
+    UNVERIFIED = "UNVERIFIED"
+    ACTIVE = "ACTIVE"
+    FAILED = "FAILED"
+    DISABLED = "DISABLED"
+
+
+class IntegrationConnectorRecord(TenantOwnedResource):
+    """Registered enterprise integration connector configuration and status."""
+
+    connector_id: str
+    name: str
+    connector_type: ConnectorType
+    provider: str  # salesforce, jira, slack, github, generic_webhook
+    config: dict[str, Any] = Field(default_factory=dict)
+    secret_id: str  # Pointer to vaulted credentials
+    status: ConnectorStatus = ConnectorStatus.UNVERIFIED
+    last_verified_at: datetime | None = None
+    rate_limit_rpm: int = 60
+    retry_max_attempts: int = 3
+    is_active: bool = True
