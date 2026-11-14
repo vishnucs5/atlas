@@ -210,19 +210,59 @@ class EnterpriseOrganizationManager:
             self._projects[proj_id] = proj
             return proj
 
+    def provision_user(
+        self,
+        user_id: str | None = None,
+        email: str = "",
+        full_name: str = "",
+    ) -> User:
+        """Provision or update a standalone user identity."""
+        with self._lock:
+            uid = user_id or f"usr_{uuid.uuid4().hex[:12]}"
+            user = self._users.get(uid)
+            if not user:
+                user = User(
+                    user_id=uid,
+                    email=email,
+                    full_name=full_name,
+                    is_active=True,
+                )
+                self._users[uid] = user
+            else:
+                if email:
+                    user.email = email
+                if full_name:
+                    user.full_name = full_name
+            return user
+
+    def get_user(self, user_id: str) -> User:
+        """Retrieve user identity by user_id."""
+        with self._lock:
+            user = self._users.get(user_id)
+            if not user:
+                raise EnterpriseOrganizationError(f"User '{user_id}' not found")
+            return user
+
     def add_member(
         self,
         org_id: str,
-        email: str,
-        full_name: str,
+        user_or_email: str | User | None = None,
+        full_name: str | MembershipRole | None = None,
         role: MembershipRole = MembershipRole.VIEWER,
         department_id: str | None = None,
+        user_id: str | None = None,
+        email: str | None = None,
     ) -> tuple[User, OrganizationMembership]:
         """Add or enroll a user into an organization and assign an RBAC role."""
         with self._lock:
             org = self._orgs.get(org_id)
             if not org:
                 raise OrganizationNotFoundError(f"Organization '{org_id}' not found")
+
+            # Handle case where full_name positional arg is actually a MembershipRole
+            if isinstance(full_name, MembershipRole):
+                role = full_name
+                full_name = None
 
             if department_id:
                 dept = self.get_department(department_id, caller_org_id=org_id)
@@ -231,17 +271,39 @@ class EnterpriseOrganizationManager:
                         f"Department '{department_id}' not found in org '{org_id}'"
                     )
 
-            # Check existing user by email or create new
-            user = next((u for u in self._users.values() if u.email.lower() == email.lower()), None)
-            if not user:
-                user_id = f"usr_{uuid.uuid4().hex[:12]}"
-                user = User(
-                    user_id=user_id,
-                    email=email,
-                    full_name=full_name,
-                    is_active=True,
+            target_uid = user_id
+            target_email = email
+            target_name = full_name or ""
+
+            if isinstance(user_or_email, User):
+                user = user_or_email
+            elif isinstance(user_or_email, str):
+                if user_or_email.startswith("usr_") or user_or_email in self._users:
+                    target_uid = user_or_email
+                else:
+                    target_email = user_or_email
+
+            if target_uid and target_uid in self._users:
+                user = self._users[target_uid]
+            elif target_email:
+                user = next(
+                    (u for u in self._users.values() if u.email.lower() == target_email.lower()),
+                    None,
                 )
-                self._users[user_id] = user
+                if not user:
+                    user = self.provision_user(
+                        user_id=target_uid, email=target_email, full_name=target_name
+                    )
+            elif target_uid:
+                user = self.provision_user(
+                    user_id=target_uid,
+                    email=target_email or f"{target_uid}@atlas.local",
+                    full_name=target_name,
+                )
+            else:
+                raise EnterpriseOrganizationError(
+                    "User identifier or email required to enroll member"
+                )
 
             mem_key = f"{org_id}:{user.user_id}"
             membership = OrganizationMembership(
@@ -253,7 +315,7 @@ class EnterpriseOrganizationManager:
                 is_active=True,
             )
             self._memberships[mem_key] = membership
-            logger.info("Enrolled user %s in org %s with role %s", email, org_id, role.value)
+            logger.info("Enrolled user %s in org %s with role %s", user.email, org_id, role.value)
             return user, membership
 
     def get_membership(self, org_id: str, user_id: str) -> OrganizationMembership | None:

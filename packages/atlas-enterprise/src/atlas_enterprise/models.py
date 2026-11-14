@@ -29,6 +29,123 @@ class MembershipRole(StrEnum):
     VIEWER = "Viewer"
 
 
+class PermissionAction(StrEnum):
+    """Granular enterprise permission actions."""
+
+    # Organization
+    ORG_READ = "org:read"
+    ORG_UPDATE = "org:update"
+    ORG_DELETE = "org:delete"
+    MEMBER_MANAGE = "member:manage"
+    DEPT_MANAGE = "dept:manage"
+
+    # IAM & Security
+    IAM_MANAGE_ROLES = "iam:manage_roles"
+    IAM_MANAGE_POLICY = "iam:manage_policy"
+    IAM_MANAGE_CREDENTIALS = "iam:manage_credentials"
+
+    # Agent Governance
+    AGENT_REGISTER = "agent:register"
+    AGENT_READ = "agent:read"
+    AGENT_UPDATE = "agent:update"
+    AGENT_DELETE = "agent:delete"
+    AGENT_EXECUTE = "agent:execute"
+
+    # Workflow Ecosystem
+    WORKFLOW_REGISTER = "workflow:register"
+    WORKFLOW_PUBLISH = "workflow:publish"
+    WORKFLOW_READ = "workflow:read"
+    WORKFLOW_EXECUTE = "workflow:execute"
+
+    # Skills
+    SKILL_MANAGE = "skill:manage"
+    SKILL_READ = "skill:read"
+
+    # Integrations
+    INTEGRATION_MANAGE = "integration:manage"
+    INTEGRATION_READ = "integration:read"
+    INTEGRATION_INVOKE = "integration:invoke"
+
+    # Compliance & Audit
+    AUDIT_READ = "audit:read"
+    AUDIT_EXPORT = "audit:export"
+
+    # Cost & Budgets
+    COST_READ = "cost:read"
+    BUDGET_MANAGE = "budget:manage"
+
+    # Approvals
+    APPROVAL_SUBMIT = "approval:submit"
+    APPROVAL_DECIDE = "approval:decide"
+
+
+class SessionToken(BaseModel):
+    """Authenticated user session token with cryptographic ID and lifecycle state."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    token_id: str
+    user_id: str
+    org_id: str
+    role: MembershipRole
+    department_id: str | None = None
+    client_ip: str | None = None
+    issued_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    expires_at: datetime
+    is_revoked: bool = False
+
+
+class ABACContext(BaseModel):
+    """Dynamic contextual attributes evaluated during Attribute-Based Access Control."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    user_id: str
+    org_id: str
+    department_id: str | None = None
+    client_ip: str | None = None
+    current_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    security_clearance: str = "standard"  # standard, confidential, secret, top_secret
+    environment_tags: dict[str, Any] = Field(default_factory=dict)
+
+
+class IdPType(StrEnum):
+    """Supported Identity Provider protocols."""
+
+    OIDC = "OIDC"
+    SAML = "SAML"
+    LOCAL = "LOCAL"
+
+
+class IdentityProviderConfig(BaseModel):
+    """Enterprise Identity Provider configuration and claim mapping rules."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    idp_id: str
+    org_id: str
+    idp_type: IdPType = IdPType.OIDC
+    name: str
+    issuer: str
+    client_id: str
+    client_secret: str | None = None
+    domain_allowlist: list[str] = Field(default_factory=list)
+    role_mapping: dict[str, MembershipRole] = Field(default_factory=dict)
+    is_active: bool = True
+
+
+class UserIdentity(BaseModel):
+    """Federated identity claims returned by IdP authentication."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    sub: str
+    email: str
+    full_name: str
+    groups: list[str] = Field(default_factory=list)
+    claims: dict[str, Any] = Field(default_factory=dict)
+
+
 class TenantOwnedResource(BaseModel):
     """Base mixin enforcing tenant ownership on all persistent entities."""
 
