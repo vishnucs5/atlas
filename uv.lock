@@ -10,6 +10,7 @@ members = [
     "atlas-cli",
     "atlas-coordination",
     "atlas-core",
+    "atlas-distributed",
     "atlas-marketplace",
     "atlas-models",
     "atlas-monorepo",
@@ -182,6 +183,33 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "pydantic", specifier = ">=2.7.0" }]
+
+[[package]]
+name = "atlas-distributed"
+version = "0.1.0"
+source = { editable = "packages/atlas-distributed" }
+dependencies = [
+    { name = "atlas-coordination" },
+    { name = "atlas-core" },
+    { name = "atlas-observability" },
+    { name = "atlas-orchestration" },
+    { name = "atlas-policy" },
+    { name = "atlas-storage" },
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-coordination", editable = "packages/atlas-coordination" },
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "atlas-observability", editable = "packages/atlas-observability" },
+    { name = "atlas-orchestration", editable = "packages/atlas-orchestration" },
+    { name = "atlas-policy", editable = "packages/atlas-policy" },
+    { name = "atlas-storage", editable = "packages/atlas-storage" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "pydantic", specifier = ">=2.7.0" },
+]
 
 [[package]]
 name = "atlas-marketplace"

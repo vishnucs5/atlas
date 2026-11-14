@@ -25,6 +25,7 @@ members = [
     "packages/atlas-orchestration",
     "packages/atlas-marketplace",
     "packages/atlas-skills",
+    "packages/atlas-distributed",
     "apps/api",
     "apps/cli",
 ]
@@ -55,6 +56,7 @@ pythonpath = [
     "packages/atlas-orchestration/src",
     "packages/atlas-marketplace/src",
     "packages/atlas-skills/src",
+    "packages/atlas-distributed/src",
     "apps/api/src",
     "apps/cli/src",
 ]
@@ -77,6 +79,7 @@ extraPaths = [
     "packages/atlas-orchestration/src",
     "packages/atlas-marketplace/src",
     "packages/atlas-skills/src",
+    "packages/atlas-distributed/src",
     "apps/api/src",
     "apps/cli/src",
 ]
