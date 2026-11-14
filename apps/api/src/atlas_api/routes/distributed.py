@@ -203,7 +203,9 @@ def schedule_assignment(req: TaskRequirements) -> dict[str, Any]:
             "assignment": payload.model_dump(mode="json"),
         }
     except NoEligibleWorkerError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
     except SchedulerQueueFullError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
 
@@ -268,7 +270,9 @@ def get_fleet_metrics() -> dict[str, Any]:
 
     workers = authority.list_workers()
     total_workers = len(workers)
-    active_workers = sum(1 for w in workers if not w.is_revoked and w.status != WorkerStatus.TERMINATED)
+    active_workers = sum(
+        1 for w in workers if not w.is_revoked and w.status != WorkerStatus.TERMINATED
+    )
     busy_workers = sum(1 for w in workers if w.status == WorkerStatus.BUSY)
     disconnected_workers = sum(1 for w in workers if w.status == WorkerStatus.DISCONNECTED)
 

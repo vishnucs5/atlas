@@ -87,6 +87,7 @@ source = { editable = "apps/api" }
 dependencies = [
     { name = "atlas-core" },
     { name = "atlas-distributed" },
+    { name = "atlas-enterprise" },
     { name = "atlas-marketplace" },
     { name = "atlas-observability" },
     { name = "atlas-orchestration" },
@@ -101,6 +102,7 @@ dependencies = [
 requires-dist = [
     { name = "atlas-core", editable = "packages/atlas-core" },
     { name = "atlas-distributed", editable = "packages/atlas-distributed" },
+    { name = "atlas-enterprise", editable = "packages/atlas-enterprise" },
     { name = "atlas-marketplace", editable = "packages/atlas-marketplace" },
     { name = "atlas-observability", editable = "packages/atlas-observability" },
     { name = "atlas-orchestration", editable = "packages/atlas-orchestration" },

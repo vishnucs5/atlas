@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] - 2026-11-14 — Phase 10 Enterprise Autonomous Operating Platform
+
+### Added
+- **Enterprise Platform Package (`packages/atlas-enterprise`)**:
+  - Full UV workspace member integrated across root `pyproject.toml`, pytest pythonpath, and pyright extraPaths.
+  - `models.py`: Domain contracts for `Organization`, `Department`, `Team`, `Project`, `User`, `OrganizationMembership`, `TenantOwnedResource`, `OrganizationStatus`, `MembershipRole`, `PermissionAction`, `SessionToken`, `ABACContext`, `IdPType`, `IdentityProviderConfig`, `UserIdentity`, `ServiceIdentity`, `AgentLifecycleStatus`, `GovernanceScopeType`, `EnterpriseAgentRecord`, `EnterprisePolicyEnvelope`, `ConnectorType`, `ConnectorStatus`, `IntegrationConnectorRecord`, `AuditRecord`, `CostRecord`, and `DepartmentBudget`.
+  - `organization.py`: `EnterpriseOrganizationManager` managing multi-tenant containment, 4-tier hierarchical scoping, duplicate slug rejection, suspension transitions, and strict server-side tenant boundary enforcement (`CrossTenantAccessViolationError`).
+  - `iam.py`: `EnterpriseIAMEngine` supporting federated SSO (OIDC/SAML), SCIM 2.0 user directory synchronization, granular least-privilege RBAC evaluation across 9 enterprise roles (`ORG_OWNER` to `VIEWER`), dynamic ABAC environmental attribute validation (IP CIDR allowlists, working hours, security clearance), active session management with token revocation, privilege escalation guards, and cryptographically scoped API keys (`atk_live_...`).
+  - `agent_governance.py`: `EnterpriseAgentGovernanceManager` managing centralized agent metadata, ownership attribution, allowed toolchains/skills, model constraints, lifecycle states (`ACTIVE`, `SUSPENDED`, `REVOKED`), deterministic multi-tier policy inheritance (Org -> Dept -> Team), and agent privilege self-elevation guard.
+  - `integrations.py`: `IntegrationHubManager` providing verified connector lifecycle, `IntegrationSecretStore` for vaulted multi-tenant credentials, timing-safe HMAC webhook signature validation (`X-Hub-Signature-256`), adapters for CRM (Salesforce), Project Management (Jira), Communication (Slack), and Webhooks, with in-memory token bucket rate limiting.
+  - `audit.py`: `EnterpriseAuditLedger` providing append-only audit trail with SHA-256 cryptographic hash chaining (`record_hash = sha256(canonical_json(data) + ":" + prev_hash)`), tamper detection (`verify_chain_integrity`), and SOC2/HIPAA export.
+  - `cost.py`: `EnterpriseCostManager` providing measured token and compute cost attribution, model pricing catalog, and departmental budget envelopes with automatic alert thresholds and hard spending caps (`BudgetCapExceededError`).
+  - `analytics.py`: `EnterpriseAnalyticsEngine` providing real-time operational performance, token usage metrics, and compliance posture scores.
+- **REST API Routes (`apps/api/src/atlas_api/routes/enterprise.py`)**:
+  - `POST /api/v1/enterprise/organizations`: Provision organization with root administrator.
+  - `GET /api/v1/enterprise/organizations/{org_id}`: Retrieve organization metadata.
+  - `POST /api/v1/enterprise/organizations/{org_id}/suspend`: Suspend organization.
+  - `POST /api/v1/enterprise/organizations/{org_id}/departments`: Provision department.
+  - `POST /api/v1/enterprise/organizations/{org_id}/members`: Enroll user with granular role.
+  - `POST /api/v1/enterprise/iam/login`: Authenticate and issue session token.
+  - `POST /api/v1/enterprise/iam/sessions/{token_id}/revoke`: Administrative session revocation.
+  - `POST /api/v1/enterprise/iam/service-identities`: Provision service identity.
+  - `POST /api/v1/enterprise/agents`: Centralized agent registration under governance.
+  - `GET /api/v1/enterprise/agents/{agent_id}`: Retrieve agent metadata.
+  - `POST /api/v1/enterprise/agents/{agent_id}/status`: Update agent lifecycle state.
+  - `POST /api/v1/enterprise/policies`: Configure hierarchical governance policy envelope.
+  - `POST /api/v1/enterprise/connectors`: Register enterprise connector with vaulted credentials.
+  - `POST /api/v1/enterprise/connectors/{connector_id}/verify`: Connection handshake verification.
+  - `POST /api/v1/enterprise/connectors/{connector_id}/invoke`: Authorized connector invocation.
+  - `POST /api/v1/enterprise/webhooks/{connector_id}`: Inbound webhook with HMAC signature verification.
+  - `GET /api/v1/enterprise/audit`: Query append-only audit logs.
+  - `GET /api/v1/enterprise/audit/verify`: Verify SHA-256 cryptographic chain integrity.
+  - `POST /api/v1/enterprise/cost/usage`: Record measured token and compute consumption.
+  - `GET /api/v1/enterprise/cost/summary`: Query aggregated expenditures.
+  - `POST /api/v1/enterprise/cost/budgets`: Configure departmental budget envelope.
+  - `GET /api/v1/enterprise/analytics`: Retrieve real-time operational and compliance metrics.
+- **Operator Dashboard Integration (`apps/api/src/atlas_api/routes/dashboard.py`)**:
+  - Added 5th main navigation tab: `Enterprise Governance & Admin`.
+  - Added multi-tenant organization provisioning and roster view.
+  - Added enterprise connectors and secret vault status view.
+  - Added interactive cryptographic SHA-256 hash-chain verification tool.
+- **Verification & Acceptance Test Suites**:
+  - 30-scenario executable acceptance test suite in `tests/integration/test_phase10_acceptance.py` (`EP-01` to `EP-30`, 100% passed).
+  - 28 unit tests across `tests/unit/test_enterprise_*.py`.
+  - Full monorepo regression baseline: **554 / 554 tests passing in 69.26s (100% green)**.
+
+---
+
 ## [0.9.0] - 2026-11-14 — Phase 9 Distributed Execution Network
 
 ### Added

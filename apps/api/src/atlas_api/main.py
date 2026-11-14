@@ -14,6 +14,7 @@ from atlas_api.routes.approvals import router as approvals_router
 from atlas_api.routes.artifacts import router as artifacts_router
 from atlas_api.routes.dashboard import router as dashboard_router
 from atlas_api.routes.distributed import router as distributed_router
+from atlas_api.routes.enterprise import router as enterprise_router
 from atlas_api.routes.events import router as events_router
 from atlas_api.routes.health import router as health_router
 from atlas_api.routes.marketplace import router as marketplace_router
@@ -107,6 +108,7 @@ def create_app() -> FastAPI:
     app.include_router(orchestration_router)
     app.include_router(marketplace_router)
     app.include_router(distributed_router)
+    app.include_router(enterprise_router)
 
     # Embedded Operator Dashboard
     app.include_router(dashboard_router)
