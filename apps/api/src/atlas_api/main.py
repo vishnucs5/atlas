@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from atlas_agent.runtime import ProductionRuntime
-from atlas_observability import get_logger
+from atlas_observability import REGISTRY, get_logger, get_tracer
 from atlas_storage.sqlite import SQLiteStorage
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -95,6 +95,35 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    tracer = get_tracer("atlas-api")
+
+    @app.middleware("http")
+    async def tracing_middleware(request, call_next):
+        parent_ctx = tracer.extract_context(dict(request.headers))
+        path = request.url.path
+        method = request.method
+        with tracer.span(
+            f"HTTP {method} {path}",
+            parent_context=parent_ctx,
+            attributes={"http.method": method, "http.target": path},
+        ) as span:
+            try:
+                response = await call_next(request)
+                span.set_attribute("http.status_code", response.status_code)
+                response.headers["traceparent"] = span.context.to_traceparent()
+                REGISTRY.inc_counter(
+                    "atlas_http_requests_total",
+                    labels={"method": method, "status": str(response.status_code)},
+                )
+                return response
+            except Exception as exc:
+                span.record_exception(exc)
+                REGISTRY.inc_counter(
+                    "atlas_http_requests_total",
+                    labels={"method": method, "status": "500"},
+                )
+                raise
 
     # Health & status
     app.include_router(health_router)

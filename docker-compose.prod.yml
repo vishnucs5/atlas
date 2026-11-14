@@ -1,0 +1,167 @@
+version: "3.8"
+
+services:
+  atlas-postgres:
+    image: postgres:16-alpine
+    container_name: atlas-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas_production_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas_production}
+    ports:
+      - "5432:5432"
+    volumes:
+      - atlas_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atlas} -d ${POSTGRES_DB:-atlas_production}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - atlas_internal
+
+  atlas-redis:
+    image: redis:7-alpine
+    container_name: atlas-redis-prod
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-atlas_redis_secure_pass}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - atlas_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-atlas_redis_secure_pass}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - atlas_internal
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.95.0
+    container_name: atlas-otel-collector
+    restart: always
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./deploy/otel/otel-collector-config.yml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+      - "8889:8889" # Prometheus metrics exporter
+    networks:
+      - atlas_internal
+
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: atlas-prometheus
+    restart: always
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - atlas_prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - atlas_internal
+
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: atlas-grafana
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin_atlas_prod}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    volumes:
+      - atlas_grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - atlas_internal
+
+  atlas-api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: atlas-api:1.0.0
+    container_name: atlas-api-prod
+    restart: always
+    depends_on:
+      atlas-postgres:
+        condition: service_healthy
+      atlas-redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - ATLAS_ENV=production
+      - ATLAS_HOME=/data
+      - ATLAS_DATABASE_URL=postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas_production_secure_pass}@atlas-postgres:5432/${POSTGRES_DB:-atlas_production}
+      - ATLAS_REDIS_URL=redis://:${REDIS_PASSWORD:-atlas_redis_secure_pass}@atlas-redis:6379/0
+      - ATLAS_ARTIFACTS_DIR=/data/artifacts
+      - ATLAS_VAULT_ENCRYPTION_KEY=${ATLAS_VAULT_ENCRYPTION_KEY:-}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=atlas-api
+      - ATLAS_API_KEY_ADMIN=${ATLAS_API_KEY_ADMIN:-admin-prod-key}
+      - ATLAS_API_KEY_OPERATOR=${ATLAS_API_KEY_OPERATOR:-operator-prod-key}
+      - ATLAS_BLOCK_PRIVATE_NETWORKS=true
+      - ATLAS_ALLOW_LOCALHOST=false
+      - ATLAS_TASK_TIMEOUT_SECONDS=300
+    volumes:
+      - atlas_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - atlas_internal
+
+  atlas-worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    image: atlas-worker:1.0.0
+    container_name: atlas-worker-prod
+    restart: always
+    depends_on:
+      atlas-api:
+        condition: service_healthy
+      atlas-postgres:
+        condition: service_healthy
+      atlas-redis:
+        condition: service_healthy
+    environment:
+      - ATLAS_ENV=production
+      - ATLAS_HOME=/data
+      - ATLAS_DATABASE_URL=postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas_production_secure_pass}@atlas-postgres:5432/${POSTGRES_DB:-atlas_production}
+      - ATLAS_REDIS_URL=redis://:${REDIS_PASSWORD:-atlas_redis_secure_pass}@atlas-redis:6379/0
+      - ATLAS_ARTIFACTS_DIR=/data/artifacts
+      - ATLAS_CONTROL_PLANE_URL=http://atlas-api:8000
+      - ATLAS_API_KEY_WORKER=${ATLAS_API_KEY_WORKER:-worker-prod-key}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=atlas-worker
+      - ATLAS_BLOCK_PRIVATE_NETWORKS=true
+    volumes:
+      - atlas_data:/data
+    networks:
+      - atlas_internal
+
+volumes:
+  atlas_data:
+    driver: local
+  atlas_postgres_data:
+    driver: local
+  atlas_redis_data:
+    driver: local
+  atlas_prometheus_data:
+    driver: local
+  atlas_grafana_data:
+    driver: local
+
+networks:
+  atlas_internal:
+    driver: bridge

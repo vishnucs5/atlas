@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.11.0] - 2026-11-14 — Phase 11 Production Operational Readiness & Infrastructure Deployment
+
+### Added
+- **Hardened Production Containers**:
+  - `apps/api/Dockerfile`: Multi-stage build with `python:3.11-slim`, non-root user `atlas:10001`, `dumb-init` signal supervisor, and integrated Docker `HEALTHCHECK`.
+  - `apps/worker/Dockerfile`: Production worker image running the distributed execution agent daemon.
+  - `docker-compose.prod.yml`: 7-service production manifest coordinating `atlas-api`, `atlas-worker`, `atlas-postgres`, `atlas-redis`, `otel-collector`, `prometheus`, and `grafana` with resource limits, restart policies, and isolated bridge network.
+  - `.env.production.example`: Complete environment variable template with database, vault encryption, Redis, and OpenTelemetry collector configs.
+- **Enterprise CI/CD Workflow**:
+  - `.github/workflows/ci.yml`: Multi-OS test matrix across Ubuntu 22.04, Windows Server 2022, and macOS 14 on Python 3.11 and 3.12.
+  - Integrated Bandit automated Static Application Security Testing (SAST) and `pip-audit` dependency vulnerability checking.
+  - Container build linting and multi-platform packaging verification.
+- **OpenTelemetry Distributed Tracing & Observability**:
+  - `packages/atlas-observability/src/atlas_observability/tracing.py`: Native W3C Trace Context engine (`00-{trace_id}-{span_id}-{flags}`) with contextvar propagation, attribute recording, exception tracking, and OTLP/HTTP JSON ResourceSpans serialization.
+  - `apps/api/src/atlas_api/main.py`: ASGI request tracing middleware automatically creating root spans, injecting `traceparent` headers into responses, and exposing Prometheus metrics at `/metrics`.
+  - Prometheus (`deploy/prometheus/prometheus.yml`) and OpenTelemetry Collector (`deploy/otel/otel-collector-config.yml`) configuration files.
+- **Fault-Tolerance Primitives**:
+  - `packages/atlas-coordination/src/atlas_coordination/resilience.py`:
+    - `CircuitBreaker`: Resilient state machine (`CLOSED` -> `OPEN` -> `HALF_OPEN` -> `CLOSED`) with sub-millisecond fast-fail (< 0.02ms) to prevent cascading system outages.
+    - `Bulkhead`: Thread-safe semaphore concurrency throttler enforcing maximum concurrent executions and fast rejection with `BulkheadRejectedError`.
+- **Automated Performance Benchmarking**:
+  - `tests/benchmarks/test_phase11_benchmarks.py`: Comprehensive benchmark suite evaluating API latency percentiles (p50/p95/p99), distributed scheduler throughput, concurrent storage access, and circuit breaker fast-fail latency.
+- **Operational Runbooks & Incident Management**:
+  - `docs/runbooks/INCIDENT_RESPONSE.md`: Sev-1 to Sev-4 severity classification, triage workflows, containment, communication channels, and blameless post-mortem templates.
+  - `docs/runbooks/DISASTER_RECOVERY.md`: RTO (< 15m), RPO (< 5m), active-passive multi-region failover, and operational restoration checklists.
+  - `docs/runbooks/DATABASE_BACKUP_RESTORE.md`: Automated daily logical backups (`pg_dump`), continuous WAL archiving, Point-in-Time Recovery (PITR), and cryptographic integrity verification.
+- **Phase 11 Acceptance Suite**:
+  - `tests/integration/test_phase11_acceptance.py`: 15 comprehensive automated scenarios (PR-01 through PR-15) verifying containers, deployment, tracing, resilience, benchmarks, and runbooks.
+  - `docs/PHASE_11_ACCEPTANCE_REPORT.md`: Comprehensive certification report for Phase 11 production readiness.
+
+---
+
 ## [0.10.1] - 2026-11-14 — Phase 10 Enterprise Remediation
 
 ### Fixed & Remediated

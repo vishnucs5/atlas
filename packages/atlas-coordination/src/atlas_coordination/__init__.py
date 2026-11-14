@@ -24,6 +24,13 @@ from atlas_coordination.lease_manager import WorkerLeaseManager
 from atlas_coordination.reconciler import EnvironmentReconciler
 from atlas_coordination.recovery_coordinator import RecoveryCoordinator
 from atlas_coordination.replay import ExecutionReplayEngine
+from atlas_coordination.resilience import (
+    Bulkhead,
+    BulkheadRejectedError,
+    CircuitBreaker,
+    CircuitBreakerOpenError,
+    CircuitState,
+)
 from atlas_coordination.scheduler import NoAvailableWorkerError, WorkerScheduler
 from atlas_coordination.worker_registry import WorkerRegistryManager
 
@@ -36,7 +43,12 @@ __all__ = [
     "ArtifactManager",
     "ArtifactSecurityError",
     "ArtifactSizeLimitError",
+    "Bulkhead",
+    "BulkheadRejectedError",
     "CheckpointManager",
+    "CircuitBreaker",
+    "CircuitBreakerOpenError",
+    "CircuitState",
     "EnvironmentReconciler",
     "ExecutionReplayEngine",
     "NoAvailableWorkerError",
