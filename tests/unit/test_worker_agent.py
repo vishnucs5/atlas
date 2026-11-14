@@ -70,7 +70,12 @@ class MockTestDriver(ComputerDriver):
 def test_platform_and_session_detection():
     """Verify platform, hardware, and session type detection routines."""
     plat = detect_platform()
-    assert plat in [WorkerPlatform.WINDOWS, WorkerPlatform.LINUX, WorkerPlatform.DARWIN, WorkerPlatform.CONTAINER]
+    assert plat in [
+        WorkerPlatform.WINDOWS,
+        WorkerPlatform.LINUX,
+        WorkerPlatform.DARWIN,
+        WorkerPlatform.CONTAINER,
+    ]
 
     session = detect_session_type(plat)
     assert session in [SessionType.INTERACTIVE_USER, SessionType.HEADLESS, SessionType.SESSION_0]
@@ -303,14 +308,17 @@ def test_event_ring_buffer_capacity():
     """Verify ring buffer bounds and maxlen eviction."""
     buffer = EventRingBuffer(capacity=5)
     for i in range(10):
-        buffer.append("test", AssignmentPayload(
-            assignment_id=f"asgn_{i}",
-            task_id="t1",
-            worker_id="w1",
-            lease_id="l1",
-            objective="test",
-            expires_at=datetime.now(UTC),
-        ))
+        buffer.append(
+            "test",
+            AssignmentPayload(
+                assignment_id=f"asgn_{i}",
+                task_id="t1",
+                worker_id="w1",
+                lease_id="l1",
+                objective="test",
+                expires_at=datetime.now(UTC),
+            ),
+        )
 
     assert len(buffer) == 5
     unacked = buffer.get_unacknowledged()

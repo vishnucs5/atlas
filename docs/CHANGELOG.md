@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.1] - 2026-11-14 — Phase 10 Enterprise Remediation
+
+### Fixed & Remediated
+- **REST API Authentication (SEC-01)**: Enforced `get_current_enterprise_session` dependency across all `/api/v1/enterprise` routes; supports session tokens (`atk_sess_`), service API keys (`atk_live_`), and super-admin keys with tenant boundary validation.
+- **Connector Invocation Authorization (SEC-02)**: Enforced strict caller authorization and tenant boundary checks in `IntegrationHubManager.invoke_connector` for users (`INTEGRATION_INVOKE` permission), agents (`ag_`), and service identities (`svc_` with `integration:invoke` scope).
+- **Agent Self-Elevation Guard (SEC-03)**: Integrated `check_agent_self_elevation` into `EnterpriseIAMEngine.assign_role` and `EnterpriseAgentGovernanceManager.set_policy`, preventing autonomous non-human actors from escalating roles.
+- **Vault Secret Encryption (SEC-04)**: Integrated Fernet symmetric encryption (AES-128-CBC + HMAC-SHA256) into `IntegrationSecretStore` using `ATLAS_VAULT_ENCRYPTION_KEY`.
+- **Enterprise Storage Persistence (ARCH-01 & OPS-01)**: Implemented `EnterpriseStorage` repository supporting dual SQLite and physical PostgreSQL persistence across all 15 relational tables with write-through caching in enterprise managers. Authored `tests/integration/test_enterprise_storage_postgres.py` testing live embedded PostgreSQL.
+- **Session Creation Exception Safety (REL-01)**: `create_session` now validates organization existence and raises `OrganizationNotFoundError` instead of `AttributeError`.
+- **Audit Hash Serialization Safety (REL-02)**: `compute_record_hash` now uses `default=str` in JSON canonical serialization to prevent `TypeError` on non-serializable details.
+- **Admin Console Dynamic Rendering (UI-01)**: Replaced placeholder stubs in `apps/api/src/atlas_api/routes/dashboard.py` with live API data fetching and DOM rendering for organizations and connectors.
+- **High-Throughput Rate Limiting (PERF-01)**: Upgraded `TokenBucketRateLimiter` from $O(N)$ sliding-window array to $O(1)$ continuous replenishment token bucket.
+- **Functional Gaps A, B, C, D**: Enforced service identity scope checks, webhook event dispatching, `GET /audit/export`, and `GET /organizations/{org_id}/members`.
+
+---
+
 ## [0.10.0] - 2026-11-14 — Phase 10 Enterprise Autonomous Operating Platform
 
 ### Added

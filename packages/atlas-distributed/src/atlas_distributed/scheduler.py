@@ -136,7 +136,9 @@ class DistributedScheduler:
 
         self._task_queue: list[PrioritizedTask] = []
         self._active_worker_tasks: dict[str, set[str]] = {}  # worker_id -> set of assignment_ids
-        self._active_assignments: dict[str, tuple[str, str, str]] = {}  # asgn_id -> (task_id, worker_id, lease_id)
+        self._active_assignments: dict[
+            str, tuple[str, str, str]
+        ] = {}  # asgn_id -> (task_id, worker_id, lease_id)
         self._lock = threading.Lock()
 
     def get_active_workers(self) -> list[WorkerIdentity]:
@@ -167,7 +169,9 @@ class DistributedScheduler:
                 )
                 raise
 
-    def schedule_task(self, requirements: TaskRequirements) -> tuple[WorkerIdentity, AssignmentPayload]:
+    def schedule_task(
+        self, requirements: TaskRequirements
+    ) -> tuple[WorkerIdentity, AssignmentPayload]:
         """Directly schedule task against available workers or raise NoEligibleWorkerError."""
         with self._lock:
             return self._schedule_now_with_worker(requirements)
@@ -190,7 +194,9 @@ class DistributedScheduler:
                 diagnostic_rejections.append(f"Worker '{worker.worker_id}': revoked")
                 continue
             if worker.status in (WorkerStatus.TERMINATED, WorkerStatus.DISCONNECTED):
-                diagnostic_rejections.append(f"Worker '{worker.worker_id}': status {worker.status.value}")
+                diagnostic_rejections.append(
+                    f"Worker '{worker.worker_id}': status {worker.status.value}"
+                )
                 continue
 
             # 1. Tenant Isolation
@@ -209,7 +215,10 @@ class DistributedScheduler:
                 continue
 
             # 3. Platform match
-            if requirements.required_platform and worker.capabilities.platform != requirements.required_platform:
+            if (
+                requirements.required_platform
+                and worker.capabilities.platform != requirements.required_platform
+            ):
                 diagnostic_rejections.append(
                     f"Worker '{worker.worker_id}': platform mismatch ('{worker.capabilities.platform}' != '{requirements.required_platform}')"
                 )
@@ -242,7 +251,9 @@ class DistributedScheduler:
                 continue
 
             # 6. Required drivers
-            missing_drivers = [d for d in requirements.required_drivers if d not in worker.capabilities.drivers]
+            missing_drivers = [
+                d for d in requirements.required_drivers if d not in worker.capabilities.drivers
+            ]
             if missing_drivers:
                 diagnostic_rejections.append(
                     f"Worker '{worker.worker_id}': missing drivers {missing_drivers}"
@@ -250,7 +261,9 @@ class DistributedScheduler:
                 continue
 
             # 7. Required browsers
-            missing_browsers = [b for b in requirements.required_browsers if b not in worker.capabilities.browsers]
+            missing_browsers = [
+                b for b in requirements.required_browsers if b not in worker.capabilities.browsers
+            ]
             if missing_browsers:
                 diagnostic_rejections.append(
                     f"Worker '{worker.worker_id}': missing browsers {missing_browsers}"
@@ -272,13 +285,19 @@ class DistributedScheduler:
                 continue
 
             if requirements.require_gpu and not hw.has_gpu:
-                diagnostic_rejections.append(f"Worker '{worker.worker_id}': GPU required but not present")
+                diagnostic_rejections.append(
+                    f"Worker '{worker.worker_id}': GPU required but not present"
+                )
                 continue
 
             # 9. Required tags
-            missing_tags = [t for t in requirements.required_tags if t not in worker.capabilities.tags]
+            missing_tags = [
+                t for t in requirements.required_tags if t not in worker.capabilities.tags
+            ]
             if missing_tags:
-                diagnostic_rejections.append(f"Worker '{worker.worker_id}': missing tags {missing_tags}")
+                diagnostic_rejections.append(
+                    f"Worker '{worker.worker_id}': missing tags {missing_tags}"
+                )
                 continue
 
             # Candidate matched! Score by least-loaded

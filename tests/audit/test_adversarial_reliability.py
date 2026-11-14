@@ -8,16 +8,16 @@ Tests:
 """
 
 import concurrent.futures
+from datetime import UTC, datetime
+
 import pytest
 from atlas_enterprise import (
     BudgetCapExceededError,
-    EnterpriseAuditLedger,
     EnterpriseCostManager,
     EnterpriseIAMEngine,
     EnterpriseOrganizationManager,
     compute_record_hash,
 )
-from datetime import UTC, datetime
 
 
 def test_audit_rel_01_concurrent_budget_deductions_prevent_overspend():
@@ -39,6 +39,7 @@ def test_audit_rel_01_concurrent_budget_deductions_prevent_overspend():
         allocated_usd=10.0,
         hard_cap_enabled=True,
     )
+    assert budget.allocated_usd == 10.0
 
     # 20 workers each trying to spend $1.00
     # Total attempted = $20.00. Exactly 10 should succeed, 10 should raise BudgetCapExceededError.
@@ -72,15 +73,18 @@ def test_audit_rel_01_concurrent_budget_deductions_prevent_overspend():
 
 
 def test_audit_rel_02_attribute_error_on_nonexistent_org_in_iam():
-    """Verify bug in iam.py: calling create_session with non-existent org_id raises AttributeError."""
+    """Verify that calling create_session with non-existent org_id raises OrganizationNotFoundError."""
+    from atlas_enterprise import OrganizationNotFoundError
+
     org_mgr = EnterpriseOrganizationManager()
     iam = EnterpriseIAMEngine(org_mgr)
 
-    user = org_mgr.provision_user(user_id="usr_test_fail", email="t@fail.com", full_name="Fail Test")
+    user = org_mgr.provision_user(
+        user_id="usr_test_fail", email="t@fail.com", full_name="Fail Test"
+    )
 
-    # When org_id does not exist, get_organization returns None, and
-    # `if org.status != "ACTIVE":` crashes with AttributeError instead of raising an EnterpriseIAMError!
-    with pytest.raises(AttributeError, match="'NoneType' object has no attribute 'status'"):
+    # Calling with non-existent org_id cleanly raises OrganizationNotFoundError
+    with pytest.raises(OrganizationNotFoundError, match="not found"):
         iam.create_session(
             user_id=user.user_id,
             org_id="non_existent_org_id",
@@ -88,35 +92,44 @@ def test_audit_rel_02_attribute_error_on_nonexistent_org_in_iam():
 
 
 def test_audit_rel_03_non_serializable_details_in_audit_record():
-    """Verify bug in audit.py: non-JSON-serializable objects in details crash compute_record_hash."""
+    """Verify that non-JSON-serializable objects in details are handled cleanly via default=str without crashing."""
     # Passing a set or custom object in details dictionary
     non_serializable_details = {"allowed_set": {1, 2, 3}, "object": object()}
 
-    with pytest.raises(TypeError, match="is not JSON serializable"):
-        compute_record_hash(
-            sequence=1,
-            org_id="org_test",
-            department_id=None,
-            event_type="TEST",
-            actor_id="actor_1",
-            actor_type="USER",
-            action="test.action",
-            target_resource_id=None,
-            details=non_serializable_details,
-            timestamp=datetime.now(UTC),
-            previous_hash="0" * 64,
-        )
+    h = compute_record_hash(
+        sequence=1,
+        org_id="org_test",
+        department_id=None,
+        event_type="TEST",
+        actor_id="actor_1",
+        actor_type="USER",
+        action="test.action",
+        target_resource_id=None,
+        details=non_serializable_details,
+        timestamp=datetime.now(UTC),
+        previous_hash="0" * 64,
+    )
+    assert len(h) == 64
+    assert isinstance(h, str)
 
 
-def test_audit_rel_04_ephemeral_state_loss_on_system_restart():
-    """Demonstrate that all enterprise state is in-memory and lost upon component re-instantiation."""
-    # Initial state
-    org_mgr_1 = EnterpriseOrganizationManager()
+def test_audit_rel_04_ephemeral_state_loss_on_system_restart(tmp_path):
+    """Verify that EnterpriseStorage persists state across component re-instantiations."""
+    from atlas_enterprise import EnterpriseStorage
+
+    db_file = tmp_path / "enterprise_persist.db"
+    storage = EnterpriseStorage(db_path=str(db_file))
+
+    # Initial state with persistence
+    org_mgr_1 = EnterpriseOrganizationManager(storage=storage)
     org, _, _ = org_mgr_1.create_organization(
-        name="Ephemeral Corp", slug="ephemeral", owner_email="e@ephemeral.com", owner_name="Owner"
+        name="Durable Corp", slug="durable", owner_email="d@durable.com", owner_name="Owner"
     )
     assert org_mgr_1.get_organization(org.org_id) is not None
 
-    # Simulate process restart (new manager instances without persistent storage)
-    org_mgr_2 = EnterpriseOrganizationManager()
-    assert org_mgr_2.get_organization(org.org_id) is None
+    # Simulate process restart by instantiating new storage and manager pointing to same DB
+    storage_2 = EnterpriseStorage(db_path=str(db_file))
+    org_mgr_2 = EnterpriseOrganizationManager(storage=storage_2)
+    restored_org = org_mgr_2.get_organization(org.org_id)
+    assert restored_org is not None
+    assert restored_org.name == "Durable Corp"

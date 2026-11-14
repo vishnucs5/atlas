@@ -150,7 +150,9 @@ def test_dn_02_rejection_of_invalid_or_expired_tokens(authority):
 def test_dn_03_credential_revocation_and_crl(authority):
     token, _ = authority.create_enrollment_token()
     resp = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-rev", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-rev", capabilities=WorkerCapabilities()
+        )
     )
     # Revoke worker
     authority.revoke_worker(resp.worker_id, reason="Security compromise")
@@ -166,7 +168,9 @@ def test_dn_03_credential_revocation_and_crl(authority):
 def test_dn_04_authentication_failure_handling(authority):
     token, _ = authority.create_enrollment_token()
     resp = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-auth", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-auth", capabilities=WorkerCapabilities()
+        )
     )
     with pytest.raises(WorkerAuthenticationError):
         authority.authenticate_worker(resp.worker_id, "wrong_auth_token_secret")
@@ -214,7 +218,9 @@ def test_dn_06_incompatible_worker_rejection(authority):
         )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
-    req_missing_driver = TaskRequirements(task_id="t_missing", required_drivers=["special_gpu_driver"])
+    req_missing_driver = TaskRequirements(
+        task_id="t_missing", required_drivers=["special_gpu_driver"]
+    )
     with pytest.raises(NoEligibleWorkerError) as exc_info:
         scheduler.schedule_task(req_missing_driver)
     assert "missing drivers" in str(exc_info.value)
@@ -226,7 +232,9 @@ def test_dn_06_incompatible_worker_rejection(authority):
 def test_dn_07_task_assignment_creation_with_fencing(authority):
     token, _ = authority.create_enrollment_token()
     authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-fencing", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-fencing", capabilities=WorkerCapabilities()
+        )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     _, payload = scheduler.schedule_task(TaskRequirements(task_id="t_fence_01"))
@@ -243,7 +251,9 @@ def test_dn_07_task_assignment_creation_with_fencing(authority):
 async def test_dn_08_worker_assignment_ack_and_state_running(authority):
     token, _ = authority.create_enrollment_token()
     resp = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-ack", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-ack", capabilities=WorkerCapabilities()
+        )
     )
     transport = InMemoryControlPlaneTransport()
     agent = WorkerAgent(config=WorkerAgentConfig(worker_id=resp.worker_id), transport=transport)
@@ -270,7 +280,9 @@ async def test_dn_08_worker_assignment_ack_and_state_running(authority):
 def test_dn_09_worker_heartbeat_monitoring_and_expiration(authority):
     token, _ = authority.create_enrollment_token()
     resp = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-hb", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-hb", capabilities=WorkerCapabilities()
+        )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     recovery_mgr = DistributedRecoveryManager(
@@ -294,7 +306,9 @@ def test_dn_09_worker_heartbeat_monitoring_and_expiration(authority):
 def test_dn_10_lease_fencing_rejecting_stale_commit(authority):
     token, _ = authority.create_enrollment_token()
     resp = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-fencing", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-fencing", capabilities=WorkerCapabilities()
+        )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     recovery_mgr = DistributedRecoveryManager(enrollment_authority=authority, scheduler=scheduler)
@@ -371,7 +385,9 @@ async def test_dn_12_network_interruption_reconnection_ring_buffer():
 def test_dn_13_worker_process_termination_detection_and_eviction(authority):
     token, _ = authority.create_enrollment_token()
     resp = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-term", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-term", capabilities=WorkerCapabilities()
+        )
     )
     worker = authority.get_worker(resp.worker_id)
     assert worker is not None
@@ -388,7 +404,9 @@ def test_dn_13_worker_process_termination_detection_and_eviction(authority):
 def test_dn_14_machine_restart_simulation_durable_recovery(authority):
     token, _ = authority.create_enrollment_token()
     resp = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-restart", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-restart", capabilities=WorkerCapabilities()
+        )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     _, p1 = scheduler.schedule_task(TaskRequirements(task_id="t_reboot"))
@@ -408,7 +426,9 @@ def test_dn_14_machine_restart_simulation_durable_recovery(authority):
 def test_dn_15_control_plane_restart_in_flight_reconciliation(authority):
     token, _ = authority.create_enrollment_token()
     enroll_worker = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-cp-restart", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-cp-restart", capabilities=WorkerCapabilities()
+        )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     _, payload = scheduler.schedule_task(TaskRequirements(task_id="t_cp_rst"))
@@ -432,16 +452,22 @@ def test_dn_15_control_plane_restart_in_flight_reconciliation(authority):
 def test_dn_16_stale_worker_completion_rejection_after_reassignment(authority):
     token1, _ = authority.create_enrollment_token()
     w1 = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token1, hostname="node-w1", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token1, hostname="node-w1", capabilities=WorkerCapabilities()
+        )
     )
     token2, _ = authority.create_enrollment_token()
     authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token2, hostname="node-w2", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token2, hostname="node-w2", capabilities=WorkerCapabilities()
+        )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     recovery_mgr = DistributedRecoveryManager(enrollment_authority=authority, scheduler=scheduler)
 
-    _, p1 = scheduler.schedule_task(TaskRequirements(task_id="t_reassign", action_type="screenshot"))
+    _, p1 = scheduler.schedule_task(
+        TaskRequirements(task_id="t_reassign", action_type="screenshot")
+    )
     recovery_mgr.register_assignment(p1)
 
     # Recover and reassign to w2
@@ -484,7 +510,9 @@ def test_dn_17_concurrent_reassignment_prevention(authority):
 def test_dn_18_unknown_external_side_effect_protection(authority):
     token, _ = authority.create_enrollment_token()
     w = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-side-effect", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-side-effect", capabilities=WorkerCapabilities()
+        )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     recovery_mgr = DistributedRecoveryManager(enrollment_authority=authority, scheduler=scheduler)
@@ -508,8 +536,22 @@ def test_dn_18_unknown_external_side_effect_protection(authority):
 def test_dn_19_cross_tenant_isolation(authority):
     t_a, _ = authority.create_enrollment_token(tenant_id="tenant-a")
     t_b, _ = authority.create_enrollment_token(tenant_id="tenant-b")
-    w_a = authority.enroll_worker(EnrollmentRequest(provisioning_token=t_a, hostname="node-a", tenant_id="tenant-a", capabilities=WorkerCapabilities()))
-    authority.enroll_worker(EnrollmentRequest(provisioning_token=t_b, hostname="node-b", tenant_id="tenant-b", capabilities=WorkerCapabilities()))
+    w_a = authority.enroll_worker(
+        EnrollmentRequest(
+            provisioning_token=t_a,
+            hostname="node-a",
+            tenant_id="tenant-a",
+            capabilities=WorkerCapabilities(),
+        )
+    )
+    authority.enroll_worker(
+        EnrollmentRequest(
+            provisioning_token=t_b,
+            hostname="node-b",
+            tenant_id="tenant-b",
+            capabilities=WorkerCapabilities(),
+        )
+    )
 
     scheduler = DistributedScheduler(enrollment_authority=authority)
     w_res, p_res = scheduler.schedule_task(TaskRequirements(task_id="t_iso", tenant_id="tenant-a"))
@@ -592,7 +634,9 @@ async def test_dn_23_distributed_task_cancellation_propagation():
 def test_dn_24_recovery_and_reconciliation_state_machine(authority):
     token, _ = authority.create_enrollment_token()
     w = authority.enroll_worker(
-        EnrollmentRequest(provisioning_token=token, hostname="node-rec24", capabilities=WorkerCapabilities())
+        EnrollmentRequest(
+            provisioning_token=token, hostname="node-rec24", capabilities=WorkerCapabilities()
+        )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     recovery_mgr = DistributedRecoveryManager(enrollment_authority=authority, scheduler=scheduler)
@@ -616,14 +660,45 @@ def test_dn_24_recovery_and_reconciliation_state_machine(authority):
 async def test_dn_25_distributed_workflow_dag_parallel_branches(authority):
     t1, _ = authority.create_enrollment_token()
     t2, _ = authority.create_enrollment_token()
-    authority.enroll_worker(EnrollmentRequest(provisioning_token=t1, hostname="w-lin", capabilities=WorkerCapabilities(platform=WorkerPlatform.LINUX, drivers=["bash"])))
-    authority.enroll_worker(EnrollmentRequest(provisioning_token=t2, hostname="w-win", capabilities=WorkerCapabilities(platform=WorkerPlatform.WINDOWS, session_type=SessionType.INTERACTIVE_USER, drivers=["desktop"])))
+    authority.enroll_worker(
+        EnrollmentRequest(
+            provisioning_token=t1,
+            hostname="w-lin",
+            capabilities=WorkerCapabilities(platform=WorkerPlatform.LINUX, drivers=["bash"]),
+        )
+    )
+    authority.enroll_worker(
+        EnrollmentRequest(
+            provisioning_token=t2,
+            hostname="w-win",
+            capabilities=WorkerCapabilities(
+                platform=WorkerPlatform.WINDOWS,
+                session_type=SessionType.INTERACTIVE_USER,
+                drivers=["desktop"],
+            ),
+        )
+    )
 
     scheduler = DistributedScheduler(enrollment_authority=authority)
     coordinator = DistributedTaskCoordinator(scheduler=scheduler)
 
-    n1 = TaskNode(node_id="n1", task_id="t_dag", name="Task 1", parameters={"required_platform": WorkerPlatform.LINUX, "required_drivers": ["bash"]})
-    n2 = TaskNode(node_id="n2", task_id="t_dag", name="Task 2", parameters={"required_platform": WorkerPlatform.WINDOWS, "requires_interactive_desktop": True, "required_drivers": ["desktop"]}, dependencies=["n1"])
+    n1 = TaskNode(
+        node_id="n1",
+        task_id="t_dag",
+        name="Task 1",
+        parameters={"required_platform": WorkerPlatform.LINUX, "required_drivers": ["bash"]},
+    )
+    n2 = TaskNode(
+        node_id="n2",
+        task_id="t_dag",
+        name="Task 2",
+        parameters={
+            "required_platform": WorkerPlatform.WINDOWS,
+            "requires_interactive_desktop": True,
+            "required_drivers": ["desktop"],
+        },
+        dependencies=["n1"],
+    )
     graph = TaskGraph(graph_id="g1", task_id="t_dag", nodes={"n1": n1, "n2": n2})
 
     summary = await coordinator.execute_task_graph(graph)
@@ -641,23 +716,33 @@ def test_dn_26_heterogeneous_worker_windows_and_linux(authority):
         EnrollmentRequest(
             provisioning_token=t1,
             hostname="linux-runner",
-            capabilities=WorkerCapabilities(platform=WorkerPlatform.LINUX, session_type=SessionType.HEADLESS, drivers=["bash"]),
+            capabilities=WorkerCapabilities(
+                platform=WorkerPlatform.LINUX, session_type=SessionType.HEADLESS, drivers=["bash"]
+            ),
         )
     )
     w_win = authority.enroll_worker(
         EnrollmentRequest(
             provisioning_token=t2,
             hostname="win11-desktop",
-            capabilities=WorkerCapabilities(platform=WorkerPlatform.WINDOWS, session_type=SessionType.INTERACTIVE_USER, drivers=["cmd", "desktop"]),
+            capabilities=WorkerCapabilities(
+                platform=WorkerPlatform.WINDOWS,
+                session_type=SessionType.INTERACTIVE_USER,
+                drivers=["cmd", "desktop"],
+            ),
         )
     )
     scheduler = DistributedScheduler(enrollment_authority=authority)
     # Schedule interactive GUI task
-    w_gui, _ = scheduler.schedule_task(TaskRequirements(task_id="t_gui", requires_interactive_desktop=True))
+    w_gui, _ = scheduler.schedule_task(
+        TaskRequirements(task_id="t_gui", requires_interactive_desktop=True)
+    )
     assert w_gui.worker_id == w_win.worker_id
 
     # Schedule headless linux task
-    w_head, _ = scheduler.schedule_task(TaskRequirements(task_id="t_head", required_platform=WorkerPlatform.LINUX))
+    w_head, _ = scheduler.schedule_task(
+        TaskRequirements(task_id="t_head", required_platform=WorkerPlatform.LINUX)
+    )
     assert w_head.worker_id == w_lin.worker_id
 
 
@@ -694,9 +779,30 @@ def test_dn_27_remote_protocol_version_negotiation():
 def test_dn_28_distributed_event_ordering_monotonic_sequence():
     dedup = MessageDeduplicator()
     secret = "secret"
-    env1 = create_envelope(message_type=ProtocolMessageType.PROGRESS_EVENT, sender_id="w1", recipient_id="cp", payload={"step": 1}, secret_key=secret, sequence_number=1)
-    env2 = create_envelope(message_type=ProtocolMessageType.PROGRESS_EVENT, sender_id="w1", recipient_id="cp", payload={"step": 2}, secret_key=secret, sequence_number=2)
-    env_stale = create_envelope(message_type=ProtocolMessageType.PROGRESS_EVENT, sender_id="w1", recipient_id="cp", payload={"step": 1}, secret_key=secret, sequence_number=1)
+    env1 = create_envelope(
+        message_type=ProtocolMessageType.PROGRESS_EVENT,
+        sender_id="w1",
+        recipient_id="cp",
+        payload={"step": 1},
+        secret_key=secret,
+        sequence_number=1,
+    )
+    env2 = create_envelope(
+        message_type=ProtocolMessageType.PROGRESS_EVENT,
+        sender_id="w1",
+        recipient_id="cp",
+        payload={"step": 2},
+        secret_key=secret,
+        sequence_number=2,
+    )
+    env_stale = create_envelope(
+        message_type=ProtocolMessageType.PROGRESS_EVENT,
+        sender_id="w1",
+        recipient_id="cp",
+        payload={"step": 1},
+        secret_key=secret,
+        sequence_number=1,
+    )
 
     dedup.process_envelope(env1)
     dedup.process_envelope(env2)
@@ -732,7 +838,9 @@ def test_dn_30_full_end_to_end_distributed_execution():
     client = TestClient(app)
 
     # 1. Create provisioning token
-    res_tok = client.post("/api/v1/distributed/tokens", json={"tenant_id": "tenant-e2e", "max_uses": 2})
+    res_tok = client.post(
+        "/api/v1/distributed/tokens", json={"tenant_id": "tenant-e2e", "max_uses": 2}
+    )
     assert res_tok.status_code == 201
     token_data = res_tok.json()
     prov_token = token_data["provisioning_token"]

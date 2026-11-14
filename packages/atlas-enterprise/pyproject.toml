@@ -19,6 +19,7 @@ dependencies = [
     "atlas-distributed",
     "pydantic>=2.7.0",
     "httpx>=0.27.0",
+    "cryptography>=50.0.2",
 ]
 
 [tool.uv.sources]

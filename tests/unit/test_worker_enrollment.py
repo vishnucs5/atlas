@@ -79,7 +79,9 @@ def test_invalid_and_expired_token_rejection(authority: WorkerEnrollmentAuthorit
         hostname="host-1",
         capabilities=WorkerCapabilities(),
     )
-    with pytest.raises(InvalidEnrollmentTokenError, match="Invalid, expired, exhausted, or revoked"):
+    with pytest.raises(
+        InvalidEnrollmentTokenError, match="Invalid, expired, exhausted, or revoked"
+    ):
         authority.enroll_worker(bad_req)
 
     # 2. Expired token
@@ -122,7 +124,9 @@ def test_session_zero_interactive_rejection(authority: WorkerEnrollmentAuthority
         capabilities=session0_caps,
     )
 
-    with pytest.raises(SessionZeroInteractiveError, match="Session 0 workers cannot execute interactive desktop"):
+    with pytest.raises(
+        SessionZeroInteractiveError, match="Session 0 workers cannot execute interactive desktop"
+    ):
         authority.enroll_worker(req)
 
 

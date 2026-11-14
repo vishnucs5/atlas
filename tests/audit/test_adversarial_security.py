@@ -16,9 +16,7 @@ from atlas_enterprise import (
     IntegrationHubManager,
     IntegrationSecretStore,
     MembershipRole,
-    PermissionAction,
     PrivilegeEscalationError,
-    UnauthorizedError,
 )
 from fastapi.testclient import TestClient
 
@@ -40,38 +38,45 @@ def enterprise_audit_stack():
 
 
 def test_audit_sec_01_api_endpoints_lack_authentication_headers():
-    """Verify that REST API endpoints fail to enforce Authorization headers or session validation."""
+    """Verify that REST API endpoints strictly enforce Authorization headers and session validation."""
     client = TestClient(app)
 
-    # 1. Calling create organization without any auth header or token succeeds
+    # 1. Calling create organization returns initial token
     res_org = client.post(
         "/api/v1/enterprise/organizations",
         json={
-            "name": "Unauthenticated Corp",
-            "slug": "unauth_corp",
-            "owner_email": "attacker@evil.com",
-            "owner_name": "Attacker",
+            "name": "Secured Corp",
+            "slug": "secured_corp",
+            "owner_email": "owner@secured.com",
+            "owner_name": "Owner",
         },
     )
     assert res_org.status_code == 200, f"Expected 200, got {res_org.status_code}"
     org_data = res_org.json()["organization"]
     org_id = org_data["org_id"]
+    token_id = res_org.json()["token_id"]
 
-    # 2. Suspending an organization without authentication succeeds!
+    # 2. Suspending an organization without authentication is rejected with 401!
     res_suspend = client.post(
         f"/api/v1/enterprise/organizations/{org_id}/suspend?reason=AttackerTakeover"
     )
-    assert res_suspend.status_code == 200, f"Expected 200, got {res_suspend.status_code}"
-    assert res_suspend.json()["status"] == "SUSPENDED"
+    assert res_suspend.status_code == 401
 
-    # 3. Reading organization details without any auth header succeeds!
+    # 3. Reading organization details without any auth header is rejected with 401!
     res_get = client.get(f"/api/v1/enterprise/organizations/{org_id}")
-    assert res_get.status_code == 200
-    assert res_get.json()["status"] == "SUSPENDED"
+    assert res_get.status_code == 401
+
+    # 4. Authenticated call succeeds
+    res_auth = client.post(
+        f"/api/v1/enterprise/organizations/{org_id}/suspend?reason=LegitHold",
+        headers={"Authorization": f"Bearer {token_id}"},
+    )
+    assert res_auth.status_code == 200
+    assert res_auth.json()["status"] == "SUSPENDED"
 
 
 def test_audit_sec_02_unauthenticated_owner_elevation_via_api():
-    """Verify vulnerability: Anyone can enroll themselves as OrganizationOwner via POST /members."""
+    """Verify vulnerability resolution: Unauthenticated and unauthorized users cannot enroll as OrganizationOwner."""
     client = TestClient(app)
 
     # Victim organization
@@ -85,8 +90,9 @@ def test_audit_sec_02_unauthenticated_owner_elevation_via_api():
         },
     )
     victim_org_id = res_org.json()["organization"]["org_id"]
+    owner_token = res_org.json()["token_id"]
 
-    # Attacker calls POST /members without authentication, granting themselves OrganizationOwner!
+    # Attacker calls POST /members without authentication -> rejected with 401!
     res_attacker = client.post(
         f"/api/v1/enterprise/organizations/{victim_org_id}/members",
         json={
@@ -95,25 +101,49 @@ def test_audit_sec_02_unauthenticated_owner_elevation_via_api():
             "role": "OrganizationOwner",
         },
     )
-    assert res_attacker.status_code == 200
-    mem_data = res_attacker.json()["membership"]
-    assert mem_data["role"] == "OrganizationOwner"
-    assert mem_data["org_id"] == victim_org_id
+    assert res_attacker.status_code == 401
+
+    # Developer user enrolls and tries to escalate to Owner -> rejected with 403!
+    res_dev = client.post(
+        f"/api/v1/enterprise/organizations/{victim_org_id}/members",
+        json={
+            "email": "dev@victim.com",
+            "full_name": "Dev User",
+            "role": "Developer",
+        },
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert res_dev.status_code == 200
+    dev_id = res_dev.json()["user"]["user_id"]
+
+    login_res = client.post(
+        "/api/v1/enterprise/iam/login",
+        json={"user_id": dev_id, "org_id": victim_org_id},
+    )
+    dev_token = login_res.json()["token_id"]
+
+    res_escalate = client.post(
+        f"/api/v1/enterprise/organizations/{victim_org_id}/members",
+        json={
+            "email": "puppet@victim.com",
+            "full_name": "Puppet",
+            "role": "OrganizationOwner",
+        },
+        headers={"Authorization": f"Bearer {dev_token}"},
+    )
+    assert res_escalate.status_code == 403
 
 
 def test_audit_sec_03_agent_self_elevation_guard_is_orphaned(enterprise_audit_stack):
-    """Verify vulnerability: check_agent_self_elevation is not hooked into IAM engine or API routes."""
+    """Verify that check_agent_self_elevation is strictly enforced in IAM assign_role and governance set_policy."""
     org_mgr = enterprise_audit_stack["org_mgr"]
     iam = enterprise_audit_stack["iam"]
+    gov = enterprise_audit_stack["gov"]
 
     org, owner, _ = org_mgr.create_organization(
         name="GuardCorp", slug="guardcorp", owner_email="o@gc.com", owner_name="Owner"
     )
 
-    # A non-human service identity with prefix 'ag_' or 'svc_'
-    # If the agent identity calls iam.assign_role directly or API routes,
-    # does EnterpriseIAMEngine or EnterpriseOrganizationManager call check_agent_self_elevation?
-    # No! It only checks caller_membership.role!
     agent_user, _ = org_mgr.add_member(
         org_id=org.org_id,
         user_id="ag_rogue_bot",
@@ -126,15 +156,26 @@ def test_audit_sec_03_agent_self_elevation_guard_is_orphaned(enterprise_audit_st
         role=MembershipRole.VIEWER,
     )
 
-    # An agent (ag_rogue_bot) that somehow obtained ORG_ADMIN can assign roles
-    # because iam.assign_role does NOT invoke check_agent_self_elevation!
-    new_mem = iam.assign_role(
-        caller_user_id="ag_rogue_bot",
-        target_user_id="usr_puppet",
-        org_id=org.org_id,
-        new_role=MembershipRole.SECURITY_ADMIN,
-    )
-    assert new_mem.role == MembershipRole.SECURITY_ADMIN
+    # An agent (ag_rogue_bot) attempting to assign roles is strictly blocked!
+    from atlas_enterprise.iam import AgentSelfElevationError
+
+    with pytest.raises(AgentSelfElevationError):
+        iam.assign_role(
+            caller_user_id="ag_rogue_bot",
+            target_user_id="usr_puppet",
+            org_id=org.org_id,
+            new_role=MembershipRole.SECURITY_ADMIN,
+        )
+
+    # An agent attempting to configure policy is strictly blocked!
+    with pytest.raises(AgentSelfElevationError):
+        gov.set_policy(
+            caller_user_id="ag_rogue_bot",
+            org_id=org.org_id,
+            scope_type="ORGANIZATION",
+            scope_id=org.org_id,
+            disallowed_tools=[],
+        )
 
 
 def test_audit_sec_04_privilege_escalation_enforcement_in_iam(enterprise_audit_stack):

@@ -47,9 +47,11 @@ class EnterpriseCostManager:
         self,
         org_manager: EnterpriseOrganizationManager,
         iam_engine: EnterpriseIAMEngine,
+        storage: Any = None,
     ) -> None:
         self.org_manager = org_manager
         self.iam_engine = iam_engine
+        self.storage = storage or getattr(org_manager, "storage", None)
         self._lock = threading.RLock()
         self._budgets: dict[str, DepartmentBudget] = {}  # dept_id -> DepartmentBudget
         self._cost_records: dict[str, list[CostRecord]] = {}  # org_id -> list of CostRecord
@@ -90,6 +92,8 @@ class EnterpriseCostManager:
             )
 
             self._budgets[department_id] = budget
+            if self.storage:
+                self.storage.save_budget(budget)
             logger.info(
                 "Configured budget %s for dept %s: $%s (cap=%s, alert=%s%%)",
                 budget_id,
@@ -104,6 +108,10 @@ class EnterpriseCostManager:
         """Retrieve department budget, checking tenant boundary."""
         with self._lock:
             budget = self._budgets.get(department_id)
+            if not budget and self.storage:
+                budget = self.storage.get_budget(org_id, department_id)
+                if budget:
+                    self._budgets[department_id] = budget
             if budget and budget.org_id != org_id:
                 raise CrossTenantAccessViolationError(
                     f"Cross-tenant access violation: caller org {org_id} != budget org {budget.org_id}"
@@ -214,6 +222,10 @@ class EnterpriseCostManager:
 
             records = self._cost_records.setdefault(org_id, [])
             records.append(rec)
+            if self.storage:
+                self.storage.save_cost_record(rec)
+                if department_id and budget:
+                    self.storage.save_budget(budget)
             return rec, is_alert
 
     def get_cost_summary(

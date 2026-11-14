@@ -53,9 +53,9 @@ def compute_record_hash(
         "details": details,
         "timestamp": timestamp.isoformat(),
     }
-    canonical_json = json.dumps(canonical_dict, sort_keys=True, separators=(",", ":")).encode(
-        "utf-8"
-    )
+    canonical_json = json.dumps(
+        canonical_dict, sort_keys=True, separators=(",", ":"), default=str
+    ).encode("utf-8")
     to_hash = canonical_json + b":" + previous_hash.encode("utf-8")
     return hashlib.sha256(to_hash).hexdigest()
 
@@ -67,9 +67,11 @@ class EnterpriseAuditLedger:
         self,
         org_manager: EnterpriseOrganizationManager,
         iam_engine: EnterpriseIAMEngine,
+        storage: Any = None,
     ) -> None:
         self.org_manager = org_manager
         self.iam_engine = iam_engine
+        self.storage = storage or getattr(org_manager, "storage", None)
         self._lock = threading.RLock()
         self._chains: dict[str, list[AuditRecord]] = {}  # org_id -> list of records
 
@@ -127,10 +129,22 @@ class EnterpriseAuditLedger:
             )
 
             chain.append(record)
+            if self.storage:
+                self.storage.save_audit_record(record)
             logger.info(
                 "Appended audit record seq=%d for org=%s hash=%s", sequence, org_id, rec_hash[:16]
             )
             return record
+
+    def _ensure_chain_loaded(self, org_id: str) -> list[AuditRecord]:
+        """Ensure the audit hash chain for an org is loaded in memory."""
+        chain = self._chains.get(org_id)
+        if (chain is None or len(chain) == 0) and self.storage:
+            persisted = self.storage.get_audit_records(org_id, limit=100000)
+            if persisted:
+                self._chains[org_id] = persisted
+                return persisted
+        return self._chains.setdefault(org_id, [])
 
     def query_records(
         self,
@@ -150,7 +164,7 @@ class EnterpriseAuditLedger:
                 action=PermissionAction.AUDIT_READ,
             )
 
-            chain = self._chains.get(org_id, [])
+            chain = self._ensure_chain_loaded(org_id)
             filtered: list[AuditRecord] = []
 
             for rec in chain:
@@ -174,7 +188,7 @@ class EnterpriseAuditLedger:
         Returns (is_intact, broken_sequence, failure_reason).
         """
         with self._lock:
-            chain = self._chains.get(org_id, [])
+            chain = self._ensure_chain_loaded(org_id)
             if not chain:
                 return True, None, None
 

@@ -21,8 +21,8 @@ class SessionType(StrEnum):
     """Execution session environment type."""
 
     INTERACTIVE_USER = "interactive_user"  # Active desktop session with GUI display
-    HEADLESS = "headless"                  # Headless VM/server (e.g. Linux bare-metal)
-    SESSION_0 = "session_0"                # Windows non-interactive service isolation
+    HEADLESS = "headless"  # Headless VM/server (e.g. Linux bare-metal)
+    SESSION_0 = "session_0"  # Windows non-interactive service isolation
 
 
 class WorkerHardware(BaseModel):

@@ -35,21 +35,18 @@ Verifies:
 
 import hashlib
 import hmac
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 from atlas_api.main import app
 from atlas_enterprise import (
     ABACContext,
-    ABACPolicyViolationError,
-    AgentCapabilityViolationError,
     AgentLifecycleStatus,
     AgentSelfElevationError,
+    AgentSuspendedError,
     BudgetCapExceededError,
     ConnectorStatus,
     ConnectorType,
-    ConnectorUnverifiedError,
     CrossTenantAccessViolationError,
     EnterpriseAgentGovernanceManager,
     EnterpriseAnalyticsEngine,
@@ -64,10 +61,8 @@ from atlas_enterprise import (
     IntegrationSecretStore,
     MembershipRole,
     PermissionAction,
+    PrivilegeEscalationError,
     RateLimitExceededError,
-    SessionRevokedError,
-    TenantOwnedResource,
-    UnauthorizedError,
 )
 from fastapi.testclient import TestClient
 
@@ -119,8 +114,12 @@ def test_reval_ep02_hierarchical_scoping(reval_stack):
 
 def test_reval_ep03_multitenant_isolation(reval_stack):
     org_mgr = reval_stack["org_mgr"]
-    org_1, _, _ = org_mgr.create_organization(name="T1", slug="t1", owner_email="1@t.com", owner_name="1")
-    org_2, _, _ = org_mgr.create_organization(name="T2", slug="t2", owner_email="2@t.com", owner_name="2")
+    org_1, _, _ = org_mgr.create_organization(
+        name="T1", slug="t1", owner_email="1@t.com", owner_name="1"
+    )
+    org_2, _, _ = org_mgr.create_organization(
+        name="T2", slug="t2", owner_email="2@t.com", owner_name="2"
+    )
     dept_2 = org_mgr.create_department(org_2.org_id, "D2", "d2")
 
     with pytest.raises(CrossTenantAccessViolationError):
@@ -130,7 +129,9 @@ def test_reval_ep03_multitenant_isolation(reval_stack):
 def test_reval_ep04_sso_federation(reval_stack):
     org_mgr = reval_stack["org_mgr"]
     iam = reval_stack["iam"]
-    org, _, _ = org_mgr.create_organization(name="SSOCorp", slug="ssocorp", owner_email="s@s.com", owner_name="S")
+    org, _, _ = org_mgr.create_organization(
+        name="SSOCorp", slug="ssocorp", owner_email="s@s.com", owner_name="S"
+    )
     idp = IdentityProviderConfig(
         idp_id="idp_okta",
         org_id=org.org_id,
@@ -144,7 +145,12 @@ def test_reval_ep04_sso_federation(reval_stack):
     iam.register_idp(idp)
     user, session = iam.authenticate_sso(
         idp_id="idp_okta",
-        assertion={"email": "alice@ssocorp.com", "sub": "okta_1", "name": "Alice", "groups": ["Engineers"]},
+        assertion={
+            "email": "alice@ssocorp.com",
+            "sub": "okta_1",
+            "name": "Alice",
+            "groups": ["Engineers"],
+        },
     )
     assert user.email == "alice@ssocorp.com"
     assert session.role == MembershipRole.DEVELOPER
@@ -170,7 +176,9 @@ def test_reval_ep05_abac_evaluation(reval_stack):
 def test_reval_ep06_rbac_matrix(reval_stack):
     org_mgr = reval_stack["org_mgr"]
     iam = reval_stack["iam"]
-    org, _, _ = org_mgr.create_organization(name="RBAC", slug="rbac", owner_email="r@r.com", owner_name="R")
+    org, _, _ = org_mgr.create_organization(
+        name="RBAC", slug="rbac", owner_email="r@r.com", owner_name="R"
+    )
     dev, _ = org_mgr.add_member(org.org_id, email="d@r.com", role=MembershipRole.DEVELOPER)
     assert iam.evaluate_permission(dev.user_id, org.org_id, PermissionAction.AGENT_REGISTER) is True
     assert iam.evaluate_permission(dev.user_id, org.org_id, PermissionAction.ORG_DELETE) is False
@@ -179,16 +187,20 @@ def test_reval_ep06_rbac_matrix(reval_stack):
 def test_reval_ep07_privilege_escalation(reval_stack):
     org_mgr = reval_stack["org_mgr"]
     iam = reval_stack["iam"]
-    org, _, _ = org_mgr.create_organization(name="Esc", slug="esc", owner_email="e@e.com", owner_name="E")
+    org, _, _ = org_mgr.create_organization(
+        name="Esc", slug="esc", owner_email="e@e.com", owner_name="E"
+    )
     dev, _ = org_mgr.add_member(org.org_id, email="d@e.com", role=MembershipRole.DEVELOPER)
-    with pytest.raises(Exception):
+    with pytest.raises(PrivilegeEscalationError):
         iam.assign_role(dev.user_id, dev.user_id, org.org_id, MembershipRole.ORG_ADMIN)
 
 
 def test_reval_ep08_service_identity(reval_stack):
     iam = reval_stack["iam"]
     org_mgr = reval_stack["org_mgr"]
-    org, _, _ = org_mgr.create_organization(name="Svc", slug="svc", owner_email="s@s.com", owner_name="S")
+    org, _, _ = org_mgr.create_organization(
+        name="Svc", slug="svc", owner_email="s@s.com", owner_name="S"
+    )
     svc, raw_key = iam.create_service_identity(org.org_id, "CI Worker", ["task:execute"])
     assert raw_key.startswith("atk_live_")
     authed = iam.authenticate_api_key(raw_key)
@@ -198,7 +210,9 @@ def test_reval_ep08_service_identity(reval_stack):
 def test_reval_ep09_agent_registration(reval_stack):
     gov = reval_stack["gov"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="AgReg", slug="agreg", owner_email="a@a.com", owner_name="A")
+    org, owner, _ = org_mgr.create_organization(
+        name="AgReg", slug="agreg", owner_email="a@a.com", owner_name="A"
+    )
     agent = gov.register_agent(
         caller_user_id=owner.user_id,
         org_id=org.org_id,
@@ -212,7 +226,9 @@ def test_reval_ep09_agent_registration(reval_stack):
 def test_reval_ep10_hierarchical_policy(reval_stack):
     gov = reval_stack["gov"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="Pol", slug="pol", owner_email="p@p.com", owner_name="P")
+    org, owner, _ = org_mgr.create_organization(
+        name="Pol", slug="pol", owner_email="p@p.com", owner_name="P"
+    )
     gov.set_policy(
         caller_user_id=owner.user_id,
         org_id=org.org_id,
@@ -227,7 +243,9 @@ def test_reval_ep10_hierarchical_policy(reval_stack):
 def test_reval_ep11_agent_execution_validation(reval_stack):
     gov = reval_stack["gov"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="ExVal", slug="exval", owner_email="x@x.com", owner_name="X")
+    org, owner, _ = org_mgr.create_organization(
+        name="ExVal", slug="exval", owner_email="x@x.com", owner_name="X"
+    )
     agent = gov.register_agent(
         caller_user_id=owner.user_id,
         org_id=org.org_id,
@@ -242,7 +260,9 @@ def test_reval_ep11_agent_execution_validation(reval_stack):
 def test_reval_ep12_agent_lifecycle(reval_stack):
     gov = reval_stack["gov"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="Life", slug="life", owner_email="l@l.com", owner_name="L")
+    org, owner, _ = org_mgr.create_organization(
+        name="Life", slug="life", owner_email="l@l.com", owner_name="L"
+    )
     agent = gov.register_agent(
         caller_user_id=owner.user_id,
         org_id=org.org_id,
@@ -251,7 +271,7 @@ def test_reval_ep12_agent_lifecycle(reval_stack):
         allowed_tools=["tool1"],
     )
     gov.update_agent_status(owner.user_id, agent.agent_id, AgentLifecycleStatus.SUSPENDED)
-    with pytest.raises(Exception):
+    with pytest.raises(AgentSuspendedError):
         gov.validate_agent_execution(agent.agent_id, tool_name="tool1")
 
 
@@ -264,7 +284,9 @@ def test_reval_ep13_agent_self_elevation(reval_stack):
 def test_reval_ep14_connector_registration(reval_stack):
     hub = reval_stack["hub"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="Conn", slug="conn", owner_email="c@c.com", owner_name="C")
+    org, owner, _ = org_mgr.create_organization(
+        name="Conn", slug="conn", owner_email="c@c.com", owner_name="C"
+    )
     conn = hub.register_connector(
         caller_user_id=owner.user_id,
         org_id=org.org_id,
@@ -286,7 +308,9 @@ def test_reval_ep15_secret_vault(reval_stack):
 def test_reval_ep16_connection_verification(reval_stack):
     hub = reval_stack["hub"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="Ver", slug="ver", owner_email="v@v.com", owner_name="V")
+    org, owner, _ = org_mgr.create_organization(
+        name="Ver", slug="ver", owner_email="v@v.com", owner_name="V"
+    )
     conn = hub.register_connector(
         caller_user_id=owner.user_id,
         org_id=org.org_id,
@@ -303,7 +327,9 @@ def test_reval_ep16_connection_verification(reval_stack):
 def test_reval_ep17_webhook_verification(reval_stack):
     hub = reval_stack["hub"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="Wh", slug="wh", owner_email="w@w.com", owner_name="W")
+    org, owner, _ = org_mgr.create_organization(
+        name="Wh", slug="wh", owner_email="w@w.com", owner_name="W"
+    )
     conn = hub.register_connector(
         caller_user_id=owner.user_id,
         org_id=org.org_id,
@@ -321,7 +347,9 @@ def test_reval_ep17_webhook_verification(reval_stack):
 def test_reval_ep18_rate_limiting(reval_stack):
     hub = reval_stack["hub"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="Rate", slug="rate", owner_email="r@r.com", owner_name="R")
+    org, owner, _ = org_mgr.create_organization(
+        name="Rate", slug="rate", owner_email="r@r.com", owner_name="R"
+    )
     conn = hub.register_connector(
         caller_user_id=owner.user_id,
         org_id=org.org_id,
@@ -382,7 +410,9 @@ def test_reval_ep22_cost_attribution(reval_stack):
 def test_reval_ep23_spending_caps(reval_stack):
     cost = reval_stack["cost"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="Sp", slug="sp", owner_email="s@s.com", owner_name="S")
+    org, owner, _ = org_mgr.create_organization(
+        name="Sp", slug="sp", owner_email="s@s.com", owner_name="S"
+    )
     dept = org_mgr.create_department(org.org_id, "D1", "d1")
     cost.set_department_budget(owner.user_id, org.org_id, dept.department_id, allocated_usd=1.0)
     with pytest.raises(BudgetCapExceededError):
@@ -400,7 +430,9 @@ def test_reval_ep23_spending_caps(reval_stack):
 def test_reval_ep24_operational_analytics(reval_stack):
     analytics = reval_stack["analytics"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="An", slug="an", owner_email="a@a.com", owner_name="A")
+    org, owner, _ = org_mgr.create_organization(
+        name="An", slug="an", owner_email="a@a.com", owner_name="A"
+    )
     metrics = analytics.get_operational_metrics(owner.user_id, org.org_id)
     assert metrics["compliance_score"] == 100.0
 
@@ -408,7 +440,9 @@ def test_reval_ep24_operational_analytics(reval_stack):
 def test_reval_ep25_compliance_export(reval_stack):
     audit = reval_stack["audit"]
     org_mgr = reval_stack["org_mgr"]
-    org, owner, _ = org_mgr.create_organization(name="Comp", slug="comp", owner_email="c@c.com", owner_name="C")
+    org, owner, _ = org_mgr.create_organization(
+        name="Comp", slug="comp", owner_email="c@c.com", owner_name="C"
+    )
     audit.append_entry(org.org_id, "SOC2", owner.user_id, "USER", "soc2.test")
     trail = audit.export_audit_trail(owner.user_id, org.org_id)
     assert len(trail) == 1
@@ -438,17 +472,30 @@ def test_reval_ep28_disaster_recovery(reval_stack):
 
 def test_reval_ep29_e2e_lifecycle(reval_stack):
     org_mgr = reval_stack["org_mgr"]
-    iam = reval_stack["iam"]
     gov = reval_stack["gov"]
     hub = reval_stack["hub"]
     audit = reval_stack["audit"]
     cost = reval_stack["cost"]
 
-    org, owner, _ = org_mgr.create_organization(name="E2E", slug="e2e", owner_email="e@e.com", owner_name="E")
+    org, owner, _ = org_mgr.create_organization(
+        name="E2E", slug="e2e", owner_email="e@e.com", owner_name="E"
+    )
     dept = org_mgr.create_department(org.org_id, "Dept", "dept")
-    user, _ = org_mgr.add_member(org.org_id, email="u@e.com", role=MembershipRole.OPERATOR, department_id=dept.department_id)
-    agent = gov.register_agent(owner.user_id, org.org_id, "Bot", user.user_id, allowed_tools=["slack"])
-    conn = hub.register_connector(owner.user_id, org.org_id, "Slk", ConnectorType.COMMUNICATION, "slack", {}, {"bot_token": "xoxb-123"})
+    user, _ = org_mgr.add_member(
+        org.org_id, email="u@e.com", role=MembershipRole.OPERATOR, department_id=dept.department_id
+    )
+    agent = gov.register_agent(
+        owner.user_id, org.org_id, "Bot", user.user_id, allowed_tools=["slack"]
+    )
+    conn = hub.register_connector(
+        owner.user_id,
+        org.org_id,
+        "Slk",
+        ConnectorType.COMMUNICATION,
+        "slack",
+        {},
+        {"bot_token": "xoxb-123"},
+    )
     hub.verify_connector(owner.user_id, conn.connector_id)
     allowed, _, _ = gov.validate_agent_execution(agent.agent_id, tool_name="slack")
     assert allowed is True

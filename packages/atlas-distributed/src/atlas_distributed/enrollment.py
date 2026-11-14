@@ -67,7 +67,9 @@ class WorkerEnrollmentAuthority:
             token_hash = hash_secret(token_secret)
 
             now = datetime.now(UTC)
-            expires_at = (now + ttl) if ttl is not None else (now + timedelta(hours=expires_in_hours))
+            expires_at = (
+                (now + ttl) if ttl is not None else (now + timedelta(hours=expires_in_hours))
+            )
 
             token_record = EnrollmentToken(
                 token_id=token_id,
@@ -166,7 +168,9 @@ class WorkerEnrollmentAuthority:
 
             provided_hash = hash_secret(auth_token)
             if not hmac.compare_digest(worker.auth_token_hash, provided_hash):
-                raise WorkerAuthenticationError(f"Invalid authentication credentials for worker '{worker_id}'.")
+                raise WorkerAuthenticationError(
+                    f"Invalid authentication credentials for worker '{worker_id}'."
+                )
 
             return worker
 

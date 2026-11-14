@@ -8,7 +8,12 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from atlas_enterprise.iam import EnterpriseIAMEngine
+from atlas_enterprise.iam import (
+    AgentSelfElevationError as _IAMAgentSelfElevationError,
+)
+from atlas_enterprise.iam import (
+    EnterpriseIAMEngine,
+)
 from atlas_enterprise.models import (
     AgentLifecycleStatus,
     EnterpriseAgentRecord,
@@ -40,7 +45,7 @@ class AgentCapabilityViolationError(EnterpriseAgentGovernanceError):
     """Raised when an agent attempts to execute an unallowlisted or forbidden tool/skill."""
 
 
-class AgentSelfElevationError(EnterpriseAgentGovernanceError):
+class AgentSelfElevationError(_IAMAgentSelfElevationError, EnterpriseAgentGovernanceError):
     """Raised when an autonomous agent attempts to elevate privileges or modify security policy."""
 
 
@@ -87,9 +92,11 @@ class EnterpriseAgentGovernanceManager:
         self,
         org_manager: EnterpriseOrganizationManager,
         iam_engine: EnterpriseIAMEngine,
+        storage: Any = None,
     ) -> None:
         self.org_manager = org_manager
         self.iam_engine = iam_engine
+        self.storage = storage or getattr(org_manager, "storage", None)
         self._lock = threading.RLock()
         self._agents: dict[str, EnterpriseAgentRecord] = {}
         self._policies: dict[str, EnterprisePolicyEnvelope] = {}  # scope_id -> Envelope
@@ -157,6 +164,9 @@ class EnterpriseAgentGovernanceManager:
             )
 
             self._agents[agent_id] = agent
+            self.org_manager.register_agent_tenancy(agent_id, org_id)
+            if self.storage:
+                self.storage.save_agent(agent)
             logger.info("Registered enterprise agent %s (%s) in org %s", name, agent_id, org_id)
             return agent
 
@@ -164,6 +174,11 @@ class EnterpriseAgentGovernanceManager:
         """Retrieve agent metadata, asserting tenant boundary."""
         with self._lock:
             agent = self._agents.get(agent_id)
+            if not agent and self.storage:
+                agent = self.storage.get_agent(agent_id)
+                if agent:
+                    self._agents[agent.agent_id] = agent
+                    self.org_manager.register_agent_tenancy(agent.agent_id, agent.org_id)
             if not agent:
                 raise AgentNotFoundError(f"Agent '{agent_id}' not found")
 
@@ -221,6 +236,9 @@ class EnterpriseAgentGovernanceManager:
     ) -> EnterprisePolicyEnvelope:
         """Set a governance policy envelope at Organization, Department, or Team scope."""
         with self._lock:
+            # Self-Elevation Guard: Non-human identities (agents, workers, service identities) cannot modify policies
+            self.check_agent_self_elevation(caller_user_id, "policy:update")
+
             self.iam_engine.assert_permission(
                 user_id=caller_user_id,
                 org_id=org_id,
@@ -229,7 +247,7 @@ class EnterpriseAgentGovernanceManager:
 
             # Enforce hierarchy bounds: department or team policy cannot relax organization rules
             if scope_type in (GovernanceScopeType.DEPARTMENT, GovernanceScopeType.TEAM):
-                org_policy = self._policies.get(org_id)
+                org_policy = self.get_policy(org_id)
                 if org_policy:
                     # Check spending cap: cannot exceed organization ceiling
                     if max_cost_per_task_usd > org_policy.max_cost_per_task_usd:
@@ -254,8 +272,20 @@ class EnterpriseAgentGovernanceManager:
             )
 
             self._policies[scope_id] = envelope
+            if self.storage:
+                self.storage.save_policy(envelope)
             logger.info("Configured policy %s for %s (%s)", policy_id, scope_type, scope_id)
             return envelope
+
+    def get_policy(self, scope_id: str) -> EnterprisePolicyEnvelope | None:
+        """Retrieve policy envelope by scope ID."""
+        with self._lock:
+            pol = self._policies.get(scope_id)
+            if not pol and self.storage:
+                pol = self.storage.get_policy(scope_id)
+                if pol:
+                    self._policies[pol.scope_id] = pol
+            return pol
 
     def get_effective_policy(
         self,
@@ -272,7 +302,7 @@ class EnterpriseAgentGovernanceManager:
             )
 
             # 1. Organization level (authoritative baseline)
-            org_pol = self._policies.get(org_id)
+            org_pol = self.get_policy(org_id)
             if org_pol and org_pol.is_active:
                 effective.disallowed_tools.update(org_pol.disallowed_tools)
                 effective.disallowed_skills.update(org_pol.disallowed_skills)
@@ -288,7 +318,7 @@ class EnterpriseAgentGovernanceManager:
 
             # 2. Department level (can add restrictions, cannot relax org constraints)
             if department_id:
-                dept_pol = self._policies.get(department_id)
+                dept_pol = self.get_policy(department_id)
                 if dept_pol and dept_pol.is_active:
                     effective.disallowed_tools.update(dept_pol.disallowed_tools)
                     effective.disallowed_skills.update(dept_pol.disallowed_skills)
@@ -304,7 +334,7 @@ class EnterpriseAgentGovernanceManager:
 
             # 3. Team level (can further restrict, cannot relax parent constraints)
             if team_id:
-                team_pol = self._policies.get(team_id)
+                team_pol = self.get_policy(team_id)
                 if team_pol and team_pol.is_active:
                     effective.disallowed_tools.update(team_pol.disallowed_tools)
                     effective.disallowed_skills.update(team_pol.disallowed_skills)

@@ -98,7 +98,10 @@ def test_abac_dynamic_context_evaluation(
 ) -> None:
     """Verify ABAC evaluates client IP allowlists, operating hours, and security clearance."""
     org, _, _ = org_manager.create_organization(
-        name="Defense Tech", slug="deftech", owner_email="admin@deftech.com", owner_name="Defense Admin"
+        name="Defense Tech",
+        slug="deftech",
+        owner_email="admin@deftech.com",
+        owner_name="Defense Admin",
     )
     user = org_manager.provision_user("usr_sec", "sec@deftech.com", "Sec Officer")
     org_manager.add_member(org.org_id, user.user_id, MembershipRole.SECURITY_ADMIN)
@@ -276,7 +279,10 @@ def test_service_identity_and_cryptographic_api_keys(
 ) -> None:
     """Verify non-human service identity provisioning, raw key masking, and rotation."""
     org, _, _ = org_manager.create_organization(
-        name="CloudOps", slug="cloudops", owner_email="admin@cloudops.com", owner_name="CloudOps Admin"
+        name="CloudOps",
+        slug="cloudops",
+        owner_email="admin@cloudops.com",
+        owner_name="CloudOps Admin",
     )
 
     # Create service identity
@@ -320,7 +326,10 @@ def test_sso_and_scim_lifecycle(
 ) -> None:
     """Verify OIDC/SAML federated authentication and SCIM directory sync provisioning."""
     org, _, _ = org_manager.create_organization(
-        name="Enterprise Co", slug="enterpriseco", owner_email="admin@enterpriseco.com", owner_name="Enterprise Admin"
+        name="Enterprise Co",
+        slug="enterpriseco",
+        owner_email="admin@enterpriseco.com",
+        owner_name="Enterprise Admin",
     )
 
     # Register OIDC IdP with claim-to-role mappings

@@ -106,7 +106,9 @@ def detect_capabilities(drivers: list[str] | None = None) -> WorkerCapabilities:
     session = detect_session_type(plat)
     hardware = detect_hardware()
 
-    default_drivers = ["bash", "playwright"] if plat != WorkerPlatform.WINDOWS else ["cmd", "playwright"]
+    default_drivers = (
+        ["bash", "playwright"] if plat != WorkerPlatform.WINDOWS else ["cmd", "playwright"]
+    )
     active_drivers = drivers or default_drivers
 
     # If on Windows interactive session with UI automation tools, advertise desktop
@@ -268,12 +270,14 @@ class EventRingBuffer:
     def append(self, event_type: str, payload: BaseModel) -> None:
         """Add event to ring buffer marked as unacknowledged."""
         with self._lock:
-            self._buffer.append({
-                "type": event_type,
-                "payload": payload,
-                "acknowledged": False,
-                "timestamp": datetime.now(UTC),
-            })
+            self._buffer.append(
+                {
+                    "type": event_type,
+                    "payload": payload,
+                    "acknowledged": False,
+                    "timestamp": datetime.now(UTC),
+                }
+            )
 
     def get_unacknowledged(self) -> list[dict[str, Any]]:
         """Return list of unacknowledged events in arrival order."""
@@ -359,7 +363,9 @@ class WorkerAgent:
         if isinstance(self.transport, HttpControlPlaneTransport):
             self.transport.auth_token = response.auth_token
 
-        logger.info("Worker %s successfully enrolled in tenant %s", response.worker_id, response.tenant_id)
+        logger.info(
+            "Worker %s successfully enrolled in tenant %s", response.worker_id, response.tenant_id
+        )
         return response
 
     async def send_heartbeat(self) -> bool:
@@ -397,7 +403,9 @@ class WorkerAgent:
             await self.transport.send_heartbeat(heartbeat)
             # Reconnection check: if we were previously disconnected, replay buffer
             if not self.connected:
-                logger.info("Reconnection detected on worker %s; replaying buffered events", self.worker_id)
+                logger.info(
+                    "Reconnection detected on worker %s; replaying buffered events", self.worker_id
+                )
                 await self.replay_buffered_events()
             self.connected = True
             return True
@@ -435,7 +443,9 @@ class WorkerAgent:
             self.connected = False
             self.buffer.append("progress", progress)
 
-    def cancel_assignment(self, assignment_id: str, reason: str = "Cancellation directive received") -> None:
+    def cancel_assignment(
+        self, assignment_id: str, reason: str = "Cancellation directive received"
+    ) -> None:
         """Signal cancellation for an active or scheduled assignment."""
         with self._lock:
             self._cancelled_assignment_ids.add(assignment_id)
@@ -495,7 +505,9 @@ class WorkerAgent:
             else:
                 # 4. Resolve driver and execute action
                 driver_name = assignment.parameters.get("driver") or (
-                    assignment.required_capabilities[0] if assignment.required_capabilities else None
+                    assignment.required_capabilities[0]
+                    if assignment.required_capabilities
+                    else None
                 )
                 driver = self.get_driver(driver_name) if driver_name else None
 

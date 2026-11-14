@@ -9,6 +9,7 @@ Measures:
 
 import concurrent.futures
 import time
+
 from atlas_enterprise import (
     EnterpriseAuditLedger,
     EnterpriseIAMEngine,
@@ -40,6 +41,7 @@ def test_audit_perf_01_hash_chain_throughput_and_verification():
         )
     append_duration = time.perf_counter() - start_time
     append_ops_per_sec = count / append_duration
+    assert append_ops_per_sec > 0
 
     # Verify chain
     verify_start = time.perf_counter()

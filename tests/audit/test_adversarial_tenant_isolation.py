@@ -9,9 +9,7 @@ Tests boundary enforcement between distinct organizations:
 """
 
 import pytest
-from atlas_api.main import app
 from atlas_enterprise import (
-    ConnectorStatus,
     ConnectorType,
     CrossTenantAccessViolationError,
     EnterpriseAgentGovernanceManager,
@@ -22,10 +20,8 @@ from atlas_enterprise import (
     IntegrationHubManager,
     IntegrationSecretStore,
     MembershipRole,
-    PermissionAction,
     UnauthorizedError,
 )
-from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -76,10 +72,10 @@ def multi_tenant_fixture():
 
 
 def test_audit_iso_01_cross_tenant_connector_invocation_vulnerability(multi_tenant_fixture):
-    """Verify vulnerability: invoke_connector does NOT check caller tenant or permissions.
+    """Verify that invoke_connector strictly checks caller tenant and permissions.
 
-    A user or agent from Org B can invoke an active connector owned by Org A
-    using Org A's credentials/secrets!
+    A user or agent from Org B CANNOT invoke an active connector owned by Org A.
+    Only authorized members of Org A can invoke it.
     """
     hub = multi_tenant_fixture["hub"]
     org_a = multi_tenant_fixture["org_a"]
@@ -99,11 +95,18 @@ def test_audit_iso_01_cross_tenant_connector_invocation_vulnerability(multi_tena
     verified, _ = hub.verify_connector(owner_a.user_id, conn_a.connector_id)
     assert verified is True
 
-    # User B from Org B invokes Org A's connector!
-    # Because invoke_connector does not verify that caller belongs to conn_a.org_id,
-    # User B successfully invokes Org A's connector!
+    # User B from Org B attempts to invoke Org A's connector -> strictly blocked!
+    with pytest.raises(CrossTenantAccessViolationError):
+        hub.invoke_connector(
+            caller_id=user_b.user_id,
+            connector_id=conn_a.connector_id,
+            action_name="query_account",
+            parameters={"account_id": "001_SECRET_ALPHA"},
+        )
+
+    # Owner A from Org A invokes Org A's connector -> succeeds!
     result = hub.invoke_connector(
-        caller_id=user_b.user_id,
+        caller_id=owner_a.user_id,
         connector_id=conn_a.connector_id,
         action_name="query_account",
         parameters={"account_id": "001_SECRET_ALPHA"},
@@ -136,7 +139,6 @@ def test_audit_iso_03_cross_tenant_audit_query_blocked(multi_tenant_fixture):
     """Verify that audit querying enforces tenant boundaries when caller is from another org."""
     audit = multi_tenant_fixture["audit"]
     org_a = multi_tenant_fixture["org_a"]
-    org_b = multi_tenant_fixture["org_b"]
     owner_a = multi_tenant_fixture["owner_a"]
     user_b = multi_tenant_fixture["user_b"]
 
@@ -166,13 +168,14 @@ def test_audit_iso_04_cross_tenant_budget_leakage_and_tampering(multi_tenant_fix
         department_id=dept_a.department_id,
         allocated_usd=25000.0,
     )
+    assert budget_a.allocated_usd == 25000.0
 
     # Org B trying to inspect Org A's budget raises CrossTenantAccessViolationError
     with pytest.raises(CrossTenantAccessViolationError):
         cost.get_department_budget(org_id=org_b.org_id, department_id=dept_a.department_id)
 
-    # Org B owner trying to set Org A's budget raises CrossTenantAccessViolationError / EnterpriseCostError
-    with pytest.raises(Exception):
+    # Org B owner trying to set Org A's budget raises CrossTenantAccessViolationError
+    with pytest.raises(CrossTenantAccessViolationError):
         cost.set_department_budget(
             caller_user_id=owner_b.user_id,
             org_id=org_b.org_id,

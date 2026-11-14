@@ -114,7 +114,9 @@ def test_windows_session_zero_protection(authority):
     with pytest.raises(NoEligibleWorkerError) as exc_info:
         scheduler.schedule_task(interactive_task)
 
-    assert "Session 0 rejected" in str(exc_info.value) or "lacks interactive desktop" in str(exc_info.value)
+    assert "Session 0 rejected" in str(exc_info.value) or "lacks interactive desktop" in str(
+        exc_info.value
+    )
 
     # Now enroll Worker 2: Windows Interactive User Session with desktop capability
     enroll_worker(

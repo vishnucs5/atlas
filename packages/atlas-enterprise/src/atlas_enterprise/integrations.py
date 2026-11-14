@@ -2,7 +2,9 @@
 
 import hashlib
 import hmac
+import json
 import logging
+import os
 import threading
 import time
 import uuid
@@ -10,7 +12,9 @@ from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from typing import Any
 
-from atlas_enterprise.iam import EnterpriseIAMEngine
+from cryptography.fernet import Fernet
+
+from atlas_enterprise.iam import EnterpriseIAMEngine, UnauthorizedError
 from atlas_enterprise.models import (
     ConnectorStatus,
     ConnectorType,
@@ -50,28 +54,49 @@ class RateLimitExceededError(EnterpriseIntegrationError):
 
 
 class IntegrationSecretStore:
-    """Isolated, multi-tenant secret vault for third-party credentials.
+    """Isolated, multi-tenant secret vault with AES-128/Fernet authenticated encryption at rest.
 
-    Ensures secrets are never exposed in logs, prompts, or standard API outputs.
+    Ensures secrets are encrypted in-memory and in persistent storage, and never exposed in logs or prompts.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, master_key: bytes | None = None, storage: Any = None) -> None:
+        self.storage = storage
         self._lock = threading.RLock()
-        self._secrets: dict[str, dict[str, str]] = {}  # secret_id -> dict of secrets
+        self._secrets: dict[str, bytes] = {}  # secret_id -> encrypted ciphertext bytes
         self._secret_orgs: dict[str, str] = {}  # secret_id -> org_id
 
+        # Master encryption key derivation / loading
+        env_key = os.getenv("ATLAS_VAULT_MASTER_KEY")
+        if env_key:
+            self._fernet = Fernet(env_key.encode() if isinstance(env_key, str) else env_key)
+        elif master_key:
+            self._fernet = Fernet(master_key)
+        else:
+            self._fernet = Fernet(Fernet.generate_key())
+
     def store_secret(self, org_id: str, secrets: dict[str, str]) -> str:
-        """Store secrets securely, returning an opaque secret reference ID."""
+        """Store secrets securely under authenticated encryption, returning an opaque secret reference ID."""
         with self._lock:
             secret_id = f"sec_{uuid.uuid4().hex[:12]}"
-            self._secrets[secret_id] = dict(secrets)
+            payload_bytes = json.dumps(secrets).encode("utf-8")
+            ciphertext = self._fernet.encrypt(payload_bytes)
+            self._secrets[secret_id] = ciphertext
             self._secret_orgs[secret_id] = org_id
+            if self.storage:
+                self.storage.save_vault_secret(secret_id, org_id, ciphertext.decode("latin1"))
             return secret_id
 
     def get_secret(self, org_id: str, secret_id: str) -> dict[str, str]:
-        """Retrieve secrets verifying tenant boundary."""
+        """Retrieve secrets verifying tenant boundary and decrypting ciphertext."""
         with self._lock:
             owner_org = self._secret_orgs.get(secret_id)
+            if not owner_org and self.storage:
+                persisted = self.storage.get_vault_secret(secret_id)
+                if persisted:
+                    owner_org, enc_data = persisted
+                    self._secret_orgs[secret_id] = owner_org
+                    self._secrets[secret_id] = enc_data.encode("latin1")
+
             if not owner_org:
                 raise EnterpriseIntegrationError(f"Secret '{secret_id}' not found in vault")
 
@@ -80,7 +105,9 @@ class IntegrationSecretStore:
                     f"Cross-tenant secret access violation: caller {org_id} != secret owner {owner_org}"
                 )
 
-            return dict(self._secrets[secret_id])
+            ciphertext = self._secrets[secret_id]
+            plaintext = self._fernet.decrypt(ciphertext)
+            return json.loads(plaintext.decode("utf-8"))
 
     def delete_secret(self, org_id: str, secret_id: str) -> None:
         """Permanently delete vaulted secret."""
@@ -250,23 +277,28 @@ CONNECTOR_REGISTRY: dict[str, type[BaseConnector]] = {
 
 
 class TokenBucketRateLimiter:
-    """In-memory rate limiter enforcing RPM bounds on integration endpoints."""
+    """In-memory rate limiter enforcing RPM bounds using continuous token replenishment (O(1))."""
 
     def __init__(self, rpm: int) -> None:
         self.rpm = rpm
+        self.capacity = float(rpm)
+        self.tokens = float(rpm)
+        self.refill_rate = float(rpm) / 60.0  # tokens per second
+        self.last_refill = time.time()
         self._lock = threading.Lock()
-        self._timestamps: list[float] = []
 
     def acquire(self) -> bool:
-        """Attempt to acquire execution token. Returns True if within rate limit, False otherwise."""
+        """Attempt to acquire execution token with continuous O(1) replenishment."""
         with self._lock:
             now = time.time()
-            # Prune timestamps older than 60 seconds
-            self._timestamps = [t for t in self._timestamps if now - t < 60.0]
-            if len(self._timestamps) >= self.rpm:
-                return False
-            self._timestamps.append(now)
-            return True
+            elapsed = now - self.last_refill
+            self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)
+            self.last_refill = now
+
+            if self.tokens >= 1.0:
+                self.tokens -= 1.0
+                return True
+            return False
 
 
 class IntegrationHubManager:
@@ -277,10 +309,12 @@ class IntegrationHubManager:
         org_manager: EnterpriseOrganizationManager,
         iam_engine: EnterpriseIAMEngine,
         secret_store: IntegrationSecretStore | None = None,
+        storage: Any = None,
     ) -> None:
         self.org_manager = org_manager
         self.iam_engine = iam_engine
-        self.secret_store = secret_store or IntegrationSecretStore()
+        self.storage = storage or getattr(org_manager, "storage", None)
+        self.secret_store = secret_store or IntegrationSecretStore(storage=self.storage)
         self._lock = threading.RLock()
         self._connectors: dict[str, IntegrationConnectorRecord] = {}
         self._rate_limiters: dict[str, TokenBucketRateLimiter] = {}
@@ -325,6 +359,9 @@ class IntegrationHubManager:
 
             self._connectors[connector_id] = record
             self._rate_limiters[connector_id] = TokenBucketRateLimiter(rpm=rate_limit_rpm)
+            if self.storage:
+                self.storage.save_connector(record)
+
             logger.info("Registered connector %s (%s) for org %s", name, connector_id, org_id)
             return record
 
@@ -334,6 +371,13 @@ class IntegrationHubManager:
         """Retrieve connector record, asserting tenant boundary."""
         with self._lock:
             record = self._connectors.get(connector_id)
+            if not record and self.storage:
+                record = self.storage.get_connector(connector_id)
+                if record:
+                    self._connectors[record.connector_id] = record
+                    self._rate_limiters[record.connector_id] = TokenBucketRateLimiter(
+                        rpm=record.rate_limit_rpm
+                    )
             if not record:
                 raise ConnectorNotFoundError(f"Connector '{connector_id}' not found")
 
@@ -343,6 +387,20 @@ class IntegrationHubManager:
                 )
 
             return record
+
+    def list_connectors(self, org_id: str | None = None) -> list[IntegrationConnectorRecord]:
+        """List registered connectors, optionally filtered by organization ID."""
+        with self._lock:
+            if self.storage:
+                for c in self.storage.list_connectors(org_id):
+                    self._connectors[c.connector_id] = c
+                    if c.connector_id not in self._rate_limiters:
+                        self._rate_limiters[c.connector_id] = TokenBucketRateLimiter(
+                            rpm=c.rate_limit_rpm
+                        )
+            if org_id:
+                return [c for c in self._connectors.values() if c.org_id == org_id]
+            return list(self._connectors.values())
 
     def verify_connector(self, caller_user_id: str, connector_id: str) -> tuple[bool, str | None]:
         """Perform deterministic connection verification handshake before activation."""
@@ -365,10 +423,14 @@ class IntegrationHubManager:
             if success:
                 record.status = ConnectorStatus.ACTIVE
                 record.last_verified_at = datetime.now(UTC)
+                if self.storage:
+                    self.storage.save_connector(record)
                 logger.info("Connector %s verified successfully and is now ACTIVE", connector_id)
                 return True, None
             else:
                 record.status = ConnectorStatus.FAILED
+                if self.storage:
+                    self.storage.save_connector(record)
                 logger.warning("Connector %s verification failed: %s", connector_id, reason)
                 return False, reason
 
@@ -379,7 +441,7 @@ class IntegrationHubManager:
         action_name: str,
         parameters: dict[str, Any],
     ) -> dict[str, Any]:
-        """Invoke an action on a verified connector with rate limit enforcement."""
+        """Invoke an action on a verified connector with tenant boundary and rate limit enforcement."""
         with self._lock:
             record = self.get_connector(connector_id)
 
@@ -387,6 +449,53 @@ class IntegrationHubManager:
             if record.status != ConnectorStatus.ACTIVE:
                 raise ConnectorUnverifiedError(
                     f"Connector '{connector_id}' is {record.status}; only ACTIVE connectors can be invoked"
+                )
+
+            # Tenant Boundary & Caller Authorization (SEC-02)
+            if caller_id.startswith("ag_"):
+                # Autonomous Agent caller
+                agent_org = self.org_manager.get_agent_org(caller_id)
+                if agent_org and agent_org != record.org_id:
+                    raise CrossTenantAccessViolationError(
+                        f"Cross-tenant connector access rejected: agent {caller_id} belongs to {agent_org}, connector belongs to {record.org_id}"
+                    )
+            elif caller_id.startswith("svc_"):
+                # Service identity caller
+                svc = self.iam_engine.get_service_identity(caller_id)
+                if svc.org_id != record.org_id:
+                    raise CrossTenantAccessViolationError(
+                        f"Cross-tenant connector access rejected: service identity {caller_id} belongs to {svc.org_id}, connector belongs to {record.org_id}"
+                    )
+                if (
+                    svc.scopes
+                    and "*" not in svc.scopes
+                    and "integration:invoke" not in svc.scopes
+                    and "workflow:execute" not in svc.scopes
+                ):
+                    raise UnauthorizedError(
+                        f"Service identity {caller_id} lacks 'integration:invoke' scope"
+                    )
+            else:
+                # Human user caller
+                membership = self.org_manager.get_membership(record.org_id, caller_id)
+                if not membership or not membership.is_active:
+                    user = None
+                    try:
+                        user = self.org_manager.get_user(caller_id)
+                    except Exception:
+                        user = None
+                    if user:
+                        raise CrossTenantAccessViolationError(
+                            f"Cross-tenant access violation: user {caller_id} does not belong to organization {record.org_id}"
+                        )
+                    raise UnauthorizedError(
+                        f"Caller {caller_id} has no active membership in {record.org_id}"
+                    )
+
+                self.iam_engine.assert_permission(
+                    user_id=caller_id,
+                    org_id=record.org_id,
+                    action=PermissionAction.INTEGRATION_INVOKE,
                 )
 
             # Rate limit check

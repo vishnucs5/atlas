@@ -1648,11 +1648,62 @@ Awaiting security audit request. Scanner tests for:
     }
 
     async function loadEnterpriseTenants() {
-      log('Refreshed enterprise tenant roster');
+      try {
+        const res = await api('/api/v1/enterprise/organizations');
+        if (res.ok) {
+          const orgs = await res.json();
+          const tbody = document.getElementById('tbl-ent-orgs-body');
+          if (orgs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No tenants registered.</td></tr>';
+          } else {
+            tbody.innerHTML = orgs.map(o => `
+              <tr>
+                <td><code>${escapeHtml(o.org_id)}</code></td>
+                <td><strong>${escapeHtml(o.name)}</strong></td>
+                <td><code>${escapeHtml(o.slug)}</code></td>
+                <td><span class="badge ${o.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">${escapeHtml(o.status)}</span></td>
+              </tr>
+            `).join('');
+          }
+          const statElem = document.getElementById('stat-ent-tenants');
+          if (statElem) statElem.textContent = orgs.length;
+          log('Refreshed ' + orgs.length + ' enterprise tenants');
+        } else {
+          log('Failed to fetch enterprise tenants: ' + res.status);
+        }
+      } catch (e) {
+        log('Error loading enterprise tenants: ' + e.message);
+      }
     }
 
     async function loadEnterpriseConnectors() {
-      log('Refreshed enterprise connectors roster');
+      try {
+        const res = await api('/api/v1/enterprise/connectors');
+        if (res.ok) {
+          const conns = await res.json();
+          const tbody = document.getElementById('tbl-ent-connectors-body');
+          if (conns.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No connectors registered.</td></tr>';
+          } else {
+            tbody.innerHTML = conns.map(c => `
+              <tr>
+                <td><code>${escapeHtml(c.connector_id)}</code></td>
+                <td><strong>${escapeHtml(c.provider)}</strong></td>
+                <td><span class="badge badge-purple">${escapeHtml(c.connector_type)}</span></td>
+                <td><span class="badge ${c.status === 'ACTIVE' ? 'badge-success' : (c.status === 'UNVERIFIED' ? 'badge-warning' : 'badge-danger')}">${escapeHtml(c.status)}</span></td>
+                <td>${escapeHtml(String(c.rate_limit_rpm))} RPM</td>
+              </tr>
+            `).join('');
+          }
+          const statElem = document.getElementById('stat-ent-connectors');
+          if (statElem) statElem.textContent = conns.length;
+          log('Refreshed ' + conns.length + ' enterprise connectors');
+        } else {
+          log('Failed to fetch enterprise connectors: ' + res.status);
+        }
+      } catch (e) {
+        log('Error loading enterprise connectors: ' + e.message);
+      }
     }
 
     async function verifyTenantAuditChain() {

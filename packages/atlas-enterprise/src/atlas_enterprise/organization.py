@@ -43,7 +43,8 @@ class DuplicateEntityError(EnterpriseOrganizationError):
 class EnterpriseOrganizationManager:
     """Manages enterprise organizations, multi-tenant boundaries, departments, and memberships."""
 
-    def __init__(self) -> None:
+    def __init__(self, storage: Any = None) -> None:
+        self.storage = storage
         self._orgs: dict[str, Organization] = {}
         self._org_slugs: dict[str, str] = {}  # slug -> org_id
         self._departments: dict[str, Department] = {}  # dept_id -> Department
@@ -51,7 +52,40 @@ class EnterpriseOrganizationManager:
         self._projects: dict[str, Project] = {}  # proj_id -> Project
         self._users: dict[str, User] = {}  # user_id -> User
         self._memberships: dict[str, OrganizationMembership] = {}  # (org_id, user_id) -> Membership
+        self._agent_orgs: dict[str, str] = {}  # agent_id -> org_id
         self._lock = threading.RLock()
+
+        if self.storage:
+            self._load_from_storage()
+
+    def _load_from_storage(self) -> None:
+        """Load persisted organizations, departments, users, and memberships into memory."""
+        try:
+            persisted_orgs = self.storage.list_organizations()
+            for org in persisted_orgs:
+                self._orgs[org.org_id] = org
+                self._org_slugs[org.slug] = org.org_id
+                depts = self.storage.list_departments(org.org_id)
+                for d in depts:
+                    self._departments[d.department_id] = d
+                mems = self.storage.list_memberships(org.org_id)
+                for m in mems:
+                    self._memberships[f"{m.org_id}:{m.user_id}"] = m
+                    u = self.storage.get_user(m.user_id)
+                    if u:
+                        self._users[u.user_id] = u
+        except Exception as e:
+            logger.warning("Error preloading enterprise organization state: %s", e)
+
+    def register_agent_tenancy(self, agent_id: str, org_id: str) -> None:
+        """Register the authoritative tenant ownership for an autonomous agent."""
+        with self._lock:
+            self._agent_orgs[agent_id] = org_id
+
+    def get_agent_org(self, agent_id: str) -> str | None:
+        """Retrieve the owning organization identifier for an autonomous agent."""
+        with self._lock:
+            return self._agent_orgs.get(agent_id)
 
     def create_organization(
         self,
@@ -102,24 +136,46 @@ class EnterpriseOrganizationManager:
             )
             self._memberships[f"{org_id}:{user_id}"] = membership
 
+            if self.storage:
+                self.storage.save_organization(org)
+                self.storage.save_user(user)
+                self.storage.save_membership(membership)
+
             logger.info("Provisioned organization %s (%s) with owner %s", name, org_id, owner_email)
             return org, user, membership
 
     def get_organization(self, org_id: str) -> Organization | None:
         """Retrieve organization by ID."""
         with self._lock:
-            return self._orgs.get(org_id)
+            org = self._orgs.get(org_id)
+            if not org and self.storage:
+                org = self.storage.get_organization(org_id)
+                if org:
+                    self._orgs[org.org_id] = org
+                    self._org_slugs[org.slug] = org.org_id
+            return org
+
+    def list_organizations(self) -> list[Organization]:
+        """List all registered organizations."""
+        with self._lock:
+            if self.storage:
+                for org in self.storage.list_organizations():
+                    self._orgs[org.org_id] = org
+                    self._org_slugs[org.slug] = org.org_id
+            return list(self._orgs.values())
 
     def suspend_organization(
         self, org_id: str, reason: str = "Administrative hold"
     ) -> Organization:
         """Suspend an organization, halting tenant task execution and login access."""
         with self._lock:
-            org = self._orgs.get(org_id)
+            org = self.get_organization(org_id)
             if not org:
                 raise OrganizationNotFoundError(f"Organization '{org_id}' not found")
             org.status = OrganizationStatus.SUSPENDED
             org.settings["suspension_reason"] = reason
+            if self.storage:
+                self.storage.save_organization(org)
             logger.warning("Suspended organization %s: %s", org_id, reason)
             return org
 
@@ -134,7 +190,7 @@ class EnterpriseOrganizationManager:
     ) -> Department:
         """Create a department / business unit within an organization."""
         with self._lock:
-            org = self._orgs.get(org_id)
+            org = self.get_organization(org_id)
             if not org:
                 raise OrganizationNotFoundError(f"Organization '{org_id}' not found")
 
@@ -149,6 +205,8 @@ class EnterpriseOrganizationManager:
                 settings=settings or {},
             )
             self._departments[dept_id] = dept
+            if self.storage:
+                self.storage.save_department(dept)
             logger.info("Created department %s (%s) in org %s", name, dept_id, org_id)
             return dept
 
@@ -182,6 +240,8 @@ class EnterpriseOrganizationManager:
                 name=name,
             )
             self._teams[team_id] = team
+            if self.storage:
+                self.storage.save_team(team)
             return team
 
     def create_project(
@@ -208,6 +268,8 @@ class EnterpriseOrganizationManager:
                 name=name,
             )
             self._projects[proj_id] = proj
+            if self.storage:
+                self.storage.save_project(project=proj)
             return proj
 
     def provision_user(
@@ -220,6 +282,8 @@ class EnterpriseOrganizationManager:
         with self._lock:
             uid = user_id or f"usr_{uuid.uuid4().hex[:12]}"
             user = self._users.get(uid)
+            if not user and self.storage:
+                user = self.storage.get_user(uid)
             if not user:
                 user = User(
                     user_id=uid,
@@ -233,12 +297,19 @@ class EnterpriseOrganizationManager:
                     user.email = email
                 if full_name:
                     user.full_name = full_name
+                self._users[uid] = user
+            if self.storage:
+                self.storage.save_user(user)
             return user
 
     def get_user(self, user_id: str) -> User:
         """Retrieve user identity by user_id."""
         with self._lock:
             user = self._users.get(user_id)
+            if not user and self.storage:
+                user = self.storage.get_user(user_id)
+                if user:
+                    self._users[user.user_id] = user
             if not user:
                 raise EnterpriseOrganizationError(f"User '{user_id}' not found")
             return user
@@ -255,7 +326,7 @@ class EnterpriseOrganizationManager:
     ) -> tuple[User, OrganizationMembership]:
         """Add or enroll a user into an organization and assign an RBAC role."""
         with self._lock:
-            org = self._orgs.get(org_id)
+            org = self.get_organization(org_id)
             if not org:
                 raise OrganizationNotFoundError(f"Organization '{org_id}' not found")
 
@@ -315,13 +386,20 @@ class EnterpriseOrganizationManager:
                 is_active=True,
             )
             self._memberships[mem_key] = membership
+            if self.storage:
+                self.storage.save_membership(membership)
             logger.info("Enrolled user %s in org %s with role %s", user.email, org_id, role.value)
             return user, membership
 
     def get_membership(self, org_id: str, user_id: str) -> OrganizationMembership | None:
         """Retrieve user membership within an organization."""
         with self._lock:
-            return self._memberships.get(f"{org_id}:{user_id}")
+            mem = self._memberships.get(f"{org_id}:{user_id}")
+            if not mem and self.storage:
+                mem = self.storage.get_membership(org_id, user_id)
+                if mem:
+                    self._memberships[f"{org_id}:{user_id}"] = mem
+            return mem
 
     def list_members(
         self,

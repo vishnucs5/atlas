@@ -85,6 +85,7 @@ from atlas_enterprise.organization import (
     EnterpriseOrganizationManager,
     OrganizationNotFoundError,
 )
+from atlas_enterprise.storage import EnterpriseStorage
 
 __version__ = "0.1.0"
 
@@ -126,6 +127,7 @@ __all__ = [
     "EnterpriseOrganizationError",
     "EnterpriseOrganizationManager",
     "EnterprisePolicyEnvelope",
+    "EnterpriseStorage",
     "GovernanceScopeType",
     "IdPType",
     "IdentityProviderConfig",

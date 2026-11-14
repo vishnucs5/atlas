@@ -20,13 +20,20 @@ from atlas_enterprise.models import (
     TenantOwnedResource,
     User,
 )
-from atlas_enterprise.organization import EnterpriseOrganizationManager
+from atlas_enterprise.organization import (
+    EnterpriseOrganizationManager,
+    OrganizationNotFoundError,
+)
 
 logger = logging.getLogger("atlas.enterprise.iam")
 
 
 class EnterpriseIAMError(Exception):
     """Base exception for enterprise IAM operations."""
+
+
+class AgentSelfElevationError(EnterpriseIAMError):
+    """Raised when an autonomous agent or non-human identity attempts to elevate privileges or modify security policy."""
 
 
 class UnauthorizedError(EnterpriseIAMError):
@@ -244,8 +251,13 @@ class ABACPolicyEngine:
 class EnterpriseIAMEngine:
     """Enterprise Identity & Access Management engine for ATLAS."""
 
-    def __init__(self, org_manager: EnterpriseOrganizationManager) -> None:
+    def __init__(
+        self,
+        org_manager: EnterpriseOrganizationManager,
+        storage: Any = None,
+    ) -> None:
         self.org_manager = org_manager
+        self.storage = storage or getattr(org_manager, "storage", None)
         self._lock = threading.RLock()
         self._sessions: dict[str, SessionToken] = {}
         self._user_sessions: dict[str, set[str]] = {}
@@ -266,13 +278,15 @@ class EnterpriseIAMEngine:
     ) -> SessionToken:
         """Create an authenticated session token for a user in an organization."""
         with self._lock:
-            user = self.org_manager.get_user(user_id)
-            if not user.is_active:
-                raise UnauthorizedError(f"User {user_id} is inactive or deprovisioned")
-
             org = self.org_manager.get_organization(org_id)
+            if not org:
+                raise OrganizationNotFoundError(f"Organization '{org_id}' not found")
             if org.status != "ACTIVE":
                 raise UnauthorizedError(f"Organization {org_id} is {org.status}")
+
+            user = self.org_manager.get_user(user_id)
+            if not user or not user.is_active:
+                raise UnauthorizedError(f"User {user_id} is inactive or deprovisioned")
 
             membership = self.org_manager.get_membership(org_id, user_id)
             if not membership or not membership.is_active:
@@ -298,6 +312,8 @@ class EnterpriseIAMEngine:
             if user_id not in self._user_sessions:
                 self._user_sessions[user_id] = set()
             self._user_sessions[user_id].add(token_id)
+            if self.storage:
+                self.storage.save_session(session)
 
             logger.info(
                 "Created session %s for user %s (role=%s, org=%s)",
@@ -312,6 +328,10 @@ class EnterpriseIAMEngine:
         """Validate active session token, verifying expiry and revocation status."""
         with self._lock:
             session = self._sessions.get(token_id)
+            if not session and self.storage:
+                session = self.storage.get_session(token_id)
+                if session:
+                    self._sessions[token_id] = session
             if not session:
                 raise UnauthorizedError("Invalid or unknown session token")
 
@@ -334,8 +354,13 @@ class EnterpriseIAMEngine:
         """Revoke a specific session token."""
         with self._lock:
             session = self._sessions.get(token_id)
+            if not session and self.storage:
+                session = self.storage.get_session(token_id)
             if session:
                 session.is_revoked = True
+                self._sessions[token_id] = session
+                if self.storage:
+                    self.storage.save_session(session)
                 logger.info("Revoked session %s for user %s", token_id, session.user_id)
 
     def revoke_user_sessions(self, user_id: str) -> int:
@@ -457,6 +482,17 @@ class EnterpriseIAMEngine:
     ) -> OrganizationMembership:
         """Assign or update a user's role while strictly enforcing privilege escalation guards."""
         with self._lock:
+            # Self-Elevation Guard: Non-human identities (agents, workers, service identities) are strictly forbidden
+            if (
+                caller_user_id.startswith("ag_")
+                or caller_user_id.startswith("worker_")
+                or caller_user_id.startswith("svc_")
+            ):
+                raise AgentSelfElevationError(
+                    f"Agent Self-Elevation Guard Triggered: Non-human identity '{caller_user_id}' "
+                    "attempted prohibited action 'role:assign'"
+                )
+
             caller_membership = self.org_manager.get_membership(org_id, caller_user_id)
             if not caller_membership or not caller_membership.is_active:
                 raise UnauthorizedError(
@@ -482,6 +518,8 @@ class EnterpriseIAMEngine:
                 role=new_role,
                 department_id=department_id,
             )
+            if self.storage:
+                self.storage.save_membership(membership)
             logger.info(
                 "Caller %s assigned role %s to %s in org %s",
                 caller_user_id,
@@ -494,6 +532,14 @@ class EnterpriseIAMEngine:
     # -------------------------------------------------------------------------
     # Service Identity & Cryptographic API Keys
     # -------------------------------------------------------------------------
+
+    def get_service_identity(self, service_id: str) -> ServiceIdentity:
+        """Retrieve service identity by ID."""
+        with self._lock:
+            svc = self._service_identities.get(service_id)
+            if not svc:
+                raise ServiceIdentityNotFoundError(f"Service identity {service_id} not found")
+            return svc
 
     def create_service_identity(
         self,
@@ -529,23 +575,44 @@ class EnterpriseIAMEngine:
 
             self._service_identities[service_id] = svc
             self._api_key_hashes[key_hash] = service_id
+            if self.storage:
+                self.storage.save_service_identity(svc)
             logger.info("Created service identity %s (%s) for org %s", service_id, name, org_id)
             return svc, raw_key
 
-    def authenticate_api_key(self, raw_api_key: str) -> ServiceIdentity:
-        """Authenticate an incoming raw API key against stored cryptographic hashes."""
+    def authenticate_api_key(
+        self, raw_api_key: str, required_scope: str | None = None
+    ) -> ServiceIdentity:
+        """Authenticate an incoming raw API key against stored cryptographic hashes, enforcing scopes."""
         with self._lock:
             key_hash = hashlib.sha256(raw_api_key.encode()).hexdigest()
             service_id = self._api_key_hashes.get(key_hash)
-            if not service_id:
+            svc: ServiceIdentity | None = None
+            if service_id:
+                svc = self._service_identities.get(service_id)
+            elif self.storage:
+                svc = self.storage.get_service_identity_by_hash(key_hash)
+                if svc:
+                    self._service_identities[svc.service_id] = svc
+                    self._api_key_hashes[key_hash] = svc.service_id
+
+            if not svc:
                 raise UnauthorizedError("Invalid API key")
 
-            svc = self._service_identities.get(service_id)
-            if not svc or not svc.is_active:
-                raise UnauthorizedError(f"Service identity {service_id} is inactive or revoked")
+            if not svc.is_active:
+                raise UnauthorizedError(f"Service identity {svc.service_id} is inactive or revoked")
 
             if svc.expires_at and datetime.now(UTC) > svc.expires_at:
-                raise UnauthorizedError(f"API key for service identity {service_id} has expired")
+                raise UnauthorizedError(
+                    f"API key for service identity {svc.service_id} has expired"
+                )
+
+            # Scope enforcement (Gap A)
+            if required_scope:
+                if svc.scopes and "*" not in svc.scopes and required_scope not in svc.scopes:
+                    raise UnauthorizedError(
+                        f"Service identity {svc.service_id} lacks required scope '{required_scope}'"
+                    )
 
             return svc
 

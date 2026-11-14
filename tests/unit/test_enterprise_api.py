@@ -11,7 +11,7 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
     """Verify enterprise organization provisioning, department scoping, member enrollment, and login."""
     client = TestClient(app)
 
-    # 1. Provision organization
+    # 1. Provision organization (returns initial owner session_token)
     org_res = client.post(
         "/api/v1/enterprise/organizations",
         json={
@@ -25,17 +25,27 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
     org_data = org_res.json()
     org_id = org_data["organization"]["org_id"]
     owner_id = org_data["owner"]["user_id"]
+    owner_token = org_data.get("session_token") or org_data.get("token_id")
+    assert owner_token is not None
     assert org_data["organization"]["name"] == "Nexus Dynamics"
 
+    auth_headers = {"Authorization": f"Bearer {owner_token}"}
+
     # 2. Get organization
-    get_res = client.get(f"/api/v1/enterprise/organizations/{org_id}")
+    get_res = client.get(f"/api/v1/enterprise/organizations/{org_id}", headers=auth_headers)
     assert get_res.status_code == 200
     assert get_res.json()["slug"] == "nexus"
+
+    # List organizations
+    list_orgs_res = client.get("/api/v1/enterprise/organizations", headers=auth_headers)
+    assert list_orgs_res.status_code == 200
+    assert len(list_orgs_res.json()) >= 1
 
     # 3. Create Department
     dept_res = client.post(
         f"/api/v1/enterprise/organizations/{org_id}/departments",
         json={"name": "Engineering", "slug": "eng", "budget_usd": 25000.0},
+        headers=auth_headers,
     )
     assert dept_res.status_code == 200
     dept_id = dept_res.json()["department_id"]
@@ -49,9 +59,17 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
             "role": "Developer",
             "department_id": dept_id,
         },
+        headers=auth_headers,
     )
     assert member_res.status_code == 200
     dev_user_id = member_res.json()["user"]["user_id"]
+
+    # List members
+    list_mem_res = client.get(
+        f"/api/v1/enterprise/organizations/{org_id}/members", headers=auth_headers
+    )
+    assert list_mem_res.status_code == 200
+    assert len(list_mem_res.json()) >= 2
 
     # 5. Login / Create Session
     login_res = client.post(
@@ -63,7 +81,9 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
     assert token_id.startswith("atk_sess_")
 
     # 6. Revoke Session
-    revoke_res = client.post(f"/api/v1/enterprise/iam/sessions/{token_id}/revoke")
+    revoke_res = client.post(
+        f"/api/v1/enterprise/iam/sessions/{token_id}/revoke", headers=auth_headers
+    )
     assert revoke_res.status_code == 200
     assert revoke_res.json()["status"] == "revoked"
 
@@ -73,8 +93,9 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
         json={
             "org_id": org_id,
             "name": "CI-Daemon",
-            "scopes": ["workflow:execute"],
+            "scopes": ["workflow:execute", "integration:invoke"],
         },
+        headers=auth_headers,
     )
     assert svc_res.status_code == 200
     assert svc_res.json()["api_key"].startswith("atk_live_")
@@ -90,6 +111,7 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
             "allowed_tools": ["filesystem", "python_runner"],
             "department_id": dept_id,
         },
+        headers=auth_headers,
     )
     assert ag_res.status_code == 200
     ag_id = ag_res.json()["agent_id"]
@@ -107,18 +129,27 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
             "config": {"default_channel": "#alerts"},
             "secrets": {"bot_token": "xoxb-test-token-valid"},
         },
+        headers=auth_headers,
     )
     assert conn_res.status_code == 200
     conn_id = conn_res.json()["connector_id"]
 
     verify_res = client.post(
-        f"/api/v1/enterprise/connectors/{conn_id}/verify?caller_user_id={owner_id}"
+        f"/api/v1/enterprise/connectors/{conn_id}/verify?caller_user_id={owner_id}",
+        headers=auth_headers,
     )
     assert verify_res.status_code == 200
     assert verify_res.json()["success"] is True
     assert verify_res.json()["status"] == "ACTIVE"
 
-    # 10. Webhook Ingestion with HMAC
+    # List connectors
+    list_conns_res = client.get(
+        f"/api/v1/enterprise/connectors?org_id={org_id}", headers=auth_headers
+    )
+    assert list_conns_res.status_code == 200
+    assert len(list_conns_res.json()) >= 1
+
+    # 10. Webhook Ingestion with HMAC (Public external webhook)
     wh_conn_res = client.post(
         "/api/v1/enterprise/connectors",
         json={
@@ -130,6 +161,7 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
             "config": {"url": "https://github.com"},
             "secrets": {"signing_secret": "github_secret_key_123"},
         },
+        headers=auth_headers,
     )
     wh_conn_id = wh_conn_res.json()["connector_id"]
 
@@ -154,6 +186,7 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
             "allocated_usd": 100.0,
             "alert_threshold_pct": 80.0,
         },
+        headers=auth_headers,
     )
     assert bgt_res.status_code == 200
 
@@ -168,18 +201,27 @@ def test_enterprise_api_organization_and_iam_flow() -> None:
             "completion_tokens": 2000,
             "compute_duration_ms": 1500,
         },
+        headers=auth_headers,
     )
     assert cost_res.status_code == 200
     assert cost_res.json()["record"]["total_cost_usd"] > 0.0
 
     # 12. Verify Audit Chain
-    audit_res = client.get(f"/api/v1/enterprise/audit/verify?org_id={org_id}")
+    audit_res = client.get(f"/api/v1/enterprise/audit/verify?org_id={org_id}", headers=auth_headers)
     assert audit_res.status_code == 200
     assert audit_res.json()["is_intact"] is True
 
+    # Export audit trail
+    export_res = client.get(
+        f"/api/v1/enterprise/audit/export?org_id={org_id}", headers=auth_headers
+    )
+    assert export_res.status_code == 200
+    assert len(export_res.json()) > 0
+
     # 13. Operational Analytics
     analytics_res = client.get(
-        f"/api/v1/enterprise/analytics?caller_user_id={owner_id}&org_id={org_id}"
+        f"/api/v1/enterprise/analytics?caller_user_id={owner_id}&org_id={org_id}",
+        headers=auth_headers,
     )
     assert analytics_res.status_code == 200
     assert analytics_res.json()["compliance_score"] == 100.0
