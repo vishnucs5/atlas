@@ -56,6 +56,7 @@ class WorkerEnrollmentAuthority:
         self,
         tenant_id: str = "default",
         expires_in_hours: float = 24.0,
+        ttl: timedelta | None = None,
         max_uses: int = 1,
         created_by: str = "admin",
     ) -> tuple[str, EnrollmentToken]:
@@ -66,7 +67,7 @@ class WorkerEnrollmentAuthority:
             token_hash = hash_secret(token_secret)
 
             now = datetime.now(UTC)
-            expires_at = now + timedelta(hours=expires_in_hours)
+            expires_at = (now + ttl) if ttl is not None else (now + timedelta(hours=expires_in_hours))
 
             token_record = EnrollmentToken(
                 token_id=token_id,

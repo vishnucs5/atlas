@@ -62,6 +62,7 @@ class DistributedRecoveryManager:
         self.heartbeat_timeout = timedelta(seconds=heartbeat_timeout_seconds)
 
         self._active_assignments: dict[str, AssignmentPayload] = {}
+        self._task_active_generations: dict[str, int] = {}
         self._recovery_states: dict[str, AssignmentRecoveryState] = {}
         self._lock = threading.Lock()
 
@@ -69,6 +70,7 @@ class DistributedRecoveryManager:
         """Track dispatched assignment for fault detection and lease monitoring."""
         with self._lock:
             self._active_assignments[assignment.assignment_id] = assignment
+            self._task_active_generations[assignment.task_id] = assignment.generation
 
     def validate_fencing_and_complete(self, result: AssignmentResult) -> bool:
         """Validate monotonic generation fencing before accepting assignment completion.
@@ -76,10 +78,24 @@ class DistributedRecoveryManager:
         Raises StaleWorkerError if completion generation does not match the active lease.
         """
         with self._lock:
+            # Check if task generation has advanced
+            active_gen = self._task_active_generations.get(result.task_id)
+            if active_gen is not None and result.generation < active_gen:
+                error_msg = (
+                    f"Stale worker completion rejected for task {result.task_id}: "
+                    f"result generation {result.generation} < active generation {active_gen}"
+                )
+                logger.error(error_msg)
+                raise StaleWorkerError(error_msg)
+
             assignment = self._active_assignments.get(result.assignment_id)
             if not assignment:
-                logger.warning("Completion received for untracked assignment %s", result.assignment_id)
-                return False
+                error_msg = (
+                    f"Stale worker completion rejected: assignment {result.assignment_id} "
+                    f"is no longer active or has been reassigned (generation {result.generation})"
+                )
+                logger.error(error_msg)
+                raise StaleWorkerError(error_msg)
 
             # Monotonic fencing check
             if result.generation < assignment.generation:
@@ -196,6 +212,9 @@ class DistributedRecoveryManager:
                     f"Cannot reassign task '{old_assignment.task_id}': "
                     f"{rec_state.reconciliation_reason}"
                 )
+
+        with self._lock:
+            self._active_assignments.pop(old_assignment.assignment_id, None)
 
         # Release old lease on scheduler
         self.scheduler.complete_task(old_assignment.assignment_id)

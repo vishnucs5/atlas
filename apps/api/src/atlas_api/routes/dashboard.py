@@ -241,6 +241,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <button id="tab-btn-fleet" class="active" onclick="switchMainTab('fleet')">Task Fleet & Ops</button>
     <button id="tab-btn-multiagent" onclick="switchMainTab('multiagent')">Multi-Agent Orchestration</button>
     <button id="tab-btn-marketplace" onclick="switchMainTab('marketplace')">Marketplace & Skill Ecosystem</button>
+    <button id="tab-btn-distributed" onclick="switchMainTab('distributed')">Distributed Fleet & Remote Nodes</button>
   </nav>
 
   <!-- TAB 1: FLEET OPS -->
@@ -742,6 +743,92 @@ Awaiting security audit request. Scanner tests for:
     </div>
   </div>
 
+  <!-- TAB 4: DISTRIBUTED FLEET & REMOTE NODES -->
+  <div id="tab-distributed" class="tab-content">
+    <div class="grid">
+      <div class="card">
+        <h2>Total Enrolled Workers</h2>
+        <div class="stat-val" id="stat-dist-total">0</div>
+      </div>
+      <div class="card">
+        <h2>Active / Healthy Nodes</h2>
+        <div class="stat-val" id="stat-dist-active" style="color: var(--success);">0</div>
+      </div>
+      <div class="card">
+        <h2>Busy Nodes</h2>
+        <div class="stat-val" id="stat-dist-busy" style="color: var(--primary);">0</div>
+      </div>
+      <div class="card">
+        <h2>Disconnected / Evicted</h2>
+        <div class="stat-val" id="stat-dist-disconnected" style="color: var(--danger);">0</div>
+      </div>
+      <div class="card">
+        <h2>Queue Depth (Backpressure)</h2>
+        <div class="stat-val" id="stat-dist-queue" style="color: var(--warning);">0</div>
+      </div>
+    </div>
+
+    <div class="grid-2col" style="margin-top: 1.25rem;">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h2>Distributed Worker Fleet</h2>
+          <button class="btn-sm btn-primary" onclick="loadDistributedFleet()">Refresh Fleet</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border); text-align: left; color: var(--text-muted);">
+                <th style="padding: 0.5rem;">Worker ID</th>
+                <th style="padding: 0.5rem;">Platform</th>
+                <th style="padding: 0.5rem;">Session Type</th>
+                <th style="padding: 0.5rem;">Drivers</th>
+                <th style="padding: 0.5rem;">Status</th>
+                <th style="padding: 0.5rem;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dist-worker-tbody">
+              <tr><td colspan="6" style="padding: 1rem; text-align: center; color: var(--text-muted);">No remote workers enrolled yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Token Provisioning Card -->
+        <div class="card">
+          <h2>Worker Provisioning Token</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Generate cryptographically signed enrollment tokens with tenant isolation.
+          </p>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <input type="text" id="token-tenant" placeholder="Tenant ID" value="default" style="flex: 1; padding: 0.4rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 4px;">
+            <input type="number" id="token-ttl" placeholder="TTL (hrs)" value="24" style="width: 80px; padding: 0.4rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 4px;">
+            <button class="btn-sm btn-primary" onclick="generateProvisioningToken()">Generate</button>
+          </div>
+          <div id="token-output" style="display: none; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 0.75rem; word-break: break-all;"></div>
+        </div>
+
+        <!-- Outcome Reconciliation Card -->
+        <div class="card">
+          <h2>Unknown Outcome Reconciliation</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Deterministic reconciliation for non-idempotent actions after worker crashes or network partition.
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <input type="text" id="rec-asgn-id" placeholder="Assignment ID (e.g. asgn_...)" style="padding: 0.4rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 4px;">
+            <select id="rec-status" style="padding: 0.4rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 4px;">
+              <option value="VERIFIED_NOT_EXECUTED">VERIFIED_NOT_EXECUTED (Safe to reassign)</option>
+              <option value="VERIFIED_SUCCEEDED">VERIFIED_SUCCEEDED (Action completed externally)</option>
+              <option value="ABORTED">ABORTED (Halt execution)</option>
+            </select>
+            <input type="text" id="rec-notes" placeholder="Verification evidence / audit notes" style="padding: 0.4rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 4px;">
+            <button class="btn-sm btn-warning" onclick="reconcileOutcome()">Submit Reconciliation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Event Stream Log (Persistent) -->
   <div class="card" style="margin-top: 1.25rem;">
     <h2>Event Stream Log</h2>
@@ -778,6 +865,9 @@ Awaiting security audit request. Scanner tests for:
       document.getElementById('tab-btn-' + tabId).classList.add('active');
       if (tabId === 'marketplace') {
         refreshMarketplace();
+      }
+      if (tabId === 'distributed') {
+        loadDistributedFleet();
       }
     }
 
@@ -1324,6 +1414,125 @@ Awaiting security audit request. Scanner tests for:
       const pubId = prompt('Enter Publisher ID to revoke:');
       if (!pubId) return;
       log(`Publisher ${pubId} revoked.`);
+    }
+
+    // Distributed Fleet & Remote Nodes Logic
+    async function loadDistributedFleet() {
+      try {
+        const [mRes, wRes] = await Promise.all([
+          api('/api/v1/distributed/fleet/metrics'),
+          api('/api/v1/distributed/workers')
+        ]);
+        if (mRes.ok) {
+          const metrics = await mRes.json();
+          document.getElementById('stat-dist-total').textContent = metrics.total_workers || 0;
+          document.getElementById('stat-dist-active').textContent = metrics.active_workers || 0;
+          document.getElementById('stat-dist-busy').textContent = metrics.busy_workers || 0;
+          document.getElementById('stat-dist-disconnected').textContent = metrics.disconnected_workers || 0;
+          document.getElementById('stat-dist-queue').textContent = metrics.queue_depth || 0;
+        }
+        if (wRes.ok) {
+          const workers = await wRes.json();
+          const tbody = document.getElementById('dist-worker-tbody');
+          if (workers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="padding: 1rem; text-align: center; color: var(--text-muted);">No remote workers enrolled yet.</td></tr>';
+          } else {
+            tbody.innerHTML = workers.map(w => {
+              const caps = w.capabilities || {};
+              const sessBadge = caps.session_type === 'session_0'
+                ? '<span class="badge badge-warning">Session 0 (Guarded)</span>'
+                : caps.session_type === 'interactive_user'
+                ? '<span class="badge badge-success">Interactive Desktop</span>'
+                : '<span class="badge badge-primary">Headless</span>';
+              const statusBadge = w.status === 'BUSY'
+                ? '<span class="badge badge-warning">BUSY</span>'
+                : w.status === 'DISCONNECTED'
+                ? '<span class="badge badge-danger">DISCONNECTED</span>'
+                : '<span class="badge badge-success">IDLE</span>';
+              return `
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 0.5rem; font-family: monospace;">${w.worker_id}</td>
+                  <td style="padding: 0.5rem;">${caps.platform || 'unknown'}</td>
+                  <td style="padding: 0.5rem;">${sessBadge}</td>
+                  <td style="padding: 0.5rem;">${(caps.drivers || []).join(', ')}</td>
+                  <td style="padding: 0.5rem;">${statusBadge}</td>
+                  <td style="padding: 0.5rem;">
+                    <button class="btn-sm btn-danger" onclick="revokeDistributedWorker('${w.worker_id}')">Revoke</button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+      } catch (err) {
+        log('Error loading distributed fleet: ' + err.message);
+      }
+    }
+
+    async function generateProvisioningToken() {
+      const tenant = document.getElementById('token-tenant').value || 'default';
+      const ttl = parseFloat(document.getElementById('token-ttl').value) || 24;
+      try {
+        const res = await api('/api/v1/distributed/tokens', {
+          method: 'POST',
+          body: { tenant_id: tenant, ttl_hours: ttl }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const out = document.getElementById('token-output');
+          out.style.display = 'block';
+          out.textContent = `Token: ${data.provisioning_token} (Expires: ${data.expires_at})`;
+          log(`Generated provisioning token for tenant ${tenant}`);
+        } else {
+          log('Token generation failed');
+        }
+      } catch (err) {
+        log('Token error: ' + err.message);
+      }
+    }
+
+    async function revokeDistributedWorker(workerId) {
+      if (!confirm(`Revoke worker ${workerId}?`)) return;
+      try {
+        const res = await api(`/api/v1/distributed/workers/${workerId}/revoke`, {
+          method: 'POST',
+          body: { reason: 'Revocation from operator dashboard' }
+        });
+        if (res.ok) {
+          log(`Worker ${workerId} revoked`);
+          loadDistributedFleet();
+        } else {
+          log(`Failed to revoke worker ${workerId}`);
+        }
+      } catch (err) {
+        log('Revoke error: ' + err.message);
+      }
+    }
+
+    async function reconcileOutcome() {
+      const asgnId = document.getElementById('rec-asgn-id').value;
+      const status = document.getElementById('rec-status').value;
+      const notes = document.getElementById('rec-notes').value;
+      if (!asgnId) {
+        alert('Please enter Assignment ID');
+        return;
+      }
+      try {
+        const res = await api('/api/v1/distributed/reconcile', {
+          method: 'POST',
+          body: { assignment_id: asgnId, verified_status: status, notes: notes }
+        });
+        if (res.ok) {
+          log(`Assignment ${asgnId} reconciled: ${status}`);
+          document.getElementById('rec-asgn-id').value = '';
+          document.getElementById('rec-notes').value = '';
+          loadDistributedFleet();
+        } else {
+          log(`Reconciliation failed for ${asgnId}`);
+        }
+      } catch (err) {
+        log('Reconciliation error: ' + err.message);
+      }
     }
 
     // Auto-refresh interval

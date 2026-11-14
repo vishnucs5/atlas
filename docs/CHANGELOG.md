@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2026-11-14 — Phase 9 Distributed Execution Network
+
+### Added
+- **Distributed Execution Network Package (`packages/atlas-distributed`)**:
+  - Full UV workspace member with clean architectural boundaries.
+  - `models.py`: Domain contracts for `WorkerPlatform`, `SessionType`, `WorkerHardware`, `WorkerCapabilities`, `EnrollmentToken`, `EnrollmentRequest`, `EnrollmentResponse`, `WorkerIdentity`, `AssignmentPayload`, `AssignmentStatus`, `AssignmentResult`, `WorkerHeartbeat`, `AssignmentProgress`, `ProtocolMessageType`, and `ProtocolEnvelope`.
+  - `enrollment.py`: `WorkerEnrollmentAuthority` managing cryptographic provisioning tokens, tenant scoping, mutual authentication, credential rotation, and Certificate/Publisher Revocation Lists (CRL). Includes Windows Session 0 protection invariant (`SessionZeroInteractiveError`).
+  - `worker.py`: `WorkerAgent` daemon runtime supporting outbound-only control plane connectivity, platform/session detection, driver execution bridge (`ComputerDriver`), telemetry heartbeat loop, cancellation propagation, and an in-memory `EventRingBuffer` buffering up to 1,000 events during network disconnects and replaying in arrival order upon reconnection.
+  - `scheduler.py`: `DistributedScheduler` implementing 9-dimensional resource matching (OS platform, Windows Session 0 guard, session type, drivers, browsers, CPU/RAM/GPU capacity, security tags, tenant boundaries, and concurrency caps), least-loaded fairness load balancing, priority queuing with backpressure throttling (`SchedulerQueueFullError`), and monotonic fencing token lease allocation.
+  - `protocol.py`: Remote Execution Protocol v1 (`ATLAS-REP/1.0`) implementation with canonical JSON serialization, HMAC-SHA256 frame signatures, timestamp TTL clock drift validation, and replay attack prevention with `MessageDeduplicator`.
+  - `coordinator.py`: `DistributedTaskCoordinator` providing multi-worker DAG partitioning, parallel branch dispatch, synchronization barriers, and deliverable/artifact aggregation into `DistributedExecutionSummary`.
+  - `fault_tolerance.py`: `DistributedRecoveryManager` handling heartbeat timeout detection, dead-worker eviction, monotonic fencing token validation rejecting stale completions (`StaleWorkerError`), side-effect safety halting blind retries of non-idempotent actions in `UNKNOWN` status (`NonIdempotentActionUncertaintyError`), and deterministic external state reconciliation (`reconcile_external_action`).
+- **REST API Routes (`apps/api/src/atlas_api/routes/distributed.py`)**:
+  - `POST /api/v1/distributed/tokens`: Create cryptographic provisioning token.
+  - `POST /api/v1/distributed/enroll`: Mutual authenticated worker enrollment.
+  - `POST /api/v1/distributed/workers/{worker_id}/heartbeat`: Ingest telemetry heartbeat.
+  - `POST /api/v1/distributed/workers/{worker_id}/revoke`: Administrative worker revocation.
+  - `GET /api/v1/distributed/workers`: List enrolled workers with redacted credentials.
+  - `GET /api/v1/distributed/workers/{worker_id}`: Retrieve worker detail.
+  - `POST /api/v1/distributed/assignments`: Schedule assignment across eligible workers.
+  - `POST /api/v1/distributed/assignments/{assignment_id}/progress`: Ingest streaming progress events.
+  - `POST /api/v1/distributed/assignments/{assignment_id}/complete`: Ingest completion result and validate fencing generation.
+  - `POST /api/v1/distributed/reconcile`: Reconcile physical external outcome for in-doubt actions.
+  - `GET /api/v1/distributed/fleet/metrics`: Aggregated fleet capacity, health, and queue depth.
+- **Operator Dashboard Integration (`apps/api/src/atlas_api/routes/dashboard.py`)**:
+  - Added 4th main navigation tab: `Distributed Fleet & Remote Nodes`.
+  - Distributed Fleet Overview with live stats (Total Workers, Active, Busy, Disconnected, Queue Depth).
+  - Worker Fleet Table with live status, session type badges (Session 0 Guarded vs Interactive Desktop), drivers, and revocation controls.
+  - Provisioning Token Generator panel with tenant isolation controls.
+  - Unknown Outcome Reconciliation panel for deterministic operator recovery.
+- **Verification & Acceptance Test Suite**:
+  - `tests/integration/test_phase9_acceptance.py`: Comprehensive 30-scenario test suite covering all Phase 9 acceptance criteria (DN-01 through DN-30) (100% green).
+  - `tests/unit/test_worker_enrollment.py`: 7 unit tests covering enrollment authority, tokens, and CRL.
+  - `tests/unit/test_worker_agent.py`: 9 unit tests covering daemon execution, session 0 guard, and ring buffer.
+  - `tests/unit/test_distributed_scheduler.py`: 8 unit tests covering multi-dimensional matching and backpressure.
+  - `tests/unit/test_remote_protocol.py`: 8 unit tests covering ATLAS-REP/1.0 framing, HMAC signing, and replay defense.
+  - `tests/unit/test_distributed_coordinator.py`: 3 unit tests covering DAG multi-worker coordination and barriers.
+  - `tests/unit/test_distributed_fault_tolerance.py`: 4 unit tests covering dead-worker eviction, fencing, and reconciliation.
+  - Full monorepo regression baseline: **495 / 495 tests passing (100% green)**.
+
+---
+
 ## [0.8.0] - 2026-11-13 — Phase 8 Autonomous Workflow Marketplace & Skill Ecosystem
 
 ### Added

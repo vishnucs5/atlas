@@ -185,9 +185,12 @@ class DistributedScheduler:
         diagnostic_rejections: list[str] = []
 
         for worker in workers:
-            # Skip revoked workers
+            # Skip revoked, terminated, or disconnected workers
             if worker.is_revoked:
                 diagnostic_rejections.append(f"Worker '{worker.worker_id}': revoked")
+                continue
+            if worker.status in (WorkerStatus.TERMINATED, WorkerStatus.DISCONNECTED):
+                diagnostic_rejections.append(f"Worker '{worker.worker_id}': status {worker.status.value}")
                 continue
 
             # 1. Tenant Isolation
