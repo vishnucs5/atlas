@@ -167,6 +167,38 @@ class AssignmentStatus(StrEnum):
     REASSIGNED = "REASSIGNED"
 
 
+class WorkerHeartbeat(BaseModel):
+    """Heartbeat frame emitted periodically by a worker agent."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    worker_id: str
+    tenant_id: str = "default"
+    status: WorkerStatus = WorkerStatus.IDLE
+    active_assignments: list[str] = Field(default_factory=list)
+    cpu_percent: float = 0.0
+    memory_percent: float = 0.0
+    sequence_number: int = 1
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class AssignmentProgress(BaseModel):
+    """Progress update emitted during assignment execution."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    assignment_id: str
+    task_id: str
+    worker_id: str
+    step_index: int = 0
+    total_steps: int | None = None
+    progress_pct: float = 0.0
+    status: AssignmentStatus = AssignmentStatus.RUNNING
+    message: str = ""
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class AssignmentResult(BaseModel):
     """Result returned by a worker upon completion of an assignment."""
 

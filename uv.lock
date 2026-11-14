@@ -196,6 +196,7 @@ dependencies = [
     { name = "atlas-policy" },
     { name = "atlas-storage" },
     { name = "httpx" },
+    { name = "psutil" },
     { name = "pydantic" },
 ]
 
@@ -208,6 +209,7 @@ requires-dist = [
     { name = "atlas-policy", editable = "packages/atlas-policy" },
     { name = "atlas-storage", editable = "packages/atlas-storage" },
     { name = "httpx", specifier = ">=0.27.0" },
+    { name = "psutil", specifier = ">=5.9.0" },
     { name = "pydantic", specifier = ">=2.7.0" },
 ]
 
