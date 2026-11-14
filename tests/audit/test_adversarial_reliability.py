@@ -1,0 +1,122 @@
+"""Independent Reliability and Crash Recovery Audit Tests for Phase 10.
+
+Tests:
+- Concurrency under multithreaded budget deductions (preventing overspend race conditions).
+- Unhandled exceptions on missing entities (e.g. NoneType dereference).
+- Non-serializable details in audit records leading to json.dumps TypeError.
+- In-memory ephemeral state loss simulation (process restart scenario).
+"""
+
+import concurrent.futures
+import pytest
+from atlas_enterprise import (
+    BudgetCapExceededError,
+    EnterpriseAuditLedger,
+    EnterpriseCostManager,
+    EnterpriseIAMEngine,
+    EnterpriseOrganizationManager,
+    compute_record_hash,
+)
+from datetime import UTC, datetime
+
+
+def test_audit_rel_01_concurrent_budget_deductions_prevent_overspend():
+    """Verify that concurrent threads deducting costs do not breach the hard cap due to race conditions."""
+    org_mgr = EnterpriseOrganizationManager()
+    iam = EnterpriseIAMEngine(org_mgr)
+    cost = EnterpriseCostManager(org_mgr, iam)
+
+    org, owner, _ = org_mgr.create_organization(
+        name="CapCorp", slug="capcorp", owner_email="c@cap.com", owner_name="Owner"
+    )
+    dept = org_mgr.create_department(org.org_id, "RaceDept", "racedept")
+
+    # Hard cap of $10.00
+    budget = cost.set_department_budget(
+        caller_user_id=owner.user_id,
+        org_id=org.org_id,
+        department_id=dept.department_id,
+        allocated_usd=10.0,
+        hard_cap_enabled=True,
+    )
+
+    # 20 workers each trying to spend $1.00
+    # Total attempted = $20.00. Exactly 10 should succeed, 10 should raise BudgetCapExceededError.
+    def worker_spend(idx: int):
+        try:
+            cost.record_usage(
+                org_id=org.org_id,
+                task_id=f"task_{idx}",
+                model_name="default",
+                prompt_tokens=250_000,  # 250 * 0.002 = $0.50
+                completion_tokens=83_333,  # 83.333 * 0.006 = $0.50 -> Total $1.00
+                compute_duration_ms=0,
+                department_id=dept.department_id,
+            )
+            return True
+        except BudgetCapExceededError:
+            return False
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(worker_spend, i) for i in range(20)]
+        results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+    success_count = sum(1 for r in results if r is True)
+    failure_count = sum(1 for r in results if r is False)
+
+    # Spent must never exceed $10.00
+    current_budget = cost.get_department_budget(org.org_id, dept.department_id)
+    assert current_budget.spent_usd <= 10.0
+    assert success_count == 10
+    assert failure_count == 10
+
+
+def test_audit_rel_02_attribute_error_on_nonexistent_org_in_iam():
+    """Verify bug in iam.py: calling create_session with non-existent org_id raises AttributeError."""
+    org_mgr = EnterpriseOrganizationManager()
+    iam = EnterpriseIAMEngine(org_mgr)
+
+    user = org_mgr.provision_user(user_id="usr_test_fail", email="t@fail.com", full_name="Fail Test")
+
+    # When org_id does not exist, get_organization returns None, and
+    # `if org.status != "ACTIVE":` crashes with AttributeError instead of raising an EnterpriseIAMError!
+    with pytest.raises(AttributeError, match="'NoneType' object has no attribute 'status'"):
+        iam.create_session(
+            user_id=user.user_id,
+            org_id="non_existent_org_id",
+        )
+
+
+def test_audit_rel_03_non_serializable_details_in_audit_record():
+    """Verify bug in audit.py: non-JSON-serializable objects in details crash compute_record_hash."""
+    # Passing a set or custom object in details dictionary
+    non_serializable_details = {"allowed_set": {1, 2, 3}, "object": object()}
+
+    with pytest.raises(TypeError, match="is not JSON serializable"):
+        compute_record_hash(
+            sequence=1,
+            org_id="org_test",
+            department_id=None,
+            event_type="TEST",
+            actor_id="actor_1",
+            actor_type="USER",
+            action="test.action",
+            target_resource_id=None,
+            details=non_serializable_details,
+            timestamp=datetime.now(UTC),
+            previous_hash="0" * 64,
+        )
+
+
+def test_audit_rel_04_ephemeral_state_loss_on_system_restart():
+    """Demonstrate that all enterprise state is in-memory and lost upon component re-instantiation."""
+    # Initial state
+    org_mgr_1 = EnterpriseOrganizationManager()
+    org, _, _ = org_mgr_1.create_organization(
+        name="Ephemeral Corp", slug="ephemeral", owner_email="e@ephemeral.com", owner_name="Owner"
+    )
+    assert org_mgr_1.get_organization(org.org_id) is not None
+
+    # Simulate process restart (new manager instances without persistent storage)
+    org_mgr_2 = EnterpriseOrganizationManager()
+    assert org_mgr_2.get_organization(org.org_id) is None
