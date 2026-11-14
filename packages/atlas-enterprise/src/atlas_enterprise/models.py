@@ -235,3 +235,51 @@ class ServiceIdentity(TenantOwnedResource):
     scopes: list[str] = Field(default_factory=list)
     is_active: bool = True
     expires_at: datetime | None = None
+
+
+class AgentLifecycleStatus(StrEnum):
+    """Lifecycle status of an enterprise autonomous agent."""
+
+    ACTIVE = "ACTIVE"
+    SUSPENDED = "SUSPENDED"
+    REVOKED = "REVOKED"
+
+
+class GovernanceScopeType(StrEnum):
+    """Hierarchy level for enterprise governance policies."""
+
+    ORGANIZATION = "ORGANIZATION"
+    DEPARTMENT = "DEPARTMENT"
+    TEAM = "TEAM"
+
+
+class EnterpriseAgentRecord(TenantOwnedResource):
+    """Registered enterprise AI agent metadata, allowed capabilities, and resource envelopes."""
+
+    agent_id: str
+    name: str
+    description: str = ""
+    version: str = "1.0.0"
+    owner_user_id: str
+    status: AgentLifecycleStatus = AgentLifecycleStatus.ACTIVE
+    model_constraints: dict[str, Any] = Field(default_factory=dict)
+    allowed_tools: list[str] = Field(default_factory=list)
+    allowed_skills: list[str] = Field(default_factory=list)
+    allowed_workflows: list[str] = Field(default_factory=list)
+    resource_limits: dict[str, Any] = Field(default_factory=dict)
+
+
+class EnterprisePolicyEnvelope(TenantOwnedResource):
+    """Enterprise policy envelope defining security constraints, tool bans, and approval triggers."""
+
+    policy_id: str
+    scope_type: GovernanceScopeType
+    scope_id: str  # org_id, dept_id, or team_id
+    disallowed_tools: list[str] = Field(default_factory=list)
+    disallowed_skills: list[str] = Field(default_factory=list)
+    disallowed_models: list[str] = Field(default_factory=list)
+    require_approval_for_tools: list[str] = Field(default_factory=list)
+    require_dual_custody: bool = False
+    max_cost_per_task_usd: float = 100.0
+    rules: list[dict[str, Any]] = Field(default_factory=list)
+    is_active: bool = True
