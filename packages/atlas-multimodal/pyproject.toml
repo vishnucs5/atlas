@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-multimodal"
+version = "0.13.0"
+description = "ATLAS Multimodal Perception, Visual Grounding, Audio/Video & Document Intelligence Platform"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "atlas-models",
+    "atlas-observation",
+    "atlas-coordination",
+    "atlas-policy",
+    "atlas-distributed",
+    "atlas-observability",
+    "pydantic>=2.7.0",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+atlas-models = { workspace = true }
+atlas-observation = { workspace = true }
+atlas-coordination = { workspace = true }
+atlas-policy = { workspace = true }
+atlas-distributed = { workspace = true }
+atlas-observability = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_multimodal"]

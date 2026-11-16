@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.13.0] - 2026-11-16 — Phase 13 Multimodal Autonomous Perception & Intelligence Platform
+
+### Added
+- **Multimodal Provider Abstraction (`packages/atlas-multimodal/src/atlas_multimodal/provider.py`)**:
+  - `MultimodalModality`: Enum defining standard modalities (`IMAGE_UNDERSTANDING`, `IMAGE_GENERATION`, `VIDEO_UNDERSTANDING`, `SPEECH_TO_TEXT`, `SPEECH_TO_SPEECH`, `DOCUMENT_OCR`, `STRUCTURED_OUTPUT`).
+  - `MultimodalCapability`, `MultimodalRequest`, `MultimodalResponse`: Core domain contracts.
+  - `MultimodalRouter`: Dynamic provider capability negotiation, automatic fallback routing on provider failures, fast-failure on unsupported modalities, and tenant spend accounting.
+- **Visual Perception Engine (`packages/atlas-multimodal/src/atlas_multimodal/visual.py`)**:
+  - `VisualObservation`: Unified screenshot observation model capturing viewport dimensions, DPR, state hashes, detected elements, and OCR blocks.
+  - `BoundingBox`: Normalized $[0.0, 1.0]$ coordinate box with area, center point, and intersection methods.
+  - `DetectedElement`: UI element representation with element types (`BUTTON`, `INPUT`, `DIALOG`, `WINDOW`, `TEXT_BLOCK`, `ICON`, `CHECKBOX`, `LINK`, `MODAL`).
+  - `VisualPerceptionEngine`: Perceptual SHA-256 state hashing, visual state comparison, and unexpected modal anomaly detection.
+- **Visual Grounding & Coordinate Engine (`packages/atlas-multimodal/src/atlas_multimodal/grounding.py`)**:
+  - `VisualGroundingTransformer`: Precision coordinate mapping across Normalized, Viewport, and Physical Screen pixel spaces.
+  - Handled non-standard DPR scaling (1.5x, 2.0x), internal browser zoom factors, and multi-monitor virtual desktop canvas offsets.
+  - `StaleCoordinateGuard`: Enforces 5.0s maximum observation age threshold and strict viewport boundary containment.
+- **Video Understanding Engine (`packages/atlas-multimodal/src/atlas_multimodal/video.py`)**:
+  - `VideoUnderstandingEngine`: Temporal frame sampling with configurable target FPS and maximum frame limits.
+  - Scene transition detection, keyframe extraction, and timestamp-preserved temporal event summarization.
+- **Audio Intelligence & Consent Framework (`packages/atlas-multimodal/src/atlas_multimodal/audio.py`)**:
+  - `AudioIntelligenceEngine`: Audio ingestion, timestamped transcription, and multi-speaker diarization.
+  - `AudioConsentManager`: Cryptographic `AudioConsentToken` creation and verification, blocking unauthorized or silent microphone recording.
+- **Document Intelligence & Decompression Bomb Defense (`packages/atlas-multimodal/src/atlas_multimodal/document.py`)**:
+  - `DocumentIntelligenceEngine`: Multi-page layout analysis, scanned PDF parsing, and structured tabular data extraction (`ExtractedTable`).
+  - `DecompressionBombProtector`: File size ceilings (50MB) and maximum decompression expansion ratios (100:1) to defend against zip/image bombs.
+- **Multimodal Episodic Memory Store (`packages/atlas-multimodal/src/atlas_multimodal/memory.py`)**:
+  - `MultimodalMemoryStore`: Offloads heavy media binaries to `ArtifactManager` with content-addressed SHA-256 hashing while retaining lightweight semantic metadata.
+  - Enforced strict tenant boundary isolation with audited `CrossTenantMemoryAccessViolation` rejections.
+- **Perception-Driven Planning Bridge (`packages/atlas-multimodal/src/atlas_multimodal/perception_planner.py`)**:
+  - `PerceptionPlannerBridge`: Feeds visual context to planner, computes grounded target coordinates, and flags actions when confidence is below 0.85.
+  - Gated all actions through `ActionFirewall.evaluate()` and provided post-action visual verification comparing pre- and post-action visual state hashes.
+- **Distributed Multimodal Inference & Security (`packages/atlas-multimodal/src/atlas_multimodal/inference.py`)**:
+  - `MultimodalInferenceRouter`: Matches heavy model VRAM and compute requirements to compatible GPU worker nodes via `GPUCapabilityManager`.
+  - Privacy routing boundary: strictly prohibits `CONFIDENTIAL` or `RESTRICTED` media from being routed to external cloud LLM APIs.
+  - `PromptInjectionScanner`: Scans OCR and document text for adversarial injection phrases.
+- **Phase 13 Acceptance Suite (`tests/integration/test_phase13_acceptance.py`)**:
+  - 27 automated acceptance scenarios (MM-01 through MM-27) verifying 100% of Phase 13 requirements with zero placeholders.
+  - Full monorepo regression verified: **679 / 679 tests passing with 100% green rate**.
+
+---
+
 ## [0.12.0] - 2026-11-16 — Phase 12 Kubernetes-Native Orchestration & Edge Execution Infrastructure
 
 ### Added

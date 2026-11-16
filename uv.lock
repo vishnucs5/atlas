@@ -15,6 +15,7 @@ members = [
     "atlas-marketplace",
     "atlas-models",
     "atlas-monorepo",
+    "atlas-multimodal",
     "atlas-observability",
     "atlas-observation",
     "atlas-operator",
@@ -317,6 +318,33 @@ dev = [
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+]
+
+[[package]]
+name = "atlas-multimodal"
+version = "0.13.0"
+source = { editable = "packages/atlas-multimodal" }
+dependencies = [
+    { name = "atlas-coordination" },
+    { name = "atlas-core" },
+    { name = "atlas-distributed" },
+    { name = "atlas-models" },
+    { name = "atlas-observability" },
+    { name = "atlas-observation" },
+    { name = "atlas-policy" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-coordination", editable = "packages/atlas-coordination" },
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "atlas-distributed", editable = "packages/atlas-distributed" },
+    { name = "atlas-models", editable = "packages/atlas-models" },
+    { name = "atlas-observability", editable = "packages/atlas-observability" },
+    { name = "atlas-observation", editable = "packages/atlas-observation" },
+    { name = "atlas-policy", editable = "packages/atlas-policy" },
+    { name = "pydantic", specifier = ">=2.7.0" },
 ]
 
 [[package]]
