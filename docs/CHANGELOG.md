@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.15.0] - 2026-11-16 — Phase 15 Federated Autonomous Intelligence Network & Global Agent Interoperability
+
+### Added
+- **Federated Cryptographic Identity & Trust Model (`packages/atlas-federation/src/atlas_federation/identity.py`)**:
+  - `ParticipantIdentity`: Hierarchical participant and agent identities formatted as standard URNs (`urn:atlas:org:...:inst:...:agent:...`).
+  - `FederationCredentials`: Ed25519-signed credentials with scoped capabilities and cryptographic validity intervals.
+  - `FederationIdentityManager`: Mutual authentication, seamless credential rotation, real-time revocation registry, and pairwise trust policy enforcement (`TRUSTED`, `DISCOVERY_ONLY`, `PROBATION`, `BLOCKED`).
+- **Capability Registry & Discovery Engine (`packages/atlas-federation/src/atlas_federation/discovery.py`)**:
+  - `FederatedCapabilityRegistry`: Multi-agent discovery supporting four-tier visibility scoping (`PRIVATE`, `ORGANIZATION`, `FEDERATION`, `PUBLIC`).
+  - Zero-leak metadata sanitizer: Automatically strips sensitive keys (tokens, passwords, secrets, prompts) from published advertisements.
+- **Versioned Agent Messaging Protocol (`packages/atlas-federation/src/atlas_federation/protocol.py`)**:
+  - `FederationProtocolEngine`: Envelope encryption and Ed25519 HMAC signatures with correlation tracking.
+  - Nonce-based replay defense with sliding TTL windows (`ReplayAttackDetectedError`) and clock-skew guards (`ExpiredMessageError`).
+  - Idempotent duplicate message handling returning cached results without redundant execution.
+- **Cross-Instance Task Delegation Engine (`packages/atlas-federation/src/atlas_federation/delegation.py`)**:
+  - `CrossInstanceDelegationEngine`: Structured task contract negotiation, execution lease issuance, and local Action Firewall authorization gates.
+  - Independent post-condition verification (Constitutional Invariant Rule 7): Rejects unverified remote claims and enforces evidence integrity (`InvalidResultEvidenceError`).
+- **External Agent Interoperability Adapters (`packages/atlas-federation/src/atlas_federation/external_adapters.py`)**:
+  - `MCPAdapter`: Translates external Model Context Protocol (`tools/list`, `tools/call`) requests into ATLAS internal actions with mandatory Action Firewall inspection.
+  - `WebhookAdapter`: Ingests HTTP webhook triggers with constant-time HMAC-SHA256 signature verification (`X-Atlas-Signature`) and generates signed async callbacks.
+- **Federated Workflow & Skill Exchange (`packages/atlas-federation/src/atlas_federation/workflow_exchange.py`)**:
+  - `FederatedWorkflowExchange`: Content-addressed SHA-256 provenance hashes, publisher signatures, tampering detection (`PackageTamperedError`), and withdrawal/revocation tracking (`PackageWithdrawnError`).
+  - Zero-Permission Inheritance Invariant: Imported federated packages inherit zero host permissions by default.
+- **Advisory Trust & Provenance System (`packages/atlas-federation/src/atlas_federation/reputation.py`)**:
+  - `FederationReputationTracker`: Empirical execution tracking across task success, failure, verification breaches, and security violations.
+  - Strictly advisory invariant: Enforces that reputation scores cannot bypass or replace cryptographic authentication or policy rules.
+- **Cross-Organization Security Governor (`packages/atlas-federation/src/atlas_federation/security.py`)**:
+  - `FederationSecurityGovernor`: Per-peer sliding-window rate limiting (`PeerRateLimitExceededError`) and concurrent task quotas (`FederationQuotaExceededError`).
+  - Action Firewall Tamper Protection: Immediately isolates peers attempting to disable or modify local security rules (`ActionFirewallTamperError`).
+  - Strict multi-tenant boundary isolation (`TenantIsolationError`) and cross-boundary artifact authorization (`ArtifactAccessDeniedError`).
+- **Network Resilience & Idempotent Outbox (`packages/atlas-federation/src/atlas_federation/resilience.py`)**:
+  - `ResilientOutbox`: Buffers outgoing messages during network partitions, delivers with exponential backoff upon reconnection, and reconciles remote task outcomes to prevent duplicate non-idempotent executions.
+- **Federated Observability & Correlation Tracing (`packages/atlas-federation/src/atlas_federation/observability.py`)**:
+  - `FederatedTraceContext`: W3C distributed traceparent propagation carrying cross-organization correlation and span IDs.
+  - `FederationTelemetryCollector`: Recursive telemetry redaction purging tokens, keys, passwords, and sensitive credentials from shared metrics.
+- **Federation Gateway (`packages/atlas-federation/src/atlas_federation/gateway.py`)**:
+  - `FederationGateway`: Unified node controller binding identity, discovery, messaging, delegation, security, resilience, and telemetry.
+- **Phase 15 Acceptance Test Suite (`tests/integration/test_phase15_acceptance.py`)**:
+  - 30 / 30 acceptance test scenarios verified (FED-01 through FED-30).
+  - Monorepo full regression: 736 / 736 tests passing (100% green rate).
+
+---
+
 ## [0.14.0] - 2026-11-16 — Phase 14 Autonomous Self-Improvement, Evaluation & Adaptive Intelligence Platform
 
 ### Added

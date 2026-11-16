@@ -30,6 +30,7 @@ members = [
     "packages/atlas-operator",
     "packages/atlas-multimodal",
     "packages/atlas-adaptive",
+    "packages/atlas-federation",
     "apps/api",
     "apps/cli",
 ]
@@ -66,6 +67,7 @@ pythonpath = [
     "packages/atlas-operator/src",
     "packages/atlas-multimodal/src",
     "packages/atlas-adaptive/src",
+    "packages/atlas-federation/src",
     "apps/api/src",
     "apps/cli/src",
 ]
@@ -93,6 +95,7 @@ extraPaths = [
     "packages/atlas-operator/src",
     "packages/atlas-multimodal/src",
     "packages/atlas-adaptive/src",
+    "packages/atlas-federation/src",
     "apps/api/src",
     "apps/cli/src",
 ]
