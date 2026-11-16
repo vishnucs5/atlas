@@ -35,7 +35,8 @@ uv run pytest -v
 | **Phase 10** | Enterprise Operating Platform | `test_enterprise_*.py`, `test_phase10_acceptance.py` (30 scenarios) | **PASSED** | 74 / 74 |
 | **Phase 10 Remediation** | Adversarial Audit Tests & Persistence | `tests/audit/test_audit_*.py` (45 tests), `test_enterprise_storage_postgres.py` (2 tests) | **PASSED** | 47 / 47 |
 | **Phase 11** | Production Ops, Tracing, Resilience & Benchmarks | `test_tracing.py` (5), `test_resilience.py` (3), `test_phase11_benchmarks.py` (4), `test_phase11_acceptance.py` (15) | **PASSED** | 27 / 27 |
-| **Total** | **All Monorepo Packages** | **Comprehensive Full Test Suite** | **PASSED** | **628 / 628 (100%)** |
+| **Phase 12** | Kubernetes Orchestration & Edge Execution | `test_phase12_acceptance.py` (24 scenarios: K8S-01 to K8S-24) | **PASSED** | 24 / 24 |
+| **Total** | **All Monorepo Packages** | **Comprehensive Full Test Suite** | **PASSED** | **652 / 652 (100%)** |
 
 ---
 
@@ -251,4 +252,45 @@ tests/integration/test_phase11_acceptance.py::test_pr14_operational_runbooks_pre
 tests/integration/test_phase11_acceptance.py::test_pr15_monorepo_regression_and_dual_db_invariants PASSED
 ... [599 additional baseline, enterprise, and adversarial audit tests] ...
 ======================== 628 passed, 2 warnings in 92.89s ========================
+```
+
+---
+
+### Run 012 — Phase 12 Kubernetes-Native Orchestration & Monorepo Regression (2026-11-16)
+
+```text
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: C:\Users\pc\Documents\antigravity\happy-meitner
+configfile: pyproject.toml
+plugins: anyio-4.16.0, platformdirs-4.14.5, asyncio-1.4.1.post1
+asyncio: mode=Mode.AUTO
+collected 652 items
+
+tests/integration/test_phase12_acceptance.py::test_k8s01_helm_chart_lint_and_manifest_generation PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s02_helm_upgrade_and_rollback PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s03_crd_validation_and_schema_enforcement PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s04_operator_reconciliation_loop PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s05_drift_detection PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s06_finalizers_and_safe_deletion PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s07_workload_aware_autoscaling PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s08_anti_flapping_cooldowns PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s09_multi_cluster_registration_and_health PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s10_capability_based_task_placement PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s11_cross_cluster_failover PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s12_edge_reverse_outbound_connection PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s13_edge_mutual_authentication_and_fingerprint_check PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s14_edge_offline_buffering_and_resynchronization PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s15_remote_credential_revocation PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s16_gpu_hardware_discovery PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s17_gpu_aware_task_scheduling PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s18_disaster_recovery_chaos_injection PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s19_stale_worker_lease_fencing PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s20_infrastructure_observability_and_prometheus PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s21_pod_security_standards_enforcement PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s22_network_policy_isolation PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s23_tenant_aware_scheduling PASSED
+tests/integration/test_phase12_acceptance.py::test_k8s24_monorepo_regression_and_core_zero_dependency_invariant PASSED
+... [628 additional Phase 1-11 baseline, enterprise, and adversarial audit tests] ...
+======================== 652 passed, 1 warning in 78.72s ========================
 ```

@@ -538,5 +538,60 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
   - Executed full monorepo regression verification across all Phases 1 through 11 (628/628 tests passed with 100% green rate).
   - Published final Phase 11 acceptance report in `docs/PHASE_11_ACCEPTANCE_REPORT.md`.
 
+---
+
+## Phase 12: Kubernetes-Native Orchestration & Edge Execution Infrastructure (COMPLETE)
+
+**Target:** Evolve ATLAS into a cloud-native, Kubernetes-compatible, multi-cluster autonomous execution platform with production Helm charts, custom resource definitions, Kubernetes Operator, workload-aware worker autoscaling, multi-cluster federated placement, reverse-connected edge gateway, and GPU-aware scheduling.  
+**Status:** **100% COMPLETE (24/24 Acceptance Criteria Verified)**  
+**Completed Date:** 2026-11-16  
+**Acceptance Report:** `docs/PHASE_12_ACCEPTANCE_REPORT.md`  
+
+### Phase 12 Milestones:
+- [x] **M0: Scaffolding, Baseline Audit & Architecture Documentation**
+  - Verified Phase 11 baseline (628/628 passed).
+  - Scaffolded `packages/atlas-operator` (`atlas_operator`) in UV monorepo workspace.
+  - Authored full documentation suite: `PHASE_12_PLAN.md`, `PHASE_12_STATUS.md`, `PHASE_12_ARCHITECTURE.md`, `PHASE_12_KUBERNETES_SPEC.md`, `PHASE_12_EDGE_GATEWAY.md`, `PHASE_12_SECURITY_MODEL.md`, `PHASE_12_OPERATIONS.md`, `PHASE_12_RISK_REGISTER.md`, `PHASE_12_ACCEPTANCE_REPORT.md`.
+- [x] **M1: Production Helm Charts & Manifest Infrastructure**
+  - Authored production Helm chart in `deploy/helm/atlas` (`Chart.yaml` v0.12.0) with separate dev/staging/prod values files and 13 production templates.
+  - Enforced non-root execution (UID 10001), read-only root filesystems, dropped capabilities (`ALL`), preStop lifecycle hooks, and resource boundaries.
+  - Validated via `helm lint` (0 errors) and `helm template` across all 3 deployment environments.
+- [x] **M2: Custom Resource Definitions (CRDs) & Validation Engine**
+  - Authored OpenAPI v3 CRDs in `deploy/crds/`: `AtlasCluster`, `AtlasWorkerPool`, `AtlasAgentPool`, `AtlasExecutionPolicy`, `AtlasDeployment`.
+  - Implemented Pydantic domain models in `packages/atlas-operator/src/atlas_operator/models.py`.
+  - Implemented admission validation engine in `atlas_operator/admission.py` rejecting invalid specs and schema boundary violations.
+- [x] **M3: ATLAS Kubernetes Operator & Reconciliation Engine**
+  - Implemented idempotent controller in `packages/atlas-operator/src/atlas_operator/reconciler.py`.
+  - Implemented status reporting, drift detection, finalizers for safe worker draining, rolling upgrade tracking, and instant rollback on healthcheck failure.
+  - Implemented operator CLI entrypoint in `atlas_operator/main.py`.
+- [x] **M4: Workload-Aware Autoscaler**
+  - Implemented `WorkloadAwareAutoscaler` in `packages/atlas-operator/src/atlas_operator/autoscaler.py`.
+  - Scaled worker fleet based on queue depth, pending task assignments, priority weighting, and SLA urgency.
+  - Implemented anti-flapping dampening with scale-up and scale-down cooldown timers and step boundaries.
+- [x] **M5: Multi-Cluster Orchestrator & Placement Engine**
+  - Implemented `MultiClusterManager` in `packages/atlas-distributed/src/atlas_distributed/multi_cluster.py`.
+  - Provided cluster enrollment, heartbeat health monitoring, latency scoring, and dynamic capability aggregation.
+  - Built global task placement engine evaluating platforms, GPUs, locality, and tenant allowlists.
+  - Implemented cross-cluster failover with monotonic lease fencing to prevent duplicate actions.
+- [x] **M6: Edge Execution Gateway & Resilient Buffer**
+  - Implemented reverse outbound TLS architecture in `packages/atlas-distributed/src/atlas_distributed/edge_gateway.py` with zero open inbound ports on edge devices.
+  - Enforced mutual authentication using HMAC enrollment tokens bound to hardware fingerprints.
+  - Built `EdgeLocalBuffer` providing durable client-side offline buffering during WAN disconnects with deterministic resynchronization.
+  - Implemented dynamic hardware capability reporting and remote credential revocation.
+- [x] **M7: GPU Capability Discovery & Intelligent Scheduling**
+  - Implemented `GPUCapabilityManager` in `packages/atlas-distributed/src/atlas_distributed/gpu.py`.
+  - Discovered multi-GPU worker inventories (vendor, model, VRAM capacity, driver version, compute capability, runtimes).
+  - Implemented capability placement matching task VRAM and runtime requirements.
+- [x] **M8: Disaster Recovery & Automated Chaos Testing**
+  - Implemented `DisasterRecoveryCoordinator` in `packages/atlas-distributed/src/atlas_distributed/disaster_recovery.py`.
+  - Simulated pod termination, node failure, network partition, and database outage chaos scenarios with monotonic lease fencing tokens.
+- [x] **M9: Infrastructure Observability & OpenTelemetry Metrics**
+  - Implemented Prometheus infrastructure metrics in `packages/atlas-operator/src/atlas_operator/metrics.py`.
+  - Tracked cluster availability, pod health, worker count, scheduler latency, queue depth, GPU utilization, and autoscaler events.
+- [x] **M10: Phase 12 Acceptance Suite & Monorepo Verification**
+  - Implemented `tests/integration/test_phase12_acceptance.py` covering scenarios K8S-01 through K8S-24 (24/24 passed).
+  - Executed full monorepo regression verification across all 12 phases: **652 / 652 tests passed with 100% green rate**.
+  - Published final Phase 12 acceptance report in `docs/PHASE_12_ACCEPTANCE_REPORT.md`.
+
 
 

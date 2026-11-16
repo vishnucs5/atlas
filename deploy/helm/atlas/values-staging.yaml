@@ -1,0 +1,43 @@
+# Staging values for ATLAS Helm chart.
+# Realistic multi-replica deployment with staging endpoints and monitoring.
+
+global:
+  environment: "staging"
+  secrets:
+    secretName: "atlas-staging-credentials"
+
+api:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+  ingress:
+    hosts:
+      - host: "staging.atlas.example.com"
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: atlas-staging-tls
+        hosts:
+          - staging.atlas.example.com
+
+supervisor:
+  replicaCount: 2
+
+worker:
+  replicaCount: 2
+
+networkPolicy:
+  enabled: true
+
+serviceMonitor:
+  enabled: true

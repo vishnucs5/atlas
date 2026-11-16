@@ -1,0 +1,100 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: atlasclusters.atlas.io
+spec:
+  group: atlas.io
+  names:
+    kind: AtlasCluster
+    listKind: AtlasClusterList
+    plural: atlasclusters
+    singular: atlascluster
+    shortNames:
+      - acls
+  scope: Cluster
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - clusterId
+                - region
+                - apiEndpoint
+              properties:
+                clusterId:
+                  type: string
+                  pattern: "^cls_[a-zA-Z0-9_-]+$"
+                region:
+                  type: string
+                provider:
+                  type: string
+                apiEndpoint:
+                  type: string
+                  format: uri
+                credentialsSecretRef:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                capabilities:
+                  type: object
+                  properties:
+                    platforms:
+                      type: array
+                      items:
+                        type: string
+                    gpuModels:
+                      type: array
+                      items:
+                        type: string
+                    maxConcurrentWorkers:
+                      type: integer
+                      minimum: 1
+                    supportsDesktopSession:
+                      type: boolean
+                tenantAllowedList:
+                  type: array
+                  items:
+                    type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum: ["Healthy", "Degraded", "Disconnected", "Revoked"]
+                registeredAt:
+                  type: string
+                  format: date-time
+                lastHeartbeat:
+                  type: string
+                  format: date-time
+                activeWorkers:
+                  type: integer
+                latencyMs:
+                  type: number
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                      reason:
+                        type: string
+                      message:
+                        type: string
+      subresources:
+        status: {}

@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.0] - 2026-11-16 — Phase 12 Kubernetes-Native Orchestration & Edge Execution Infrastructure
+
+### Added
+- **Production Helm Charts (`deploy/helm/atlas`)**:
+  - `Chart.yaml`: Helm chart v0.12.0 for enterprise production Kubernetes deployment.
+  - Separate parameterization profiles: `values.yaml` (defaults), `values-dev.yaml`, `values-staging.yaml`, and `values-prod.yaml`.
+  - Hardened Kubernetes templates: `api-deployment.yaml`, `api-service.yaml`, `api-ingress.yaml`, `api-hpa.yaml`, `api-pdb.yaml`, `supervisor-deployment.yaml`, `worker-pool-deployment.yaml`, `configmap.yaml`, `secrets.yaml`, `serviceaccount.yaml`, `rbac.yaml`, `networkpolicy.yaml`, `service-monitor.yaml`.
+  - Non-root security context (UID/GID 10001), read-only root filesystems, dropped capabilities (`ALL`), preStop lifecycle hooks, and resource boundaries.
+- **Kubernetes Custom Resource Definitions (`deploy/crds`)**:
+  - `atlas.io_atlasclusters.yaml`: Multi-cluster federated topology and capability advertisement.
+  - `atlas.io_atlasworkerpools.yaml`: Elastic worker pool definition with auto-scale bindings.
+  - `atlas.io_atlasagentpools.yaml`: Multi-agent runtime and specialist agent pools.
+  - `atlas.io_atlasexecutionpolicies.yaml`: Network egress allowlists and tenant-level security boundaries.
+  - `atlas.io_atlasdeployments.yaml`: Cohesive full-stack deployment bundles.
+- **ATLAS Kubernetes Operator (`packages/atlas-operator`)**:
+  - `models.py`: Pydantic domain models for all 5 custom resources.
+  - `admission.py`: Admission validation engine enforcing schema boundaries and rejecting malformed specs.
+  - `reconciler.py`: Idempotent reconciliation controller handling condition tracking, drift detection, finalizer protection, rolling upgrades, and instant rollback.
+  - `autoscaler.py`: Workload-aware autoscaler computing desired replicas from queue depth, pending task assignments, priority weighting, and SLA urgency with anti-flapping cooldowns.
+  - `metrics.py`: Prometheus infrastructure metrics rendering cluster availability, pod health, queue depth, and GPU utilization.
+- **Multi-Cluster Orchestration (`packages/atlas-distributed/src/atlas_distributed/multi_cluster.py`)**:
+  - `MultiClusterManager`: Federated cluster registration, heartbeat health monitoring, latency scoring, and dynamic capability aggregation.
+  - Global task placement engine evaluating platforms, GPUs, desktop session capability, data locality, and tenant allowlists.
+  - Cross-cluster failover with monotonic lease fencing preventing split-brain duplicate task executions.
+- **Edge Execution Gateway (`packages/atlas-distributed/src/atlas_distributed/edge_gateway.py`)**:
+  - Reverse outbound TLS architecture for remote edge nodes without exposing inbound listening ports.
+  - Mutual cryptographic authentication using HMAC-signed enrollment tokens bound to hardware fingerprints.
+  - `EdgeLocalBuffer`: Durable client-side offline store buffering assignments and results during intermittent WAN disconnects.
+  - Dynamic capability reporting (CPU, RAM, disk, battery status) and instant remote credential revocation.
+- **GPU-Aware Scheduling Fabric (`packages/atlas-distributed/src/atlas_distributed/gpu.py`)**:
+  - `GPUCapabilityManager`: Worker GPU inventory tracking vendor (NVIDIA, AMD, Apple Metal, Intel), model, VRAM capacity, driver version, compute capability, and supported runtimes (CUDA, ROCm, vLLM, TensorRT-LLM, Ollama).
+  - Placement matcher ensuring task VRAM and runtime constraints are satisfied.
+- **Disaster Recovery & Chaos Injection (`packages/atlas-distributed/src/atlas_distributed/disaster_recovery.py`)**:
+  - `DisasterRecoveryCoordinator`: Chaos fault injection engine simulating pod terminations, node drains, network partitions, and database outages.
+  - Monotonic lease fencing tokens preventing zombie workers from corrupting task states.
+- **Phase 12 Acceptance Suite (`tests/integration/test_phase12_acceptance.py`)**:
+  - 24 automated acceptance scenarios (K8S-01 through K8S-24) verifying 100% of Phase 12 requirements.
+  - Comprehensive documentation in `docs/PHASE_12_ACCEPTANCE_REPORT.md`.
+
+---
+
 ## [0.11.0] - 2026-11-14 — Phase 11 Production Operational Readiness & Infrastructure Deployment
 
 ### Added

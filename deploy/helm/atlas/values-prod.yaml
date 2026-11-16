@@ -1,0 +1,72 @@
+# Production values for ATLAS Helm chart.
+# High-availability, hardened security context, multi-cluster readiness, autoscaling and strict network policies.
+
+global:
+  environment: "production"
+  secrets:
+    secretName: "atlas-production-secrets"
+
+api:
+  replicaCount: 3
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 75
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  ingress:
+    hosts:
+      - host: "atlas.company.com"
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: atlas-production-tls
+        hosts:
+          - atlas.company.com
+
+supervisor:
+  replicaCount: 3
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+
+worker:
+  replicaCount: 5
+  resources:
+    limits:
+      cpu: "4000m"
+      memory: "4Gi"
+    requests:
+      cpu: "1000m"
+      memory: "1Gi"
+  terminationGracePeriodSeconds: 120
+
+postgresql:
+  sslmode: "verify-full"
+  poolSize: 50
+
+networkPolicy:
+  enabled: true
+  allowExternalEgress: false
+
+serviceMonitor:
+  enabled: true
+  interval: 10s

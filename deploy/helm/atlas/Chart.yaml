@@ -1,0 +1,14 @@
+apiVersion: v2
+name: atlas
+description: Production Helm chart for ATLAS Autonomous Task & Lifecycle Automation System
+type: application
+version: 0.12.0
+appVersion: "0.12.0"
+keywords:
+  - autonomous-agents
+  - computer-use
+  - orchestration
+  - kubernetes
+maintainers:
+  - name: ATLAS Architecture Team
+    email: architecture@atlas.io

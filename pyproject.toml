@@ -27,6 +27,7 @@ members = [
     "packages/atlas-skills",
     "packages/atlas-distributed",
     "packages/atlas-enterprise",
+    "packages/atlas-operator",
     "apps/api",
     "apps/cli",
 ]
@@ -39,6 +40,7 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "embedded-postgres>=18.0.0",
+    "pyyaml>=6.0.3",
 ]
 
 [tool.pytest.ini_options]
@@ -59,6 +61,7 @@ pythonpath = [
     "packages/atlas-skills/src",
     "packages/atlas-distributed/src",
     "packages/atlas-enterprise/src",
+    "packages/atlas-operator/src",
     "apps/api/src",
     "apps/cli/src",
 ]
@@ -83,6 +86,7 @@ extraPaths = [
     "packages/atlas-skills/src",
     "packages/atlas-distributed/src",
     "packages/atlas-enterprise/src",
+    "packages/atlas-operator/src",
     "apps/api/src",
     "apps/cli/src",
 ]

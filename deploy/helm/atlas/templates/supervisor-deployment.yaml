@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "atlas.fullname" . }}-supervisor
+  labels:
+    {{- include "atlas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: supervisor
+spec:
+  replicas: {{ .Values.supervisor.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "atlas.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: supervisor
+  template:
+    metadata:
+      labels:
+        {{- include "atlas.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: supervisor
+    spec:
+      serviceAccountName: {{ include "atlas.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: atlas-supervisor
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.supervisor.image.repository }}:{{ .Values.supervisor.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.supervisor.image.pullPolicy }}
+          command:
+            {{- toYaml .Values.supervisor.command | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "atlas.fullname" . }}-config
+            - secretRef:
+                name: {{ .Values.global.secrets.secretName | default (printf "%s-default-secrets" (include "atlas.fullname" .)) }}
+          livenessProbe:
+            {{- toYaml .Values.supervisor.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.supervisor.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.supervisor.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
