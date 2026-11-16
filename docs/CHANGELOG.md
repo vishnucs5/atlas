@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.14.0] - 2026-11-16 — Phase 14 Autonomous Self-Improvement, Evaluation & Adaptive Intelligence Platform
+
+### Added
+- **Task Evaluation Engine (`packages/atlas-adaptive/src/atlas_adaptive/evaluator.py`)**:
+  - `TaskEvaluationEngine`: Objective evidence-based scoring across functional correctness, compliance, reliability, and efficiency.
+  - False-success detection: Clamps evaluation score to $0.0$ when tasks claim completion without verifiable execution evidence.
+- **Experience Learning System (`packages/atlas-adaptive/src/atlas_adaptive/experience.py`)**:
+  - `ExperienceStore`: Structured pattern capture with content-addressed SHA-256 provenance hashing.
+  - Strict separation of observed facts from generated recommendations, blocking unverified experiences from authoritative memory.
+- **Failure Analysis & Root Cause Engine (`packages/atlas-adaptive/src/atlas_adaptive/failure_analyzer.py`)**:
+  - `FailureAnalysisEngine`: Exhaustive 12-category failure taxonomy with evidence-backed root cause attribution and confidence scoring.
+- **Strategy Optimization Engine (`packages/atlas-adaptive/src/atlas_adaptive/optimizer.py`)**:
+  - `StrategyOptimizationEngine`: Multi-objective Pareto dominance and composite utility calculation against fixed baselines.
+  - Non-negotiable safety invariant: strictly rejects any candidate that degrades policy compliance or verification quality.
+- **Adaptive Model Router (`packages/atlas-adaptive/src/atlas_adaptive/adaptive_router.py`)**:
+  - `AdaptiveModelRouter`: Cost, latency, and quality utility routing with fallback progression.
+  - Privacy boundary enforcement: Blocks dispatch of `CONFIDENTIAL` or `RESTRICTED` data to external cloud models (`DataPrivacyRoutingError`).
+- **Automated Experimentation Engine (`packages/atlas-adaptive/src/atlas_adaptive/experimentation.py`)**:
+  - `AutomatedExperimentationEngine`: Sandboxed A/B trials with automatic cancellation on cost ($5.00 limit) or timeout (120s limit) breaches.
+  - Two-proportion z-test statistical significance verification ($p < 0.05$) and shadow evaluation mode.
+- **Regression Intelligence System (`packages/atlas-adaptive/src/atlas_adaptive/regression.py`)**:
+  - `RegressionIntelligenceSystem`: Continuous evaluation against versioned baselines, alerting on metric degradation across severity levels.
+- **Agent Performance Intelligence (`packages/atlas-adaptive/src/atlas_adaptive/agent_analytics.py`)**:
+  - `AgentPerformanceIntelligence`: Specialist agent metric aggregation and non-authoritative capability recommendations.
+  - Strict prohibition invariant: autonomous permission auto-expansion is permanently blocked.
+- **Controlled Knowledge Evolution (`packages/atlas-adaptive/src/atlas_adaptive/knowledge.py`)**:
+  - `ControlledKnowledgeStore`: Versioned factual knowledge evolution with duplicate detection, contradiction detection (`ContradictionDetectedError`), approval workflow, rollback, and deprecation.
+- **Safety Governor & Promotion Lifecycle (`packages/atlas-adaptive/src/atlas_adaptive/governor.py`, `promotion.py`)**:
+  - `SafetyGovernor`: Hardened boundary blocking autonomous modification of `ActionFirewall`, security rules, and production source code (`ProtectedComponentModificationError`).
+  - Prohibits self-approval (`SelfApprovalProhibitedError`) on proposed optimization changes.
+  - `PromotionManager`: Controlled staged progression (Candidate $\to$ Validation $\to$ Experiment $\to$ Safety Review $\to$ Approval $\to$ Canary 10% $\to$ Production) with cryptographic signature validation and instant rollback.
+- **Phase 14 Acceptance Suite (`tests/integration/test_phase14_acceptance.py`)**:
+  - 27 automated acceptance scenarios (AUTO-01 through AUTO-27) verifying 100% of Phase 14 requirements with zero placeholders.
+  - Full monorepo regression verified: **706 / 706 tests passing with 100% green rate**.
+
+---
+
 ## [0.13.0] - 2026-11-16 — Phase 13 Multimodal Autonomous Perception & Intelligence Platform
 
 ### Added
