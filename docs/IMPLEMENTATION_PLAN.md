@@ -871,3 +871,52 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 
 
 
+
+---
+
+## Phase 16.6: Distributed Safety, Durable Idempotency & Lease Hardening (COMPLETE)
+
+- [x] **Multi-Worker Approval Linearizability**: Atomic row locks (`FOR UPDATE`) in PostgreSQL.
+- [x] **Durable Task Idempotency**: State machine with `UNKNOWN_OUTCOME` and host crash recovery to `SUSPENDED`.
+- [x] **Atomic Lease Upsert**: Single-query `INSERT ... ON CONFLICT DO UPDATE` with monotonic fencing tokens.
+- [x] **Socket Dial-Time SSRF Pinning**: `PinnedResolutionAsyncTransport` eliminating TOCTOU DNS rebinding while preserving TLS.
+- [x] **Test Baseline**: 905/905 monorepo tests passing.
+
+---
+
+## Phase 16.8: Exception Contract Remediation & Pilot Readiness (COMPLETE)
+
+- [x] **Unified Exception Identity**: Centralized `ReconciliationRequiredError(IdempotencyError, SagaError)` in `exceptions.py`.
+- [x] **Acceptance PROC-29 Verified**: Single shared exception class eliminates catch-block divergence.
+- [x] **Test Baseline**: 916/916 monorepo tests passing.
+
+---
+
+## Phase 16.10: Controlled Operational Pilot & Capacity Validation (COMPLETE)
+
+- [x] **18 Operational Pilot Scenarios**: Automated end-to-end integration tests in `test_phase16_10_operational_pilot.py`.
+- [x] **Capacity Benchmark**: Measured process creation throughput (> 10 ops/sec) and sub-second recovery latencies.
+- [x] **Operational Runbooks Published**: 10 ITIL runbooks including deployment, rollback, and disaster recovery.
+- [x] **Test Baseline**: 922/922 monorepo tests passing.
+
+---
+
+## Phase 16.12: Independent Release Verification & Phase 17 Authorization Audit (COMPLETE)
+
+- [x] **Mathematical Test Reconciliation**: Reconciled test count progression from 781 -> 818 -> 865 -> 905 -> 916 -> 922.
+- [x] **Release Candidate Qualification**: Certified ATLAS v0.16.8 as an enterprise production release candidate.
+- [x] **Phase 17 Proposal Review**: Identified 4 architectural risks (workspace sync, lineage storage, steering idempotency, simulation sandbox).
+- [x] **Audit Verdict**: Release Candidate Verified; Phase 17 conditionally gated pending staging preparation.
+
+---
+
+## Phase 16.13: Final Governance Gates & Staging Canary Readiness (COMPLETE)
+
+- [x] **Dependency Vulnerability Gate**: Integrated `scripts/audit_dependencies.py` into `.github/workflows/ci.yml`. Scanned all 25 runtime dependencies with `pip-audit 2.10.1` (0 CVEs). Published `reports/dependency-audit.json`. Added `tests/unit/test_dependency_security_gate.py` (6 tests).
+- [x] **Phase 17 Architecture Risk Remediation**: Fully remediated all 4 risks in `docs/PHASE_17_ARCHITECTURE_RISK_REMEDIATION.md` and updated `docs/PHASE_17_ARCHITECTURE_PROPOSAL.md`.
+- [x] **Staging Canary Deployment Plan**: Published `docs/PHASE_16_13_STAGING_CANARY_PLAN.md` with 10 core elements, synthetic tenancy, and chaos injection tests.
+- [x] **Staging Canary Acceptance Criteria**: Published `docs/PHASE_16_13_STAGING_ACCEPTANCE_CRITERIA.md` with quantitative P95 upper bounds and failure injection thresholds.
+- [x] **Rollback & Disaster Recovery Protocol**: Published `docs/PHASE_16_13_ROLLBACK_AND_RECOVERY.md` with rehearsable 6-step rollback runbook and database PITR procedures.
+- [x] **Governance Authorization Manifest**: Published `docs/PHASE_16_13_GOVERNANCE_AUTHORIZATION.md` (deployment held behind human approval).
+- [x] **Final Governance Verdict**: Published `docs/PHASE_16_13_FINAL_VERDICT.md`.
+- [x] **Monorepo Test Suite**: 928 / 928 tests passing (100% green, 91.09s, 0 failures, 1 benign warning).
