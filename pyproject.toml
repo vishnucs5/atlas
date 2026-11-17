@@ -33,6 +33,7 @@ members = [
     "packages/atlas-federation",
     "packages/atlas-process",
     "packages/atlas-coding",
+    "packages/atlas-code-intelligence",
     "apps/api",
     "apps/cli",
 ]
@@ -71,6 +72,7 @@ pythonpath = [
     "packages/atlas-adaptive/src",
     "packages/atlas-federation/src",
     "packages/atlas-coding/src",
+    "packages/atlas-code-intelligence/src",
     "apps/api/src",
     "apps/cli/src",
 ]
@@ -100,6 +102,7 @@ extraPaths = [
     "packages/atlas-adaptive/src",
     "packages/atlas-federation/src",
     "packages/atlas-coding/src",
+    "packages/atlas-code-intelligence/src",
     "apps/api/src",
     "apps/cli/src",
 ]

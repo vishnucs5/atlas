@@ -11,6 +11,7 @@ from atlas_core.contracts.coding import RepositoryFileMetadata
 
 DEFAULT_IGNORED_DIRS = {
     ".git",
+    ".atlas",
     "__pycache__",
     "node_modules",
     ".venv",

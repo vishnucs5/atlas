@@ -810,6 +810,22 @@
   7. Comprehensive Interface Test Suite (`tests/unit/test_cli_interfaces.py`: 12/12 passing; 33/33 total CLI suite passing)
   8. Formal documentation: `ATLAS_CLI_MINIMAL_MODE.md`, `ATLAS_CLI_TUI_ARCHITECTURE.md`, `ATLAS_CLI_KEYBOARD_REFERENCE.md`, `ATLAS_CLI_APPROVAL_UX.md`.
 
+### Stage 4: Code Intelligence & Context Engine (COMPLETE)
+- Branch: `feat/atlas-cli-code-intelligence`
+- Package: `packages/atlas-code-intelligence`
+- Workstreams Completed:
+  1. Safe 8-Phase Repository Indexing Pipeline (`RepositoryIndexer`: Discover -> Filter -> Classify -> Parse -> Extract -> Index -> Validate -> Persist to `.atlas/index/repository_index.json`)
+  2. Multi-Language Code Parsing (`LanguageParser`: Python AST with `EXACT_AST` and `SYNTAX_ERROR` detection, structural regex parsing for JS/TS, Go, Rust, Java, C/C++)
+  3. Symbol Intelligence & Definition Mapping (`Symbol`, `DependencyGraph`: function, class, method, variable lookups, cross-module import tracking, test-to-source file mapping)
+  4. Multi-Modal Code Search (`CodeSearchEngine`: exact substring, bounded regex, symbol lookup, filename glob, local BM25/TF-IDF semantic ranking without external embeddings)
+  5. Dependency & Architectural Graph Analysis (`DependencyGraph`: directed graph, DFS cycle detection, high-coupling module identification)
+  6. Incremental Delta Reconciliation (`IncrementalIndexManager`: SHA-256 change detection for created, modified, deleted, renamed files; automatic symbol table pruning)
+  7. Evidence-Based Context Assembly (`ContextAssembler`: explicit targets, exact symbol matches, semantic ranking, test suites, token budgeting, provenance notes)
+  8. Context Security & Injection Sanitization (untrusted code tagging `is_untrusted_repository_content: True`, prompt injection regex neutralization, secret exclusion)
+  9. Performance Benchmarking Suite (`CodeIntelligenceBenchmark`: indexing latency, incremental latency, search latency, context assembly throughput)
+  10. Comprehensive Unit & Adversarial Test Suite (`tests/unit/test_code_intelligence.py`: 8/8 passing; 41/41 total CLI suite passing)
+  11. Formal documentation: `ATLAS_CODE_INTELLIGENCE.md`, `ATLAS_REPOSITORY_INDEXING.md`, `ATLAS_CONTEXT_ASSEMBLY.md`, `ATLAS_LANGUAGE_SUPPORT.md`, `ATLAS_CODE_SEARCH.md`, `ATLAS_INDEX_SECURITY.md`.
+
 ---
 
 ## Next Steps: Phase 2 Kickoff

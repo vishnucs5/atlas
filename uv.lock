@@ -9,6 +9,7 @@ members = [
     "atlas-api",
     "atlas-browser",
     "atlas-cli",
+    "atlas-code-intelligence",
     "atlas-coding",
     "atlas-coordination",
     "atlas-core",
@@ -180,6 +181,7 @@ source = { editable = "apps/cli" }
 dependencies = [
     { name = "atlas-agent" },
     { name = "atlas-browser" },
+    { name = "atlas-code-intelligence" },
     { name = "atlas-coding" },
     { name = "atlas-core" },
     { name = "atlas-models" },
@@ -192,10 +194,30 @@ dependencies = [
 requires-dist = [
     { name = "atlas-agent", editable = "packages/atlas-agent" },
     { name = "atlas-browser", editable = "packages/atlas-browser" },
+    { name = "atlas-code-intelligence", editable = "packages/atlas-code-intelligence" },
     { name = "atlas-coding", editable = "packages/atlas-coding" },
     { name = "atlas-core", editable = "packages/atlas-core" },
     { name = "atlas-models", editable = "packages/atlas-models" },
     { name = "atlas-observability", editable = "packages/atlas-observability" },
+    { name = "atlas-policy", editable = "packages/atlas-policy" },
+    { name = "atlas-storage", editable = "packages/atlas-storage" },
+]
+
+[[package]]
+name = "atlas-code-intelligence"
+version = "0.1.0"
+source = { editable = "packages/atlas-code-intelligence" }
+dependencies = [
+    { name = "atlas-coding" },
+    { name = "atlas-core" },
+    { name = "atlas-policy" },
+    { name = "atlas-storage" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-coding", editable = "packages/atlas-coding" },
+    { name = "atlas-core", editable = "packages/atlas-core" },
     { name = "atlas-policy", editable = "packages/atlas-policy" },
     { name = "atlas-storage", editable = "packages/atlas-storage" },
 ]

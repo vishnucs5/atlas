@@ -17,6 +17,7 @@ dependencies = [
     "atlas-policy",
     "atlas-agent",
     "atlas-coding",
+    "atlas-code-intelligence",
 ]
 
 [project.scripts]
@@ -31,6 +32,7 @@ atlas-models = { workspace = true }
 atlas-policy = { workspace = true }
 atlas-agent = { workspace = true }
 atlas-coding = { workspace = true }
+atlas-code-intelligence = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/atlas_cli"]

@@ -958,7 +958,20 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Workstream 7: Testing**: 12 unit/integration tests in `tests/unit/test_cli_interfaces.py` (33/33 total CLI suite passing).
 - [x] **Deliverables**: Authored `ATLAS_CLI_MINIMAL_MODE.md`, `ATLAS_CLI_TUI_ARCHITECTURE.md`, `ATLAS_CLI_KEYBOARD_REFERENCE.md`, `ATLAS_CLI_APPROVAL_UX.md`.
 
-### Stage 4: Repository Intelligence & Context Engine (GATED - PENDING AUTHORIZATION)
-- [ ] Language server protocol (LSP) and tree-sitter AST analysis
-- [ ] Repository graph and symbol dependency indexing
-- [ ] Context pruning and relevance scoring
+### Stage 4: Repository Intelligence & Context Engine (COMPLETE)
+- [x] **Workstream 1: Repository Indexing Pipeline**: Implemented 8-phase safe indexing (`RepositoryIndexer`: Discover -> Filter -> Classify -> Parse -> Extract -> Index -> Validate -> Persist to `.atlas/index/repository_index.json`).
+- [x] **Workstream 2: Multi-Language Code Parsing**: Built `LanguageParser` supporting Python (native `ast` with `EXACT_AST` and `SYNTAX_ERROR`), JS/TS, Go, Rust, Java, and C/C++ structural parsing with explicit `ParseAccuracy`.
+- [x] **Workstream 3: Symbol Intelligence**: Built symbol table and `DependencyGraph` for function, class, method, variable lookups, cross-module import tracking, and test-to-source mapping.
+- [x] **Workstream 4: Multi-Modal Code Search**: Built `CodeSearchEngine` supporting exact substring, bounded regex, symbol lookup, filename glob, and local BM25/TF-IDF semantic ranking without external embedding APIs.
+- [x] **Workstream 5: Dependency Graph Analysis**: Directed graph construction, cycle detection (DFS), and high-coupling module identification.
+- [x] **Workstream 6: Incremental Delta Reconciliation**: Built `IncrementalIndexManager` tracking SHA-256 changes for created, modified, deleted, renamed files; automatic symbol table pruning.
+- [x] **Workstream 7: Context Assembly & Budgeting**: Built `ContextAssembler` providing evidence-based context assembly, token estimation, hard budget caps, and provenance notes.
+- [x] **Workstream 8: Context Security**: Built untrusted code tagging (`is_untrusted_repository_content: True`), prompt injection regex neutralization, and sensitive secret exclusion.
+- [x] **Workstream 9: Benchmarking**: Built `CodeIntelligenceBenchmark` measuring initial indexing, incremental refresh, search latency, and context assembly throughput.
+- [x] **Workstream 10: Testing**: 8 comprehensive unit tests in `tests/unit/test_code_intelligence.py` (41/41 total CLI suite passing).
+- [x] **Deliverables**: Authored `ATLAS_CODE_INTELLIGENCE.md`, `ATLAS_REPOSITORY_INDEXING.md`, `ATLAS_CONTEXT_ASSEMBLY.md`, `ATLAS_LANGUAGE_SUPPORT.md`, `ATLAS_CODE_SEARCH.md`, `ATLAS_INDEX_SECURITY.md`.
+
+### Stage 5: Multi-Agent Coding Orchestration (GATED - PENDING AUTHORIZATION)
+- [ ] Subagent delegation and specialist roles (Planner, Author, Reviewer, Tester)
+- [ ] Message board and swarm coordination
+- [ ] Inter-agent verification and Action Firewall boundaries

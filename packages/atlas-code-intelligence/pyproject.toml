@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-code-intelligence"
+version = "0.1.0"
+description = "ATLAS Code Intelligence and Context Engine - Multi-Language Parsing, Indexing, Search & Graph"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "atlas-coding",
+    "atlas-policy",
+    "atlas-storage",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+atlas-coding = { workspace = true }
+atlas-policy = { workspace = true }
+atlas-storage = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_code_intelligence"]
