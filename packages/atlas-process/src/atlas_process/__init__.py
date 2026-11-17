@@ -20,16 +20,21 @@ from atlas_process.approvals import (
     UnauthorizedApproverError,
 )
 from atlas_process.connectors import (
+    AsyncHttpEnterpriseConnector,
     BaseEnterpriseConnector,
     CircuitBreakerOpenError,
     CircuitState,
     ConnectorError,
     ConnectorExecutionResult,
+    ConnectorHttpTransportError,
     ConnectorRateLimitExceededError,
     ConnectorScopeViolationError,
     ConnectorType,
     CRMConnector,
     ERPConnector,
+    HttpEnterpriseConnector,
+    SSRFSecurityError,
+    SSRFValidator,
     TicketingConnector,
 )
 from atlas_process.definitions import (
@@ -162,6 +167,11 @@ __all__ = [
     "CircuitState",
     "ConnectorExecutionResult",
     "BaseEnterpriseConnector",
+    "HttpEnterpriseConnector",
+    "AsyncHttpEnterpriseConnector",
+    "SSRFSecurityError",
+    "SSRFValidator",
+    "ConnectorHttpTransportError",
     "ERPConnector",
     "CRMConnector",
     "TicketingConnector",

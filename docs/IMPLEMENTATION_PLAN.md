@@ -791,6 +791,81 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
   - Executed full monorepo regression verification across all 16 phases: **781 / 781 tests passed with 100% green rate**.
   - Published final Phase 16 acceptance report in `docs/PHASE_16_ACCEPTANCE_REPORT.md`.
 
+---
+
+## Phase 16.2: Critical Remediation, Durability & Security Hardening (COMPLETE)
+
+**Target:** Remediate all 10 confirmed findings from the Phase 16.1 independent audit. Establish relational PostgreSQL & SQLite durability, honest saga compensation, API authentication & multi-tenant authorization, safe AST conditional evaluation, approval terminal-state enforcement, webhook HMAC security, distributed worker lease fencing, encrypted connector credentials, real HTTP transport with circuit breaking, and process memory pagination/archival.  
+**Status:** **100% COMPLETE (10/10 Findings Remediated & Verified; 37/37 Remediation Tests Passing; 818/818 Monorepo Tests Passing)**  
+**Completed Date:** 2026-11-17  
+
+### Phase 16.2 Milestones:
+- [x] **M0: Reproduction & Finding Traceability**
+  - Independently reproduced all 10 audit findings in `scratch/reproduce_findings.py`.
+  - Authored `docs/PHASE_16_2_REMEDIATION_PLAN.md` and `docs/PHASE_16_2_FINDING_TRACEABILITY.md`.
+- [x] **M1: Durable PostgreSQL & SQLite Persistence (`storage.py`, `migrations/016_enterprise_process.sql`)**
+  - Created 15 relational tables in `migrations/016_enterprise_process.sql`.
+  - Implemented `ProcessStorageProtocol`, `PostgresProcessStorage`, and `SqliteProcessStorage`.
+  - Reconstructed uncompleted processes on restart in `ProcessExecutionEngine.recover_after_restart()`.
+  - Verified crash recovery against both SQLite and real native PostgreSQL instances (`tests/integration/test_phase16_2_persistence.py`).
+- [x] **M2: Saga Compensation Integrity (`transactions.py`)**
+  - Overhauled saga compensation coordinator: missing handlers now transition step to `COMPENSATION_UNAVAILABLE` and saga to `MANUAL_INTERVENTION_REQUIRED`.
+  - Failed compensation handlers capture exception context and enqueue to reconciliation queue.
+  - Added support for post-condition verification functions (`verification_fn`).
+  - Verified via `tests/unit/test_phase16_2_saga_integrity.py` (7/7 passed).
+- [x] **M3: API Authentication & Multi-Tenant Authorization (`auth.py`, `api.py`)**
+  - Created `packages/atlas-process/src/atlas_process/auth.py` providing `ProcessCallerIdentity`, constant-time HMAC `atk_proc_` token verification, and `get_current_identity` dependency.
+  - Protected all 5 routes in `api.py` with `Depends(get_current_identity)`.
+  - Enforced strict tenant isolation (HTTP 403 Forbidden on cross-tenant access) and prevented approver user impersonation.
+  - Verified via `tests/unit/test_phase16_2_api_auth.py` (8/8 passed).
+- [x] **M4: Safe AST Conditional Evaluator (`evaluator.py`, `engine.py`)**
+  - Implemented `SafeExpressionEvaluator` using Python AST parsing with strict allowlists (no `Call`, `Import`, `Attribute`, max length 500, max depth 10).
+  - Integrated into `_evaluate_conditions()` in `engine.py`, replacing empty stubs.
+  - Verified via `tests/unit/test_phase16_2_evaluator.py` (6/6 passed).
+- [x] **M5: Approval Terminal-State Enforcement (`approvals.py`)**
+  - Enforced permanent rejection veto: rejection immediately seals request as `REJECTED` and prevents state reversal.
+  - Locked terminal states (`APPROVED`, `REJECTED`, `EXPIRED`) against subsequent decision attempts (`ApprovalError`).
+  - Verified via `tests/unit/test_phase16_2_approvals.py` (4/4 passed).
+- [x] **M6: Webhook HMAC Secret Security (`triggers.py`)**
+  - Removed static fallback secret `"atlas-process-trigger-secret-v16"`.
+  - Mandated explicit per-tenant webhook secrets, enforced 300s timestamp drift replay defense, and used constant-time HMAC comparison.
+  - Verified via `tests/unit/test_phase16_2_triggers.py` (4/4 passed).
+- [x] **M7: Distributed Worker Lease Fencing (`storage.py`, `engine.py`)**
+  - Implemented database-backed monotonic fencing tokens in `process_worker_leases`.
+  - Reject stale worker commits with `StaleWorkerFencingError`.
+  - Verified via `tests/integration/test_phase16_2_persistence.py::test_distributed_fencing_token_rejection`.
+- [x] **M8: Encrypted Connector Credentials (`connectors.py`)**
+  - Implemented `SecretCredential(SecretStr)` for API keys and secrets.
+  - Redacts sensitive credentials in string formatting, exception traces, JSON dumps, and `__repr__`.
+  - Verified via `tests/unit/test_phase16_2_connectors.py` (4/4 passed).
+- [x] **M9: Real HTTP Enterprise Connector Transport (`connectors.py`)**
+  - Implemented `HttpEnterpriseConnector` using `httpx.Client` with connection pooling, timeouts, backoff retries, and circuit breakers.
+  - Verified via `tests/unit/test_phase16_2_connectors.py::test_http_enterprise_connector_transport`.
+- [x] **M10: Process Archival & Pagination (`storage.py`, `engine.py`)**
+  - Implemented paginated queries in `list_instances()` and historical cleanup in `archive_completed_instances()`.
+  - Verified via `tests/integration/test_phase16_2_persistence.py::test_pagination_and_archival`.
+- [x] **M11: Regression & Monorepo Verification**
+  - Verified full test suite: **818 / 818 monorepo tests passing with 100% green rate**.
+  - Verified Phase 16 acceptance suite: **45 / 45 tests passing**.
+  - Produced complete documentation suite in `docs/PHASE_16_2_*.md`.
+
+---
+
+## Phase 16.4: Critical Remediation, Durable Transactions & Security Corrections
+
+**Target:** Remediate every actionable finding from the Phase 16.3 Independent Audit. Transform enterprise process execution into a genuinely durable, transactionally consistent, replay- and SSRF-resistant platform under concurrent distributed execution.
+
+- [x] **PostgreSQL Lease Integrity**: Added `lease_token` column in `migrations/017_process_lease_integrity.sql`, preserved fencing monotonicity across releases.
+- [x] **Durable Saga Transactions**: Injected storage protocol into `SagaCoordinator`, persisted steps and compensation history into `process_saga_steps`, automated reconciliation records.
+- [x] **Approval Quorum Concurrency**: Thread-safe `RLock` synchronization, vote persistence in `process_approval_decisions`, terminal lock enforcement.
+- [x] **Reconciliation Retention Guardrails**: Severed cascade delete (`ON DELETE RESTRICT`), nullified instance archival (`ON DELETE SET NULL`), excluded pending instances from cleanup.
+- [x] **Deterministic Webhook Identity**: Fingerprinted webhook body+sig+ts, added durable `process_event_inbox` deduplication table.
+- [x] **Outbound Connector SSRF Firewall**: Built `SSRFValidator` blocking private IPs, cloud metadata, hex/octal encodings, DNS rebinding, and redirect hops.
+- [x] **Non-Blocking Async Connectors**: Implemented `AsyncHttpEnterpriseConnector` using `httpx.AsyncClient` with non-blocking backoff and status discrimination.
+- [x] **Zero Runtime Warnings**: Awaited background task cancellations during runtime shutdown and CLI execution.
+- [x] **Documentation Suite**: Produced complete documentation suite in `docs/PHASE_16_4_*.md` with 865/865 tests passing.
+
+
 
 
 

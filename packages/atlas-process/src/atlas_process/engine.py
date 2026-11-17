@@ -1,7 +1,7 @@
 """ATLAS Durable Process Execution Engine.
 
 Orchestrates business process execution, dependency resolution, parallel/conditional branching,
-worker lease fencing, crash recovery, checkpointing, and idempotent execution.
+worker lease fencing, crash recovery, checkpointing, and idempotent execution backed by durable storage.
 """
 
 from __future__ import annotations
@@ -17,11 +17,16 @@ from atlas_process.definitions import (
     ProcessTaskDefinition,
     TaskType,
 )
+from atlas_process.evaluator import SafeExpressionEvaluator
 from atlas_process.state_machine import (
     ProcessStateMachine,
     ProcessStatus,
     ProcessTaskStateMachine,
     ProcessTaskStatus,
+)
+from atlas_process.storage import (
+    InMemoryProcessStorage,
+    ProcessStorageProtocol,
 )
 
 
@@ -78,7 +83,9 @@ class LeaseExpiredError(Exception):
 class ProcessExecutionEngine:
     """Authoritative orchestrator for durable process lifecycle and task execution."""
 
-    def __init__(self) -> None:
+    def __init__(self, storage: ProcessStorageProtocol | None = None) -> None:
+        self._storage: ProcessStorageProtocol = storage or InMemoryProcessStorage()
+        self._evaluator = SafeExpressionEvaluator()
         self._instances: dict[str, ProcessInstance] = {}
         self._definitions: dict[str, ProcessDefinition] = {}
         self._idempotency_cache: dict[str, str] = {}  # idempotency_key -> instance_id
@@ -87,8 +94,9 @@ class ProcessExecutionEngine:
         self._fencing_counters: dict[str, int] = {}  # task_instance_id -> counter
 
     def register_definition(self, definition: ProcessDefinition) -> None:
-        """Register a validated process definition in the engine."""
+        """Register a validated process definition in the engine and persistent storage."""
         self._definitions[definition.definition_id] = definition
+        self._storage.save_definition(definition)
 
     def start_process(
         self,
@@ -105,7 +113,11 @@ class ProcessExecutionEngine:
 
         definition = self._definitions.get(definition_id)
         if not definition:
-            raise KeyError(f"Process definition '{definition_id}' not found.")
+            definition = self._storage.get_definition(definition_id)
+            if definition:
+                self._definitions[definition_id] = definition
+            else:
+                raise KeyError(f"Process definition '{definition_id}' not found.")
 
         instance = ProcessInstance(
             definition_id=definition_id,
@@ -131,6 +143,7 @@ class ProcessExecutionEngine:
             self._idempotency_cache[idempotency_key] = instance.instance_id
 
         self._instances[instance.instance_id] = instance
+        self._storage.save_instance(instance)
         self._create_checkpoint(instance)
 
         # Transition initial tasks with 0 dependencies to READY
@@ -143,15 +156,36 @@ class ProcessExecutionEngine:
         instance.checkpoint_version += 1
         instance.updated_at = time.time()
         history = self._checkpoints.setdefault(instance.instance_id, [])
-        history.append(instance.model_dump())
+        snapshot = instance.model_dump()
+        history.append(snapshot)
+        self._storage.save_checkpoint(instance.instance_id, instance.checkpoint_version, snapshot)
+        self._storage.save_instance(instance)
 
-    def get_instance(self, instance_id: str) -> ProcessInstance | None:
-        """Retrieve a process instance by ID."""
-        return self._instances.get(instance_id)
+    def get_instance(
+        self, instance_id: str, tenant_id: str | None = None
+    ) -> ProcessInstance | None:
+        """Retrieve a process instance by ID with optional tenant isolation enforcement."""
+        instance = self._instances.get(instance_id)
+        if not instance:
+            instance = self._storage.get_instance(instance_id)
+            if instance:
+                self._instances[instance_id] = instance
+        if instance and tenant_id and instance.tenant_id != tenant_id:
+            raise PermissionError(
+                f"Access denied: Instance '{instance_id}' does not belong to tenant '{tenant_id}'."
+            )
+        return instance
 
     def _refresh_task_states(self, instance: ProcessInstance) -> None:
         """Evaluate dependencies and conditional branches to progress tasks."""
-        definition = self._definitions[instance.definition_id]
+        definition = self._definitions.get(instance.definition_id)
+        if not definition:
+            definition = self._storage.get_definition(instance.definition_id)
+            if definition:
+                self._definitions[instance.definition_id] = definition
+            else:
+                raise KeyError(f"Definition '{instance.definition_id}' not found.")
+
         all_completed = True
         any_failed = False
 
@@ -202,8 +236,12 @@ class ProcessExecutionEngine:
         self._create_checkpoint(instance)
 
     def _evaluate_conditions(self, tdef: ProcessTaskDefinition, instance: ProcessInstance) -> bool:
-        """Evaluate branch conditions against process variables."""
-        # By default, without negative conditions, dependencies met means ready
+        """Evaluate branch conditions against process variables using SafeExpressionEvaluator."""
+        if not tdef.conditions:
+            return True
+        for cond in tdef.conditions:
+            if not self._evaluator.evaluate(cond.expression, instance.variables):
+                return False
         return True
 
     def acquire_task_lease(
@@ -216,7 +254,11 @@ class ProcessExecutionEngine:
         """Grant a worker lease and monotonic fencing token to execute a task."""
         instance = self._instances.get(instance_id)
         if not instance:
-            raise KeyError(f"Process instance '{instance_id}' not found.")
+            instance = self._storage.get_instance(instance_id)
+            if instance:
+                self._instances[instance_id] = instance
+            else:
+                raise KeyError(f"Process instance '{instance_id}' not found.")
 
         t_inst = instance.task_instances.get(task_def_id)
         if not t_inst:
@@ -235,11 +277,15 @@ class ProcessExecutionEngine:
                 f"Task '{task_def_id}' is currently leased by worker '{t_inst.assigned_to}' until {t_inst.lease_expires_at}."
             )
 
-        # Monotonically increment fencing token
-        fencing_token = self._fencing_counters.get(t_inst.task_instance_id, 0) + 1
+        # Monotonically increment fencing token through durable storage
+        lease_token, fencing_token = self._storage.acquire_lease(
+            t_inst.task_instance_id,
+            instance.instance_id,
+            worker_id,
+            lease_duration_seconds,
+        )
         self._fencing_counters[t_inst.task_instance_id] = fencing_token
 
-        lease_token = f"lease_{uuid.uuid4().hex[:12]}"
         t_inst.lease_token = lease_token
         t_inst.lease_fencing_token = fencing_token
         t_inst.lease_expires_at = now + lease_duration_seconds
@@ -264,11 +310,20 @@ class ProcessExecutionEngine:
         """Mark task completed, verifying worker fencing token and checking idempotency."""
         instance = self._instances.get(instance_id)
         if not instance:
-            raise KeyError(f"Process instance '{instance_id}' not found.")
+            instance = self._storage.get_instance(instance_id)
+            if instance:
+                self._instances[instance_id] = instance
+            else:
+                raise KeyError(f"Process instance '{instance_id}' not found.")
 
         t_inst = instance.task_instances.get(task_def_id)
         if not t_inst:
             raise KeyError(f"Task '{task_def_id}' not found.")
+
+        # Check task-level idempotency first
+        if idempotency_key and idempotency_key in self._task_idempotency_cache:
+            t_inst.outputs = self._task_idempotency_cache[idempotency_key]
+            return
 
         # Fencing token invariant: must match active token
         if fencing_token != t_inst.lease_fencing_token:
@@ -276,18 +331,20 @@ class ProcessExecutionEngine:
                 f"Worker commit rejected: Stale fencing token {fencing_token} (expected {t_inst.lease_fencing_token})."
             )
 
-        # Check if lease expired
+        # Check if lease expired before checking storage validity
         if t_inst.lease_expires_at and time.time() > t_inst.lease_expires_at:
             raise LeaseExpiredError(
                 f"Task lease expired at {t_inst.lease_expires_at} (current={time.time()})."
             )
 
-        # Check task-level idempotency
+        if not self._storage.verify_lease(
+            t_inst.task_instance_id, t_inst.lease_token or "", fencing_token
+        ):
+            raise StaleWorkerFencingError(
+                f"Worker commit rejected: Lease verification failed in storage for token {fencing_token}."
+            )
+
         if idempotency_key:
-            if idempotency_key in self._task_idempotency_cache:
-                # Return cached result
-                t_inst.outputs = self._task_idempotency_cache[idempotency_key]
-                return
             self._task_idempotency_cache[idempotency_key] = outputs
 
         ProcessTaskStateMachine.validate_transition(t_inst.status, ProcessTaskStatus.COMPLETED)
@@ -312,13 +369,22 @@ class ProcessExecutionEngine:
         """Mark a task failed, triggering failure paths or compensations."""
         instance = self._instances.get(instance_id)
         if not instance:
-            raise KeyError(f"Process instance '{instance_id}' not found.")
+            instance = self._storage.get_instance(instance_id)
+            if instance:
+                self._instances[instance_id] = instance
+            else:
+                raise KeyError(f"Process instance '{instance_id}' not found.")
 
         t_inst = instance.task_instances.get(task_def_id)
         if not t_inst:
             raise KeyError(f"Task '{task_def_id}' not found.")
 
         if fencing_token != t_inst.lease_fencing_token:
+            raise StaleWorkerFencingError("Stale fencing token on task failure.")
+
+        if not self._storage.verify_lease(
+            t_inst.task_instance_id, t_inst.lease_token or "", fencing_token
+        ):
             raise StaleWorkerFencingError("Stale fencing token on task failure.")
 
         ProcessTaskStateMachine.validate_transition(t_inst.status, ProcessTaskStatus.FAILED)
@@ -332,7 +398,11 @@ class ProcessExecutionEngine:
         """Cancel an in-flight process instance and all non-terminal tasks."""
         instance = self._instances.get(instance_id)
         if not instance:
-            raise KeyError(f"Process instance '{instance_id}' not found.")
+            instance = self._storage.get_instance(instance_id)
+            if instance:
+                self._instances[instance_id] = instance
+            else:
+                raise KeyError(f"Process instance '{instance_id}' not found.")
 
         if instance.status in ProcessStateMachine.TERMINAL_STATES:
             return
@@ -351,13 +421,23 @@ class ProcessExecutionEngine:
     def recover_after_restart(self) -> int:
         """Simulate engine restart recovery from persistent checkpoints.
 
-        Identifies expired worker leases and re-queues tasks as READY.
-        Returns count of recovered tasks.
+        Reconstructs active processes from durable storage, identifies expired worker leases,
+        and re-queues tasks as READY. Returns count of recovered tasks.
         """
         now = time.time()
         recovered_count = 0
 
-        for instance in self._instances.values():
+        # Reconstruct uncompleted instances from durable storage
+        stored_uncompleted = self._storage.get_uncompleted_instances()
+        for inst in stored_uncompleted:
+            if inst.instance_id not in self._instances:
+                self._instances[inst.instance_id] = inst
+            if inst.definition_id not in self._definitions:
+                d = self._storage.get_definition(inst.definition_id)
+                if d:
+                    self._definitions[d.definition_id] = d
+
+        for instance in list(self._instances.values()):
             if instance.status == ProcessStatus.RUNNING:
                 for t_inst in instance.task_instances.values():
                     if t_inst.status == ProcessTaskStatus.RUNNING:
@@ -371,3 +451,34 @@ class ProcessExecutionEngine:
                 self._create_checkpoint(instance)
 
         return recovered_count
+
+    def list_instances(
+        self,
+        tenant_id: str | None = None,
+        status: ProcessStatus | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[ProcessInstance]:
+        """Query process instances with pagination."""
+        return self._storage.list_instances(tenant_id, status, limit, offset)
+
+    def archive_completed_instances(
+        self,
+        cutoff_timestamp: float,
+        tenant_id: str | None = None,
+    ) -> int:
+        """Archive completed/failed instances older than cutoff."""
+        count = self._storage.archive_completed_instances(cutoff_timestamp, tenant_id)
+        # Clean local cache
+        to_del = [
+            iid
+            for iid, inst in self._instances.items()
+            if (not tenant_id or inst.tenant_id == tenant_id)
+            and inst.status in (ProcessStatus.COMPLETED, ProcessStatus.FAILED)
+            and inst.completed_at
+            and inst.completed_at < cutoff_timestamp
+        ]
+        for iid in to_del:
+            self._instances.pop(iid, None)
+            self._checkpoints.pop(iid, None)
+        return count

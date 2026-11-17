@@ -234,6 +234,10 @@ def run_task_pause(task_id: str, reason: str | None = None) -> int:
         print(f"Error: {err}", file=sys.stderr)
         return 1
     finally:
+        try:
+            loop.run_until_complete(runtime.shutdown())
+        except Exception:
+            pass
         loop.close()
 
 
@@ -259,6 +263,10 @@ def run_task_resume(task_id: str) -> int:
         print(f"Error: {err}", file=sys.stderr)
         return 1
     finally:
+        try:
+            loop.run_until_complete(runtime.shutdown())
+        except Exception:
+            pass
         loop.close()
 
 
@@ -284,4 +292,8 @@ def run_task_cancel(task_id: str, reason: str | None = None) -> int:
         print(f"Error: {err}", file=sys.stderr)
         return 1
     finally:
+        try:
+            loop.run_until_complete(runtime.shutdown())
+        except Exception:
+            pass
         loop.close()

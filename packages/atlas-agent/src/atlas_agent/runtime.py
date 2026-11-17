@@ -198,9 +198,13 @@ class ProductionRuntime(AtlasRuntime):
 
     async def shutdown(self) -> None:
         """Cleanly tear down all running tasks, sessions, and drivers."""
-        for _t_id, task_obj in list(self._running_async_tasks.items()):
-            if not task_obj.done():
-                task_obj.cancel()
+        pending = [
+            task_obj for task_obj in self._running_async_tasks.values() if not task_obj.done()
+        ]
+        for task_obj in pending:
+            task_obj.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
         self._running_async_tasks.clear()
 
         try:
@@ -356,12 +360,18 @@ class ProductionRuntime(AtlasRuntime):
             if not self._initialized:
                 await self.initialize()
             timeout = float(task.metadata.get("timeout_seconds") or self.task_timeout_seconds)
+            loop_task = asyncio.create_task(self.loop.run(task, session, budget=budget))
             try:
                 task = await asyncio.wait_for(
-                    self.loop.run(task, session, budget=budget),
+                    asyncio.shield(loop_task),
                     timeout=timeout,
                 )
             except TimeoutError:
+                loop_task.cancel()
+                try:
+                    await loop_task
+                except (asyncio.CancelledError, Exception):
+                    pass
                 await self._transition_task(
                     task,
                     TaskStatus.FAILED,
@@ -369,6 +379,13 @@ class ProductionRuntime(AtlasRuntime):
                     reason=f"Task execution exceeded timeout limit of {timeout} seconds",
                 )
                 return task
+            except asyncio.CancelledError:
+                loop_task.cancel()
+                try:
+                    await loop_task
+                except (asyncio.CancelledError, Exception):
+                    pass
+                raise
 
             # Check if task paused for human approval
             if task.status == TaskStatus.WAITING_APPROVAL:
@@ -443,6 +460,10 @@ class ProductionRuntime(AtlasRuntime):
             bg_task = self._running_async_tasks.pop(task_id)
             if not bg_task.done():
                 bg_task.cancel()
+                try:
+                    await bg_task
+                except (asyncio.CancelledError, Exception):
+                    pass
 
         session = self._sessions.get(task_id)
         sess_id = session.session_id if session else None

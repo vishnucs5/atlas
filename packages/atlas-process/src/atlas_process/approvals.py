@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 import time
 import uuid
 from enum import StrEnum
@@ -66,6 +67,7 @@ class ApprovalRequest(BaseModel):
     parameters: dict[str, Any]
     parameter_hash: str = ""
     requesting_identity: str
+    tenant_id: str = "tenant_default"
     allowed_approver_roles: list[str] = Field(default_factory=list)
     allowed_approver_ids: list[str] = Field(default_factory=list)
     required_approvals: int = 1
@@ -75,6 +77,7 @@ class ApprovalRequest(BaseModel):
     status: ApprovalDecision = ApprovalDecision.PENDING
     decisions: list[ApprovalRecord] = Field(default_factory=list)
     created_at: float = Field(default_factory=time.time)
+    resolved_at: float | None = None
 
     def compute_parameter_hash(self) -> str:
         """Compute deterministic SHA-256 hash of material parameters."""
@@ -85,8 +88,10 @@ class ApprovalRequest(BaseModel):
 class HumanApprovalEngine:
     """Manages human approval requests, enforces separation of duties, and validates parameter integrity."""
 
-    def __init__(self) -> None:
+    def __init__(self, storage: Any | None = None) -> None:
+        self.storage = storage
         self._approvals: dict[str, ApprovalRequest] = {}
+        self._lock = threading.RLock()
 
     def create_approval_request(
         self,
@@ -101,6 +106,7 @@ class HumanApprovalEngine:
         duration_seconds: float = 3600.0,
         required_approvals: int = 1,
         risk_classification: str = "HIGH",
+        tenant_id: str = "tenant_default",
     ) -> ApprovalRequest:
         """Create and register an immutable approval request with hashed parameters."""
         now = time.time()
@@ -116,9 +122,13 @@ class HumanApprovalEngine:
             required_approvals=required_approvals,
             risk_classification=risk_classification,
             expires_at=now + duration_seconds,
+            tenant_id=tenant_id,
         )
         req.parameter_hash = req.compute_parameter_hash()
-        self._approvals[req.approval_id] = req
+        with self._lock:
+            self._approvals[req.approval_id] = req
+            if self.storage and hasattr(self.storage, "save_approval"):
+                self.storage.save_approval(req)
         return req
 
     def decide(
@@ -129,65 +139,88 @@ class HumanApprovalEngine:
         comments: str = "",
         current_parameters: dict[str, Any] | None = None,
     ) -> ApprovalRequest:
-        """Record an approval or rejection decision, validating SoD, expiry, and parameters."""
-        req = self._approvals.get(approval_id)
-        if not req:
-            raise KeyError(f"Approval request '{approval_id}' not found.")
+        """Record an approval or rejection decision with thread-safe quorum updates and storage durability."""
+        with self._lock:
+            req = self.get_approval(approval_id)
+            if not req:
+                raise KeyError(f"Approval request '{approval_id}' not found.")
 
-        now = time.time()
+            now = time.time()
 
-        # 1. Check Expiry
-        if now > req.expires_at:
-            req.status = ApprovalDecision.EXPIRED
-            raise ApprovalExpiredError(f"Approval request '{approval_id}' has expired.")
-
-        # 2. Separation of Duties Invariant: Requestor cannot approve own action
-        if approver_id == req.requesting_identity:
-            raise SeparationOfDutiesViolationError(
-                f"Separation of duties violation: Requestor '{approver_id}' cannot approve its own action."
-            )
-
-        # 3. Authorized Approver Check
-        if approver_id not in req.allowed_approver_ids:
-            raise UnauthorizedApproverError(
-                f"Approver '{approver_id}' is not authorized to decide approval '{approval_id}'."
-            )
-
-        # 4. Parameter Tamper Resistance: Ensure parameters haven't mutated
-        if current_parameters is not None:
-            current_hash = hashlib.sha256(
-                json.dumps(current_parameters, sort_keys=True).encode("utf-8")
-            ).hexdigest()
-            if current_hash != req.parameter_hash:
-                raise ParameterTamperedError(
-                    "Approval rejected: Material parameters have been altered since approval request creation."
+            # 0. Terminal State Lock Invariant
+            if req.status != ApprovalDecision.PENDING:
+                raise ApprovalError(
+                    f"Approval request '{approval_id}' has already been resolved with status '{req.status}' "
+                    "and cannot accept further decisions."
                 )
 
-        # 5. Check duplicate approval by same person
-        if any(d.approver_id == approver_id for d in req.decisions):
-            raise ApprovalError(f"Approver '{approver_id}' has already submitted a decision.")
+            # 1. Check Expiry
+            if now > req.expires_at:
+                req.status = ApprovalDecision.EXPIRED
+                req.resolved_at = now
+                if self.storage and hasattr(self.storage, "save_approval"):
+                    self.storage.save_approval(req)
+                raise ApprovalExpiredError(f"Approval request '{approval_id}' has expired.")
 
-        # Record decision
-        req.decisions.append(
-            ApprovalRecord(
-                approver_id=approver_id,
-                decision=decision,
-                decided_at=now,
-                comments=comments,
+            # 2. Separation of Duties Invariant: Requestor cannot approve own action
+            if approver_id == req.requesting_identity:
+                raise SeparationOfDutiesViolationError(
+                    f"Separation of duties violation: Requestor '{approver_id}' cannot approve its own action."
+                )
+
+            # 3. Authorized Approver Check
+            if approver_id not in req.allowed_approver_ids:
+                raise UnauthorizedApproverError(
+                    f"Approver '{approver_id}' is not authorized to decide approval '{approval_id}'."
+                )
+
+            # 4. Parameter Tamper Resistance: Ensure parameters haven't mutated
+            if current_parameters is not None:
+                current_hash = hashlib.sha256(
+                    json.dumps(current_parameters, sort_keys=True).encode("utf-8")
+                ).hexdigest()
+                if current_hash != req.parameter_hash:
+                    raise ParameterTamperedError(
+                        "Approval rejected: Material parameters have been altered since approval request creation."
+                    )
+
+            # 5. Check duplicate approval by same person
+            if any(d.approver_id == approver_id for d in req.decisions):
+                raise ApprovalError(f"Approver '{approver_id}' has already submitted a decision.")
+
+            # Record decision
+            req.decisions.append(
+                ApprovalRecord(
+                    approver_id=approver_id,
+                    decision=decision,
+                    decided_at=now,
+                    comments=comments,
+                )
             )
-        )
 
-        if decision == ApprovalDecision.REJECTED:
-            req.status = ApprovalDecision.REJECTED
-        elif decision == ApprovalDecision.APPROVED:
-            approved_count = sum(
-                1 for d in req.decisions if d.decision == ApprovalDecision.APPROVED
-            )
-            if approved_count >= req.required_approvals:
-                req.status = ApprovalDecision.APPROVED
+            if decision == ApprovalDecision.REJECTED:
+                # Permanent veto: Single rejection terminates immediately
+                req.status = ApprovalDecision.REJECTED
+                req.resolved_at = now
+            elif decision == ApprovalDecision.APPROVED:
+                approved_count = sum(
+                    1 for d in req.decisions if d.decision == ApprovalDecision.APPROVED
+                )
+                if approved_count >= req.required_approvals:
+                    req.status = ApprovalDecision.APPROVED
+                    req.resolved_at = now
 
-        return req
+            if self.storage and hasattr(self.storage, "save_approval"):
+                self.storage.save_approval(req)
+
+            return req
 
     def get_approval(self, approval_id: str) -> ApprovalRequest | None:
-        """Retrieve approval request by ID."""
-        return self._approvals.get(approval_id)
+        """Retrieve approval request by ID, checking local cache and falling back to durable storage."""
+        with self._lock:
+            appr = self._approvals.get(approval_id)
+            if not appr and self.storage and hasattr(self.storage, "get_approval"):
+                appr = self.storage.get_approval(approval_id)
+                if appr:
+                    self._approvals[approval_id] = appr
+            return appr

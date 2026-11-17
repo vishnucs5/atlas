@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.4] - 2026-11-17 — Phase 16.4 Critical Remediation, Durable Transactions & Security Corrections
+
+### Added
+- **PostgreSQL Worker Lease Token Integrity (`migrations/017_process_lease_integrity.sql`, `storage.py`)**:
+  - `lease_token VARCHAR(64) NOT NULL` column added to `process_worker_leases` with performance indexes.
+  - Lease release preserves row with expiration timestamp `0.0`, preserving monotonic fencing counters across worker re-acquisition epochs.
+- **Durable Saga Transaction & Step Persistence (`transactions.py`, `storage.py`)**:
+  - `SagaCoordinator` storage injection persisting state, payloads, execution records, and compensation histories into `process_saga_transactions` and `process_saga_steps`.
+  - Automatic `process_reconciliation_records` generation on compensation failure and safe `manual_resolve()` synchronization.
+- **Human Approval Quorum Durability & Concurrency (`approvals.py`, `storage.py`)**:
+  - `HumanApprovalEngine` `threading.RLock()` synchronization preventing decision race conditions.
+  - Persistent vote storage in `process_approval_decisions` surviving engine restarts.
+- **Reconciliation Retention & Nullified Archival (`migrations/017_process_lease_integrity.sql`, `storage.py`)**:
+  - Severed foreign key cascade to `ON DELETE RESTRICT` on `process_reconciliation_records`.
+  - Nullified `process_saga_transactions.process_instance_id` (`ON DELETE SET NULL`) preserving compliance audit history when instances are archived.
+  - SQL archival subquery excluding instances with pending reconciliation records.
+- **Deterministic Webhook Replay Deduplication (`triggers.py`, `storage.py`)**:
+  - Deterministic event IDs derived from payload content, tenant ID, signature, and timestamp.
+  - Durable `process_event_inbox` table in PostgreSQL and SQLite preventing duplicate event ingestion.
+- **Outbound Enterprise Connector SSRF Firewall (`connectors.py`)**:
+  - `SSRFValidator` blocking RFC 1918 private subnets, cloud metadata (`169.254.169.254`), loopback, alternate encodings (hex/int/octal), IPv6 mapped ranges, and DNS rebinding.
+  - Intercepted 3xx redirects with mandatory target revalidation and 10MB payload size limit.
+- **Non-Blocking Asynchronous HTTP Connectors (`connectors.py`)**:
+  - `AsyncHttpEnterpriseConnector` using `httpx.AsyncClient` and non-blocking backoff with jitter.
+  - Status code discrimination retrying only transient errors (429, 502, 503, 504) while failing fast on client errors (400, 401, 403, 404).
+
+### Fixed
+- **Unawaited Coroutine Warnings (`runtime.py`, `apps/cli/src/atlas_cli/commands/task.py`)**:
+  - `ProductionRuntime.shutdown()` cleanly cancels and awaits all background tasks.
+  - CLI task execution commands gracefully await runtime shutdown, eliminating unawaited coroutine warnings.
+
+---
+
+## [0.16.2] - 2026-11-17 — Phase 16.2 Critical Remediation, Durability & Security Hardening
+
+### Added
+- **Durable Relational Persistence (`packages/atlas-process/src/atlas_process/storage.py`, `migrations/016_enterprise_process.sql`)**:
+  - 15 relational tables providing durable storage for definitions, instances, checkpoints, approvals, sagas, and worker leases.
+  - `PostgresProcessStorage` with connection pooling, parameterized queries, and row-level fencing.
+  - `SqliteProcessStorage` with WAL journaling, foreign keys, and thread-safe reentrant locking.
+  - Persistent checkpointing and stateful crash recovery in `ProcessExecutionEngine.recover_after_restart()`.
+- **API Authentication & Tenant Authorization (`packages/atlas-process/src/atlas_process/auth.py`, `api.py`)**:
+  - `ProcessCallerIdentity` and `get_current_identity` FastAPI dependency enforcing Bearer token and API key validation.
+  - Cryptographically signed HMAC `atk_proc_` tokens with tamper detection and expiration enforcement.
+  - Cross-tenant isolation returning HTTP 403 Forbidden on foreign tenant resource access.
+  - Caller identity binding on approval decisions preventing user impersonation.
+- **Safe Conditional Expression Evaluator (`packages/atlas-process/src/atlas_process/evaluator.py`)**:
+  - Sandboxed AST evaluator parsing and validating dynamic workflow branch conditions.
+  - Strict allowlist blocking `Call`, `Import`, `Attribute`, and arbitrary code execution.
+- **Real HTTP Transport & Credential Redaction (`packages/atlas-process/src/atlas_process/connectors.py`)**:
+  - `SecretCredential` (`SecretStr`) redacting API keys and passwords in logs, exceptions, and `__repr__`.
+  - `HttpEnterpriseConnector` using `httpx.Client` with connection pooling, timeouts, backoff retries, and circuit breakers.
+
+### Fixed
+- **Saga Compensation Integrity (`packages/atlas-process/src/atlas_process/transactions.py`)**:
+  - Missing compensation handlers now transition steps to `COMPENSATION_UNAVAILABLE` and saga to `MANUAL_INTERVENTION_REQUIRED`.
+  - Compensation failures capture exceptions in history, mark sagas for manual reconciliation, and return `False`.
+- **Approval Terminal-State Enforcement (`packages/atlas-process/src/atlas_process/approvals.py`)**:
+  - Rejection permanently seals approval requests as `REJECTED`, preventing reversal by subsequent approvals.
+  - Terminal states (`APPROVED`, `REJECTED`, `EXPIRED`) locked against modifications.
+- **Webhook HMAC Secret Security (`packages/atlas-process/src/atlas_process/triggers.py`)**:
+  - Removed static fallback secret `"atlas-process-trigger-secret-v16"`. Mandates explicit per-tenant secrets and enforces 300s timestamp drift replay defense.
+- **Distributed Worker Lease Fencing (`packages/atlas-process/src/atlas_process/storage.py`, `engine.py`)**:
+  - Monotonic database fencing tokens in `process_worker_leases` reject stale worker commits with `StaleWorkerFencingError`.
+- **Process Memory Growth (`packages/atlas-process/src/atlas_process/storage.py`, `engine.py`)**:
+  - Implemented `list_instances` with pagination and `archive_completed_instances` with cutoff thresholds.
+
+---
+
 ## [0.16.0] - 2026-11-17 — Phase 16 Autonomous Enterprise Process Execution & Digital Workforce Platform
 
 ### Added

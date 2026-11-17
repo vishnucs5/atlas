@@ -40,7 +40,9 @@ uv run pytest -v
 | **Phase 14** | Autonomous Self-Improvement & Adaptive Intelligence | `test_phase14_acceptance.py` (27 scenarios: AUTO-01 to AUTO-27) | **PASSED** | 27 / 27 |
 | **Phase 15** | Federated Autonomous Intelligence Network | `test_phase15_acceptance.py` (30 scenarios: FED-01 to FED-30) | **PASSED** | 30 / 30 |
 | **Phase 16** | Autonomous Enterprise Process Execution | `test_phase16_acceptance.py` (45 scenarios: PROC-01 to PROC-45) | **PASSED** | 45 / 45 |
-| **Total** | **All Monorepo Packages** | **Comprehensive Full Test Suite** | **PASSED** | **781 / 781 (100%)** |
+| **Phase 16.2** | Critical Remediation, Durability & Security Hardening | `test_phase16_2_persistence.py` (4), `test_phase16_2_api_auth.py` (8), `test_phase16_2_approvals.py` (4), `test_phase16_2_connectors.py` (4), `test_phase16_2_evaluator.py` (6), `test_phase16_2_saga_integrity.py` (7), `test_phase16_2_triggers.py` (4) | **PASSED** | 37 / 37 |
+| **Phase 16.4** | Critical Remediation, Durable Transactions & Security Corrections | `test_phase16_4_leases.py` (8), `test_phase16_4_sagas.py` (6), `test_phase16_4_approvals.py` (8), `test_phase16_4_archival.py` (2), `test_phase16_4_webhooks.py` (4), `test_phase16_4_ssrf.py` (8), `test_phase16_4_connectors.py` (5), `test_phase16_4_postgres_full.py` (6) | **PASSED** | 47 / 47 |
+| **Total** | **All Monorepo Packages** | **Comprehensive Full Test Suite** | **PASSED** | **865 / 865 (100%)** |
 
 ---
 
