@@ -31,6 +31,7 @@ members = [
     "packages/atlas-multimodal",
     "packages/atlas-adaptive",
     "packages/atlas-federation",
+    "packages/atlas-process",
     "apps/api",
     "apps/cli",
 ]

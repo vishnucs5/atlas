@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.0] - 2026-11-17 — Phase 16 Autonomous Enterprise Process Execution & Digital Workforce Platform
+
+### Added
+- **Process Definition Contracts & Validation (`packages/atlas-process/src/atlas_process/definitions.py`)**:
+  - `ProcessDefinition`: Versioned, validated declarative business process workflows with sequential steps, parallel forks, join gates, and conditional branches.
+  - `ProcessDefinitionValidator`: Directed acyclic graph (DAG) validation, DFS cycle detection, and content-addressed hash generation for version pinning.
+- **Durable Process Execution Engine (`packages/atlas-process/src/atlas_process/state_machine.py`, `engine.py`)**:
+  - `ProcessStateMachine` and `ProcessTaskStateMachine`: Deterministic lifecycle transitions with terminal locking.
+  - `ProcessExecutionEngine`: Checkpoint-backed persistence, worker leases with monotonic fencing tokens (`StaleWorkerFencingError`), lease expiration guards (`LeaseExpiredError`), and automated crash recovery.
+  - Process-level and task-level idempotency caching.
+- **Business Event & Trigger Engine (`packages/atlas-process/src/atlas_process/triggers.py`)**:
+  - `EventTriggerEngine`: HMAC-SHA256 signature verification over incoming webhooks (`ForgedEventError`).
+  - Sliding-window event deduplication (`DuplicateEventError`) and tenant-scoped subscription routing.
+- **Human Workforce & Approval Engine (`packages/atlas-process/src/atlas_process/approvals.py`)**:
+  - `HumanApprovalEngine`: Cryptographically bound approval requests with material parameter hashing.
+  - Anti-tampering check: Mutating parameters invalidates pending approvals (`ParameterTamperedError`).
+  - Separation of Duties (SoD): Invariant preventing requestors from approving their own sensitive actions (`SeparationOfDutiesViolationError`).
+  - Multi-person approval quorums and expiration enforcement (`ApprovalExpiredError`).
+- **Distributed Saga Transactions & Reconciliation (`packages/atlas-process/src/atlas_process/transactions.py`)**:
+  - `SagaCoordinator`: Multi-system saga execution with backward compensation in reverse order upon failure.
+  - No-blind-retry policy on non-idempotent operations (`NonIdempotentBlindRetryError`).
+  - Unknown-outcome handling: Enqueues timed-out external calls into a reconciliation queue (`ReconciliationRequiredError`) rather than guessing outcomes.
+- **Enterprise Connector SDK (`packages/atlas-process/src/atlas_process/connectors.py`)**:
+  - `BaseEnterpriseConnector`: Least-privilege scope checks (`ConnectorScopeViolationError`), sliding-window rate limiting (`ConnectorRateLimitExceededError`), circuit breaker protection (`CircuitBreakerOpenError`), and isolated per-tenant credentials.
+  - Standard connectors: `ERPConnector`, `CRMConnector`, `TicketingConnector`.
+- **SLA & Escalation Management (`packages/atlas-process/src/atlas_process/sla.py`)**:
+  - `SLAManager`: Process and task deadline tracking, breach detection, warning thresholds (80% elapsed), and automated escalation actions.
+- **Digital Workforce Allocation (`packages/atlas-process/src/atlas_process/workforce.py`)**:
+  - `WorkforceAllocationEngine`: Matches digital agents and human workers by required skills and current workload.
+  - Human-vs-agent routing policies (`HUMAN_ONLY`, `AGENT_ONLY`, hybrid).
+- **Process Analytics & Simulation (`packages/atlas-process/src/atlas_process/analytics.py`, `simulation.py`)**:
+  - `ProcessAnalyticsEngine`: Aggregates cycle time, SLA compliance, human intervention rates, and identifies bottleneck tasks.
+  - `ProcessSimulationEngine`: Monte Carlo simulation over duration and failure distributions with a strict zero-side-effects guarantee.
+- **Federation & Security Governance (`packages/atlas-process/src/atlas_process/federation.py`, `security.py`)**:
+  - `FederatedProcessDelegator`: Cross-organization task delegation via Phase 15 `FederationGateway`.
+  - `ProcessSecurityGovernor`: Action Firewall integration, multi-tenant isolation boundaries (`TenantIsolationViolationError`), and anti-privilege escalation guards (`PrivilegeEscalationError`).
+- **Phase 16 Acceptance Suite (`tests/acceptance/test_phase16_acceptance.py`)**:
+  - 45 / 45 acceptance test scenarios verified (PROC-01 to PROC-45).
+  - Monorepo full regression: 781 / 781 tests passing (100% green rate).
+
+---
+
 ## [0.15.0] - 2026-11-16 — Phase 15 Federated Autonomous Intelligence Network & Global Agent Interoperability
 
 ### Added
