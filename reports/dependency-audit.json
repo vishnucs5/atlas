@@ -1,0 +1,149 @@
+{
+  "audit_id": "dep-audit-1794917363",
+  "generated_at": "2026-11-17T12:09:23.022233+00:00",
+  "scanner": "pip-audit",
+  "scanner_version": "2.10.1",
+  "vulnerability_database": "PyPI / OSV Advisory Database",
+  "lockfile_source": "uv.lock",
+  "evaluation": {
+    "status": "PASS",
+    "threshold": "MODERATE",
+    "total_packages_scanned": 25,
+    "violations_count": 0,
+    "exempted_count": 0,
+    "ignored_low_severity_count": 0,
+    "violations": [],
+    "exempted": [],
+    "ignored_low_severity": []
+  },
+  "raw_audit_data": {
+    "dependencies": [
+      {
+        "name": "annotated-doc",
+        "version": "0.0.6",
+        "vulns": []
+      },
+      {
+        "name": "annotated-types",
+        "version": "0.8.0",
+        "vulns": []
+      },
+      {
+        "name": "anyio",
+        "version": "4.16.0",
+        "vulns": []
+      },
+      {
+        "name": "certifi",
+        "version": "2026.10.23",
+        "vulns": []
+      },
+      {
+        "name": "cffi",
+        "version": "2.1.1",
+        "vulns": []
+      },
+      {
+        "name": "cryptography",
+        "version": "50.0.2",
+        "vulns": []
+      },
+      {
+        "name": "fastapi",
+        "version": "0.162.5",
+        "vulns": []
+      },
+      {
+        "name": "greenlet",
+        "version": "3.5.6",
+        "vulns": []
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0",
+        "vulns": []
+      },
+      {
+        "name": "httpcore",
+        "version": "1.0.9",
+        "vulns": []
+      },
+      {
+        "name": "httpx",
+        "version": "0.28.1",
+        "vulns": []
+      },
+      {
+        "name": "idna",
+        "version": "3.20",
+        "vulns": []
+      },
+      {
+        "name": "opentelemetry-api",
+        "version": "1.45.2",
+        "vulns": []
+      },
+      {
+        "name": "playwright",
+        "version": "1.65.1",
+        "vulns": []
+      },
+      {
+        "name": "psutil",
+        "version": "7.2.2",
+        "vulns": []
+      },
+      {
+        "name": "psycopg",
+        "version": "3.3.9",
+        "vulns": []
+      },
+      {
+        "name": "psycopg-binary",
+        "version": "3.3.9",
+        "vulns": []
+      },
+      {
+        "name": "psycopg-pool",
+        "version": "3.3.3",
+        "vulns": []
+      },
+      {
+        "name": "pycparser",
+        "version": "3.12",
+        "vulns": []
+      },
+      {
+        "name": "pydantic",
+        "version": "2.14.3",
+        "vulns": []
+      },
+      {
+        "name": "pydantic-core",
+        "version": "2.50.4",
+        "vulns": []
+      },
+      {
+        "name": "starlette",
+        "version": "1.10.0",
+        "vulns": []
+      },
+      {
+        "name": "typing-extensions",
+        "version": "4.16.0",
+        "vulns": []
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.5",
+        "vulns": []
+      },
+      {
+        "name": "tzdata",
+        "version": "2026.6",
+        "vulns": []
+      }
+    ],
+    "fixes": []
+  }
+}

@@ -2,9 +2,10 @@
 
 **Phase:** Phase 17 Architectural Design & RFC  
 **Topic:** Human–AI Collaborative Workspaces, Enterprise Governance, Explainability, & Policy Simulation  
-**Status:** PROPOSED ARCHITECTURE (Implementation Strictly Blocked Pending Authorization)  
+**Status:** REFINED ARCHITECTURE (Phase 16.13 Audit Remediations Incorporated; Implementation Strictly Blocked Pending Authorization)  
 **Target Release:** ATLAS v0.17.0  
 **Author:** ATLAS Architecture Strategy Committee  
+**Last Updated:** 2026-11-17 (Phase 16.13 Review)  
 
 ---
 
@@ -212,43 +213,111 @@ class DelegationEnvelope(BaseModel):
     valid_from: float
     valid_until: float
     revoked: bool = False
+
+
+class CASArtifactRef(BaseModel):
+    """Content-addressable reference to a bulk lineage artifact in object storage."""
+
+    uri: str  # Format: "atlas-cas://<sha256>"
+    sha256_hash: str
+    size_bytes: int
+    content_type: str
+    encryption_algorithm: str = "AES-256-GCM"
+
+
+class SteeringEvent(BaseModel):
+    """Immutable audit record of a human intervention on a paused workflow."""
+
+    steering_id: str
+    process_instance_id: str
+    task_instance_id: str
+    operator_id: str
+    parent_operation_key: str
+    child_operation_key: str
+    original_parameters: dict[str, Any]
+    modified_parameters: dict[str, Any]
+    reason: str
+    timestamp: float
 ```
 
 ---
 
-## 7. Migration Strategy & Compatibility
+## 7. Architectural Risk Remediations & Operational Robustness
+
+Following the Phase 16.12 Independent Audit, four core architectural risks were formally remediated and integrated into this proposal:
+
+### 7.1 Collaborative Workspace State Synchronization (Risk 1 Remediation)
+- **Primary Strategy**: **Server-Authoritative Semantic Turn-Locking** at the task/plan artifact boundary.
+- **Rationale**: Strict legal custody and determinism are required for enterprise governance. Unlike character-level CRDTs which risk semantic business logic inconsistencies, semantic turn-locking guarantees that exactly one actor edits a plan step at any time.
+- **Human Preemptive Override**: Enterprise operators retain supreme preemption authority. When a human requests edit access, the agent's edit lease is immediately preempted, and its fencing token is revoked.
+- **Reconnection & Ordering**: Monotonic server `sequence_id` ordering ensures clean disconnect recovery via snapshot and differential catch-up stream. Multi-tenant isolation is enforced via tenant-scoped WebSocket channels.
+
+### 7.2 Two-Tier Decision Lineage Storage (Risk 2 Remediation)
+- **Topology**:
+  - **Tier 1 (PostgreSQL Migration 020)**: Stores relational metadata, parent/child causal lineage edges, actor identity, Merkle root hashes, and CAS URIs.
+  - **Tier 2 (Content-Addressable Object Storage)**: Stores large contextual artifacts, raw prompts, model tokens, context embeddings, and inspection screenshots at `atlas-cas://<sha256>`.
+- **Integrity & Security**: Mandatory SHA-256 integrity verification upon retrieval. AES-256-GCM envelope encryption using tenant-isolated Data Encryption Keys (DEKs). Cryptographic erasure upon legal retention expiration.
+
+### 7.3 In-Flight Steering & Child Idempotency Key Derivation (Risk 3 Remediation)
+- **Protocol**:
+  1. Operator pauses in-flight execution (`PAUSED_FOR_STEERING`).
+  2. The parent operation in `durable_operations` transitions to `SUPERSEDED_BY_STEERING`.
+  3. A deterministic child idempotency key is derived:
+     $$\text{key}_{\text{child}} = \text{SHA-256}\Big(\text{key}_{\text{parent}} \,||\, \text{steering\_id} \,||\, \text{SHA-256}\big(\text{canonical\_json}(\text{modified\_params})\big)\Big)$$
+  4. Modified parameters are re-submitted to the Action Firewall for policy re-validation.
+  5. The child operation is executed under `key_child`. Accidental replay of the parent operation is mathematically prevented.
+
+### 7.4 Hermetic Policy Simulation Sandbox (Risk 4 Remediation)
+- **Sandbox Architecture**:
+  - `SimulationProcessEngine` strictly accepts only `DryRunConnectorDriver` at initialization time. Live production connectors raise `SimulationSandboxViolationError`.
+  - Zero external network egress; transport is bound to in-memory mocks.
+  - Zero production secrets; synthetic mock credentials injected.
+  - Deterministic replay of historical audit logs enables Monte Carlo validation of draft policies against 10,000+ historical runs without external side-effects.
+
+---
+
+## 8. Migration Strategy & Compatibility
 
 1. **Zero-Impact on Phase 16 Engine:** Phase 16 `ProcessExecutionEngine`, `SagaCoordinator`, and `SqliteProcessStorage` / `PostgresProcessStorage` continue operating without modification.
 2. **Schema Evolution (Migration 019 & 020):**
    - Migration 019: `process_governance_delegations` and `process_collaborative_workspaces`.
-   - Migration 020: `process_decision_lineage` and `process_compliance_proofs`.
+   - Migration 020: `process_decision_lineage`, `process_steering_events`, and `process_compliance_proofs`.
 3. **Backward Compatibility:** All existing process definitions run with default governance policies without requiring code changes.
 
 ---
 
-## 8. Implementation Milestones
+## 9. Implementation Milestones
 
 | Milestone | Title | Scope & Deliverables | Target Timeline |
 | :--- | :--- | :--- | :---: |
 | **M17.1** | Governance Engine & Dynamic Delegation | `atlas_governance/delegation.py`, Migration 019 | Sprint 1 |
-| **M17.2** | Collaborative Workspaces & State Sync | `atlas_collab/workspace.py`, WebSocket hub | Sprint 2 |
-| **M17.3** | Causal Decision Explainability Engine | `atlas_governance/explainability.py`, Lineage tracer | Sprint 3 |
-| **M17.4** | Active Runtime Steering & Intervention | `atlas_governance/steering.py`, pause/inject handlers | Sprint 4 |
+| **M17.2** | Collaborative Workspaces & Semantic Lock Hub | `atlas_collab/workspace.py`, WebSocket turn server | Sprint 2 |
+| **M17.3** | Two-Tier Decision Lineage & CAS Engine | `atlas_governance/lineage.py`, CAS blob driver, Migration 020 | Sprint 3 |
+| **M17.4** | Active Runtime Steering & Child Idempotency | `atlas_governance/steering.py`, pause/inject handlers | Sprint 4 |
 | **M17.5** | Continuous Compliance & Evidence Export | Cryptographic bundle exporter, SOC 2 / EU AI Act mappings | Sprint 5 |
-| **M17.6** | Monte Carlo Policy Simulation | Dry-run governance simulator against historical runs | Sprint 6 |
+| **M17.6** | Hermetic Monte Carlo Policy Simulator | Isolated dry-run connector sandbox & historical replay engine | Sprint 6 |
 
 ---
 
-## 9. Acceptance Criteria & Test Strategy
+## 10. Acceptance Criteria & Test Strategy
 
 - [ ] **AC-1:** Delegations automatically expire at `valid_until` timestamp; subsequent decisions rejected with `DelegationExpiredError`.
-- [ ] **AC-2:** Active steering pauses tasks without losing durable idempotency keys or causing double executions.
-- [ ] **AC-3:** Decision lineage produces deterministic Merkle root hashes reproducible from the factors list.
-- [ ] **AC-4:** Policy simulation against 10,000 historical workflow instances completes in < 30 seconds without modifying production state.
+- [ ] **AC-2:** Active steering pauses tasks, generates deterministic child idempotency keys, re-validates via Action Firewall, and prevents double execution.
+- [ ] **AC-3:** Two-tier lineage engine verifies CAS artifact SHA-256 hashes on retrieval and rejects corrupted blobs with `CorruptedLineageArtifactError`.
+- [ ] **AC-4:** Policy simulation against 10,000 historical workflow instances executes in a hermetic sandbox with zero outbound network calls in < 30 seconds.
 - [ ] **AC-5:** 100% of Phase 16 regression tests remain green (zero regression).
 
 ---
 
-## 10. Invariant Gating Notice
+## 11. Invariant Gating Notice
 
 **Strict Rule:** No branch creation for Phase 17 implementation and no modification of production source code shall take place until this architecture proposal is reviewed and approved by human governance stakeholders.
+
+---
+
+## 12. Document History & Revision Changelog
+
+| Date | Revision | Author | Description |
+| :--- | :---: | :--- | :--- |
+| **2026-11-17** | 1.0.0 | Architecture Committee | Initial comprehensive proposal for Human–AI Collaboration & Governance Ecosystem. |
+| **2026-11-17** | 1.1.0 | Release Directorate | Phase 16.13 update: Formally integrated risk remediations for workspace sync (turn locks), two-tier CAS lineage storage, child idempotency derivation for steering, and hermetic simulation sandboxing. |
