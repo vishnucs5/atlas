@@ -4,10 +4,28 @@ build-backend = "hatchling.build"
 
 [project]
 name = "atlas-cli"
-version = "0.1.0"
-description = "ATLAS Developer CLI - Command-Line Interface for ATLAS"
+version = "0.16.8"
+description = "ATLAS CLI — Native, Autonomous Developer Environment and Enterprise Coding Agent"
 readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "ATLAS Engineering Team", email = "maintainers@atlas.dev" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Quality Assurance",
+]
+keywords = ["agent", "cli", "coding-agent", "autonomous", "mcp", "developer-tools"]
 dependencies = [
     "atlas-core",
     "atlas-storage",
@@ -24,6 +42,12 @@ dependencies = [
     "atlas-enterprise",
     "atlas-federation",
 ]
+
+[project.urls]
+Homepage = "https://github.com/atlas-org/atlas"
+Documentation = "https://docs.atlas.dev"
+Repository = "https://github.com/atlas-org/atlas.git"
+Issues = "https://github.com/atlas-org/atlas/issues"
 
 [project.scripts]
 atlas = "atlas_cli.main:main"
@@ -46,3 +70,10 @@ atlas-federation = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/atlas_cli"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/atlas_cli",
+    "README.md",
+    "pyproject.toml",
+]
