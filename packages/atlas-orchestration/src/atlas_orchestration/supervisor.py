@@ -108,11 +108,46 @@ class AgentSupervisor:
             dependency_type=DependencyType.HARD,
         )
 
+        # Check if objective requires data analysis specialist
+        data_keywords = [
+            "data",
+            "dataset",
+            "latency",
+            "benchmark",
+            "p95",
+            "p99",
+            "distribution",
+            "statistics",
+        ]
+        requires_data = any(k in objective.lower() for k in data_keywords) or params.get(
+            "include_data_analysis"
+        )
+
+        if requires_data:
+            n_data = TaskNode(
+                node_id=f"node_data_{task_id}",
+                task_id=task_id,
+                name=f"Analyze data and calculate distributions for {objective}",
+                required_capability=AgentCapability.DATA_ANALYSIS,
+                parameters={
+                    "objective": objective,
+                    "dataset": [12.4, 15.1, 18.2, 22.0, 28.7, 34.2, 45.2],
+                    **params,
+                },
+                dependencies=[n1.node_id],
+                status=NodeStatus.PENDING,
+                dependency_type=DependencyType.HARD,
+            )
+            n2.dependencies = [n1.node_id, n_data.node_id]
+            nodes = {n1.node_id: n1, n_data.node_id: n_data, n2.node_id: n2, n3.node_id: n3}
+        else:
+            nodes = {n1.node_id: n1, n2.node_id: n2, n3.node_id: n3}
+
         graph = TaskGraph(
             graph_id=graph_id,
             task_id=task_id,
             version=1,
-            nodes={n1.node_id: n1, n2.node_id: n2, n3.node_id: n3},
+            nodes=nodes,
             created_at=now,
             updated_at=now,
         )

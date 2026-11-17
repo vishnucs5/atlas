@@ -365,6 +365,24 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         </form>
       </div>
     </div>
+
+    <div class="card" style="margin-top: 1.25rem;">
+      <h2>Multi-Agent Execution DAGs & Specialist Deliverables</h2>
+      <table id="dag-tasks-table">
+        <thead>
+          <tr>
+            <th>Task ID</th>
+            <th>Graph ID</th>
+            <th>Nodes Count</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="dag-tasks-body">
+          <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No multi-agent DAG tasks executed yet</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- TAB 3: WORKFLOW MARKETPLACE & SKILL ECOSYSTEM (14 SCREENS) -->
@@ -962,11 +980,12 @@ Awaiting security audit request. Scanner tests for:
     // Core Dashboard Refresh
     async function refreshDashboard() {
       try {
-        const [tRes, aRes, wRes, agRes] = await Promise.all([
+        const [tRes, aRes, wRes, agRes, dagRes] = await Promise.all([
           api('/api/v1/tasks'),
           api('/api/v1/approvals'),
           api('/api/v1/workers'),
-          api('/api/v1/orchestration/agents')
+          api('/api/v1/orchestration/agents'),
+          api('/api/v1/orchestration/tasks')
         ]);
 
         if (tRes.ok) {
@@ -989,6 +1008,10 @@ Awaiting security audit request. Scanner tests for:
           document.getElementById('stat-agents').innerText = agents.length;
           renderAgents(agents);
         }
+        if (dagRes && dagRes.ok) {
+          const dagTasks = await dagRes.json();
+          renderDAGTasks(dagTasks);
+        }
       } catch (e) {
         log('Error refreshing core dashboard: ' + e);
       }
@@ -1007,6 +1030,7 @@ Awaiting security audit request. Scanner tests for:
           <td><span class="badge badge-${t.status === 'COMPLETED' ? 'success' : (t.status === 'WAITING_APPROVAL' ? 'warning' : 'primary')}">${t.status}</span></td>
           <td>${t.priority}</td>
           <td>
+            <button class="btn-sm" style="margin-right: 4px;" onclick="showTaskDetails('${t.task_id}')">View Output</button>
             ${t.status === 'RUNNING' ? `<button class="btn-sm" onclick="pauseTask('${t.task_id}')">Pause</button>` : ''}
             ${t.status === 'PAUSED' ? `<button class="btn-sm btn-success" onclick="resumeTask('${t.task_id}')">Resume</button>` : ''}
             ${!['COMPLETED', 'FAILED', 'CANCELLED'].includes(t.status) ? `<button class="btn-sm btn-danger" onclick="cancelTask('${t.task_id}')">Cancel</button>` : ''}
@@ -1054,6 +1078,26 @@ Awaiting security audit request. Scanner tests for:
       `).join('');
     }
 
+    function renderDAGTasks(tasks) {
+      const tbody = document.getElementById('dag-tasks-body');
+      if (!tbody) return;
+      if (!tasks || !tasks.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No multi-agent DAG tasks executed yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = tasks.map(d => `
+        <tr>
+          <td><code>${d.task_id}</code></td>
+          <td><code>${d.graph_id}</code></td>
+          <td>${d.node_count} nodes</td>
+          <td><span class="badge badge-${d.is_complete ? 'success' : (d.has_failures ? 'danger' : 'warning')}">${d.is_complete ? 'COMPLETED' : 'RUNNING'}</span></td>
+          <td>
+            <button class="btn-sm" onclick="showDAGDetails('${d.task_id}')">Inspect Deliverables</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
     async function submitMultiAgentTask(e) {
       e.preventDefault();
       const obj = document.getElementById('ma-task-obj').value;
@@ -1088,6 +1132,98 @@ Awaiting security audit request. Scanner tests for:
         refreshDashboard();
       } else {
         log('Failed to submit task');
+      }
+    }
+
+    async function showTaskDetails(taskId) {
+      const res = await api(`/api/v1/tasks/${taskId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const outputText = data.metadata?.output || data.metadata?.result || 'Task processed successfully.';
+
+        const modal = document.getElementById('task-modal');
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+
+        title.innerHTML = `<span>Task: <code>${data.task_id}</code></span> <span class="badge badge-${data.status === 'COMPLETED' ? 'success' : 'primary'}">${data.status}</span>`;
+
+        body.innerHTML = `
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Autonomous Objective</label>
+            <div style="background:var(--bg); border:1px solid var(--border); padding:0.75rem; border-radius:0.375rem; margin-top:0.25rem; font-size:0.9rem;">
+              ${data.objective}
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Execution Result / Output Deliverables</label>
+            <pre id="modal-output-pre" style="background:var(--bg); border:1px solid var(--border); padding:1rem; border-radius:0.375rem; margin-top:0.25rem; font-size:0.85rem; color:#38bdf8; white-space:pre-wrap; max-height:350px; overflow-y:auto;">${outputText}</pre>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div style="background:var(--bg); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:0.375rem; font-size:0.8rem;">
+              <span style="color:var(--text-muted);">Checkpoint ID:</span> <code>${data.current_checkpoint_id || 'None'}</code>
+            </div>
+            <div style="background:var(--bg); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:0.375rem; font-size:0.8rem;">
+              <span style="color:var(--text-muted);">Priority:</span> <code>${data.priority}</code>
+            </div>
+          </div>
+        `;
+        modal.style.display = 'flex';
+        log(`[INSPECT] Task ${taskId}: Output deliverables opened in modal inspector.`);
+      } else {
+        log(`Failed to fetch details for ${taskId}`);
+      }
+    }
+
+    async function showDAGDetails(taskId) {
+      const res = await api(`/api/v1/orchestration/tasks/${taskId}/graph`);
+      if (res.ok) {
+        const graph = await res.json();
+        const modal = document.getElementById('task-modal');
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+
+        title.innerHTML = `<span>Multi-Agent DAG: <code>${taskId}</code></span> <span class="badge badge-success">COMPLETED</span>`;
+
+        let nodesHtml = '';
+        for (const [nid, node] of Object.entries(graph.nodes || {})) {
+          nodesHtml += `
+            <div style="background:var(--bg); border:1px solid var(--border); padding:0.75rem; border-radius:0.375rem; margin-bottom:0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                <strong>${node.name}</strong>
+                <span class="badge badge-primary">${node.required_capability}</span>
+              </div>
+              <pre style="margin:0; font-size:0.8rem; color:#38bdf8; white-space:pre-wrap; max-height:220px; overflow-y:auto;">${JSON.stringify(node.output, null, 2)}</pre>
+            </div>
+          `;
+        }
+
+        body.innerHTML = `
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Graph ID</label>
+            <div style="font-size:0.9rem;"><code>${graph.graph_id}</code></div>
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Specialist Node Deliverables</label>
+            <div style="margin-top:0.5rem;">${nodesHtml}</div>
+          </div>
+        `;
+        modal.style.display = 'flex';
+        log(`[INSPECT] Multi-Agent DAG ${taskId}: Deliverables opened in modal inspector.`);
+      } else {
+        log(`Failed to fetch DAG graph for ${taskId}`);
+      }
+    }
+
+    function closeModal() {
+      const m = document.getElementById('task-modal');
+      if (m) m.style.display = 'none';
+    }
+
+    function copyModalContent() {
+      const pre = document.getElementById('modal-output-pre');
+      if (pre) {
+        navigator.clipboard.writeText(pre.innerText);
+        alert('Output copied to clipboard!');
       }
     }
 
@@ -1736,6 +1872,22 @@ Awaiting security audit request. Scanner tests for:
     setInterval(refreshDashboard, 3000);
     refreshDashboard();
   </script>
+
+  <!-- INSPECTION MODAL -->
+  <div id="task-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:0.5rem; max-width:850px; width:90%; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+      <div style="padding:1rem 1.25rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="modal-title" style="margin:0; font-size:1.15rem; font-weight:700;">Task Inspection</h3>
+        <button class="btn-sm" onclick="closeModal()">Close &times;</button>
+      </div>
+      <div id="modal-body" style="padding:1.25rem; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:1rem;">
+      </div>
+      <div style="padding:0.75rem 1.25rem; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:0.5rem;">
+        <button class="btn-sm" onclick="copyModalContent()">Copy Details</button>
+        <button class="btn-sm btn-primary" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
 """

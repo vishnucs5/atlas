@@ -356,6 +356,9 @@ class AutonomousAgentLoop:
                 self._context_mgr.add_message(
                     ModelMessage(role="assistant", content=resp.content or "Completed")
                 )
+                output_text = resp.content or "Task completed successfully."
+                task.metadata["output"] = output_text
+                task.metadata["result"] = output_text
                 # Constitutional Invariant: Must transition through VERIFYING before COMPLETED
                 await self._transition_task(
                     task, TaskStatus.VERIFYING, session_id=session.session_id

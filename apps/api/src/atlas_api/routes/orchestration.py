@@ -214,6 +214,30 @@ async def submit_multi_agent_task(
         ) from orch_err
 
 
+@router.get("/tasks", response_model=list[dict[str, Any]])
+async def list_multi_agent_tasks(
+    request: Request,
+    user: Annotated[
+        AuthenticatedUser,
+        Depends(require_role(Role.ADMIN, Role.OPERATOR, Role.WORKER, Role.VIEWER)),
+    ],
+) -> list[dict[str, Any]]:
+    """List all registered multi-agent task execution graphs."""
+    supervisor = _get_supervisor(request)
+    with supervisor._lock:
+        return [
+            {
+                "task_id": tid,
+                "graph_id": eng.graph.graph_id,
+                "is_complete": eng.graph.is_complete(),
+                "has_failures": eng.graph.has_failures(),
+                "node_count": len(eng.graph.nodes),
+                "nodes": {nid: n.model_dump(mode="json") for nid, n in eng.graph.nodes.items()},
+            }
+            for tid, eng in supervisor._active_graphs.items()
+        ]
+
+
 @router.get("/tasks/{task_id}/graph", response_model=TaskGraph)
 async def get_task_graph(
     task_id: str,

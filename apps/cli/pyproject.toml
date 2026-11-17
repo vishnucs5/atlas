@@ -13,6 +13,9 @@ dependencies = [
     "atlas-storage",
     "atlas-observability",
     "atlas-browser",
+    "atlas-models",
+    "atlas-policy",
+    "atlas-agent",
 ]
 
 [project.scripts]
@@ -23,6 +26,9 @@ atlas-core = { workspace = true }
 atlas-storage = { workspace = true }
 atlas-observability = { workspace = true }
 atlas-browser = { workspace = true }
+atlas-models = { workspace = true }
+atlas-policy = { workspace = true }
+atlas-agent = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/atlas_cli"]

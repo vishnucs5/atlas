@@ -215,11 +215,18 @@ class DataAnalysisSpecialist(SpecialistAgent):
         count = len(dataset)
         total = sum(dataset) if count > 0 else 0
         mean = total / count if count > 0 else 0.0
+        sorted_vals = sorted(dataset)
+        p50 = sorted_vals[int(len(sorted_vals) * 0.5)] if count > 0 else 0.0
+        p95 = sorted_vals[min(int(len(sorted_vals) * 0.95), count - 1)] if count > 0 else 0.0
+        p99 = sorted_vals[min(int(len(sorted_vals) * 0.99), count - 1)] if count > 0 else 0.0
 
         analysis = {
             "sample_count": count,
             "sum": total,
             "mean": round(mean, 4),
+            "p50_latency_ms": p50,
+            "p95_latency_ms": p95,
+            "p99_latency_ms": p99,
             "status": "analyzed",
         }
 
