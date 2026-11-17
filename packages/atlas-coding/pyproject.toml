@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-coding"
+version = "0.1.0"
+description = "ATLAS Autonomous Coding Engine - Repository Exploration, Patching, Terminal & Testing"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-core",
+    "atlas-policy",
+    "atlas-storage",
+    "atlas-observability",
+]
+
+[tool.uv.sources]
+atlas-core = { workspace = true }
+atlas-policy = { workspace = true }
+atlas-storage = { workspace = true }
+atlas-observability = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_coding"]

@@ -770,6 +770,36 @@
 
 ---
 
+## ATLAS CLI Implementation Track
+
+### Stage 0: Read-Only Repository Audit (COMPLETE)
+- Status: 100% Complete. 8 formal audit deliverables presented.
+- Baseline Monorepo Health: 928 tests green, 0 lint errors.
+
+### Stage 1: CLI Foundation & Dual-Mode Shell (COMPLETE)
+- Branch: `feat/atlas-cli-foundation` -> merged/base `f9d21066f2a16f971001955c831cc0cd2450106e`
+- Features: Click entrypoint, configuration hierarchy, session lifecycle, terminal rendering, minimal mode, interactive mode, 12 commands.
+- Verification: 9/9 unit tests passing (`tests/unit/test_cli_foundation.py`).
+
+### Stage 2: Autonomous Coding Engine (COMPLETE)
+- Branch: `feat/atlas-cli-coding-engine`
+- Package: `packages/atlas-coding`
+- Workstreams Completed:
+  1. Coding task contracts (`CodingTask`, `FileChange`, `UnifiedDiff`, `TestResultSummary` in `atlas-core`)
+  2. Safe repository exploration (`RepositoryExplorer`: boundary checks, `.gitignore`, secret/binary exclusion)
+  3. Authorized file operations (`AuthorizedFileOperations`: bounded read/search, optimistic concurrency SHA-256)
+  4. Structured patch engine (`PatchEngine`: unified diff parser, dry-run, transactional rollback)
+  5. Authorized terminal driver (`AuthorizedTerminalDriver`: process isolation, `shell=False`, Action Firewall, credential redaction)
+  6. Safe Git integration (`GitPorcelain`: status, diff, branch, log; no auto-push/merge/master changes)
+  7. Coding planner adapter (`CodingPlanner`: structured plan generation, risk profiling)
+  8. Autonomous execution loop & engine (`CodingEngine`: OBSERVE -> PLAN -> FIREWALL -> APPROVAL -> EXECUTE -> VERIFY -> CHECKPOINT -> COMPLETE)
+  9. Test runner & QA integration (`TestRunner`: framework auto-discovery, structured metric synthesis)
+  10. Coding CLI workflows (`atlas plan`, `atlas review`, `atlas test`, `atlas debug`, `atlas "prompt"`)
+  11. Comprehensive test suite (`tests/unit/test_coding_engine.py`: 12/12 passing; 21/21 total CLI suite passing)
+  12. Formal documentation: `ATLAS_CLI_CODING_ENGINE.md`, `ATLAS_CLI_FILE_OPERATIONS.md`, `ATLAS_CLI_TERMINAL_SECURITY.md`, `ATLAS_CLI_PATCH_ENGINE.md`, `ATLAS_CLI_CODING_WORKFLOWS.md`.
+
+---
+
 ## Next Steps: Phase 2 Kickoff
 
 1. **Browser Runtime & Driver**:

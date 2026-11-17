@@ -920,3 +920,35 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Governance Authorization Manifest**: Published `docs/PHASE_16_13_GOVERNANCE_AUTHORIZATION.md` (deployment held behind human approval).
 - [x] **Final Governance Verdict**: Published `docs/PHASE_16_13_FINAL_VERDICT.md`.
 - [x] **Monorepo Test Suite**: 928 / 928 tests passing (100% green, 91.09s, 0 failures, 1 benign warning).
+
+---
+
+## ATLAS CLI Implementation Track
+
+### Stage 0: Read-Only Repository Audit (COMPLETE)
+- [x] 8 formal audit deliverables presented.
+- [x] Verified zero-dependency core, Action Firewall, SQLite/PostgreSQL storage, and 928 green tests.
+
+### Stage 1: CLI Foundation & Dual-Mode Shell (COMPLETE)
+- [x] Implemented `apps/cli` with Click entrypoint, configuration hierarchy, session lifecycle, terminal rendering.
+- [x] Minimal mode, interactive mode, 12 command groups.
+- [x] 9/9 unit tests passing (`tests/unit/test_cli_foundation.py`).
+
+### Stage 2: Autonomous Coding Engine (COMPLETE)
+- [x] **Workstream 1: Coding Task Abstraction**: `CodingTask`, `FileChange`, `UnifiedDiff`, `TestResultSummary` defined in `atlas-core`.
+- [x] **Workstream 2: Safe Repository Exploration**: `RepositoryExplorer` with boundary containment, `.gitignore` awareness, secret/binary exclusion.
+- [x] **Workstream 3: Authorized File Operations**: `AuthorizedFileOperations` with bounded read/search, optimistic concurrency SHA-256 checks, atomic replacement.
+- [x] **Workstream 4: Structured Patch Engine**: `PatchEngine` with unified diff parsing, dry-run validation, and transactional multi-file rollback.
+- [x] **Workstream 5: Authorized Terminal Execution**: `AuthorizedTerminalDriver` with Action Firewall gating, `shell=False`, argument vectors, credential masking.
+- [x] **Workstream 6: Safe Git Integration**: `GitPorcelain` read-only status, diff, branch, and log querying. Invariant: zero auto-pushes, zero master branch mutations.
+- [x] **Workstream 7: Coding Planner Adapter**: `CodingPlanner` with heuristic relevant file discovery, structured step decomposition, risk levels.
+- [x] **Workstream 8: Coding Execution Loop**: `CodingEngine` coordinating `OBSERVE -> PLAN -> FIREWALL -> APPROVAL -> EXECUTE -> VERIFY -> CHECKPOINT -> COMPLETE`.
+- [x] **Workstream 9: Test and Build Integration**: `TestRunner` with automated framework detection (`pytest`, `npm`, `cargo`, `go`) and structured metric parsing.
+- [x] **Workstream 10: Coding CLI Workflows**: Connected `atlas plan`, `atlas review`, `atlas test`, `atlas debug`, `atlas "prompt"` to `CodingEngine`.
+- [x] **Workstream 11: Comprehensive Test Suite**: Created `tests/unit/test_coding_engine.py` (12/12 passing). Total CLI suite passing: 21/21.
+- [x] **Deliverables**: Authored `ATLAS_CLI_CODING_ENGINE.md`, `ATLAS_CLI_FILE_OPERATIONS.md`, `ATLAS_CLI_TERMINAL_SECURITY.md`, `ATLAS_CLI_PATCH_ENGINE.md`, `ATLAS_CLI_CODING_WORKFLOWS.md`.
+
+### Stage 3: Repository Intelligence & Context Engine (GATED - PENDING AUTHORIZATION)
+- [ ] Language server protocol (LSP) and tree-sitter AST analysis
+- [ ] Repository graph and symbol dependency indexing
+- [ ] Context pruning and relevance scoring
