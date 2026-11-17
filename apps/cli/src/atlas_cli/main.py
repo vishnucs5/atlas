@@ -53,9 +53,12 @@ from atlas_cli.commands.task import (
     run_task_resume,
 )
 from atlas_cli.commands.tools_plugins import (
+    run_edition_info,
     run_mcp_list,
     run_plugins_install,
     run_plugins_list,
+    run_profiles_list,
+    run_skills_list,
     run_tools_list,
 )
 from atlas_cli.commands.worker import run_worker_daemon
@@ -173,6 +176,21 @@ def create_parser() -> argparse.ArgumentParser:
     mcp_parser = subparsers.add_parser("mcp", help="Model Context Protocol (MCP) servers")
     mcp_sub = mcp_parser.add_subparsers(dest="mcp_command", help="MCP subcommands")
     mcp_sub.add_parser("list", help="List registered MCP servers")
+
+    # Command: atlas skills
+    skills_parser = subparsers.add_parser("skills", help="Engineering workflow skills")
+    skills_sub = skills_parser.add_subparsers(dest="skills_command", help="Skills subcommands")
+    skills_sub.add_parser("list", help="List registered engineering skills")
+
+    # Command: atlas profiles
+    profiles_parser = subparsers.add_parser("profiles", help="Workspace development profiles")
+    profiles_sub = profiles_parser.add_subparsers(
+        dest="profiles_command", help="Profiles subcommands"
+    )
+    profiles_sub.add_parser("list", help="List available workspace profiles")
+
+    # Command: atlas edition
+    subparsers.add_parser("edition", help="Display product edition and feature matrix")
 
     # Command: atlas server
     server_parser = subparsers.add_parser("server", help="Control plane API server management")
@@ -408,6 +426,9 @@ def main(argv: list[str] | None = None) -> int:
         "tools",
         "plugins",
         "mcp",
+        "skills",
+        "profiles",
+        "edition",
         "config",
         "permissions",
         "approvals",
@@ -520,6 +541,18 @@ def main(argv: list[str] | None = None) -> int:
             return run_mcp_list()
         parser.parse_args(["mcp", "--help"])
         return 0
+    if args.command == "skills":
+        if getattr(args, "skills_command", None) == "list":
+            return run_skills_list()
+        parser.parse_args(["skills", "--help"])
+        return 0
+    if args.command == "profiles":
+        if getattr(args, "profiles_command", None) == "list":
+            return run_profiles_list()
+        parser.parse_args(["profiles", "--help"])
+        return 0
+    if args.command == "edition":
+        return run_edition_info()
 
     # Governance & Configuration
     if args.command == "config":

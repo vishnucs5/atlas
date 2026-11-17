@@ -841,6 +841,26 @@
   9. Comprehensive Multi-Agent Test Suite (`tests/unit/test_multi_agent.py`: 10/10 passing; 51/51 total CLI suite passing).
   10. Formal documentation: `ATLAS_MULTI_AGENT_CODING.md`, `ATLAS_AGENT_ROLE_SPECIFICATIONS.md`, `ATLAS_AGENT_COORDINATION.md`, `ATLAS_AGENT_WORKSPACE_ISOLATION.md`, `ATLAS_INDEPENDENT_CODE_REVIEW.md`.
 
+### Stage 6: Enterprise Ecosystem & Extensibility (COMPLETE)
+- Branch: `feat/atlas-cli-enterprise-ecosystem`
+- Package: `apps/cli/src/atlas_cli/ecosystem`
+- Workstreams Completed:
+  1. Model Context Protocol (MCP) Integration (`MCPClientManager`, `MCPServerConfig`, `MCPToolSchema`, `MCPToolResult`: stdio/sse server discovery, parameter validation, Action Firewall gates under `mcp.<tool>`, secret masking, untrusted output tagging).
+  2. Plugin Ecosystem Management (`PluginManager`, `InstalledPlugin`, `PluginAuditEvent`: package manifest validation, SHA-256 archive checksums, publisher signature verification, lifecycle transitions, append-only audit trail).
+  3. Skill Ecosystem & Prompt Defense (`SkillManager`, `RegisteredSkill`: 7 built-in engineering workflows, parameter schema validation, adversarial prompt injection regex pre-screening against policy override attacks).
+  4. Workspace Profiles & Privilege Boundaries (`WorkspaceProfileManager`, `WorkspaceProfile`: 6 built-in profiles, auto-detection via repository manifests, strict privilege ceiling enforcement preventing privilege elevation).
+  5. Enterprise Connectivity (`EnterpriseClientAdapter`, `EnterpriseSessionInfo`: multi-tenant organization binding, RBAC hierarchies, fleet security policy distribution into Action Firewall, tamper-evident centralized audit logging).
+  6. Remote Runtime Federation (`RemoteRuntimeClient`, `RemoteNodeInfo`, `RemoteSessionLease`: remote worker discovery, session leasing with token masking, streamed event polling, connection recovery / session re-attachment).
+  7. Open-Source Core Separation (`EditionFeatureMatrix`, `EditionTier`: 100% offline-ready open-source core with zero cloud dependencies; graceful degradation reporting clear error on enterprise features).
+  8. CLI Integration: `atlas edition`, `atlas skills list`, `atlas profiles list`, `atlas plugins list`, `atlas mcp list`.
+  9. Comprehensive Unit Test Suite (`tests/unit/test_enterprise_ecosystem.py`: 18/18 passing; 69/69 total CLI suite passing).
+  10. Formal documentation: `ATLAS_MCP_INTEGRATION.md`, `ATLAS_PLUGIN_ARCHITECTURE.md`, `ATLAS_SKILL_SDK.md`, `ATLAS_WORKSPACE_PROFILES.md`, `ATLAS_ENTERPRISE_INTEGRATION.md`, `ATLAS_REMOTE_RUNTIME.md`, `ATLAS_OPEN_SOURCE_EDITION.md`.
+
+### Stage 7: Computer-Use, Browser & Desktop Automation (GATED — AWAITING EXPLICIT HUMAN AUTHORIZATION)
+- Proposed Branch: `feat/atlas-cli-computer-use`
+- Scope: Playwright browser automation, desktop UI automation, screenshot capture, DOM inspection, Action Firewall gating, visual verification engine.
+- Status: Gated. Cannot begin until Stage 6 is reviewed and approved by human user.
+
 ---
 
 ## Next Steps: Phase 2 Kickoff

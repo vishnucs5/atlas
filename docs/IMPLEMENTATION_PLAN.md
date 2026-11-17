@@ -983,7 +983,19 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Workstream 9: Comprehensive Testing**: Authored 10 comprehensive unit tests in `tests/unit/test_multi_agent.py` (51/51 total CLI suite passing).
 - [x] **Deliverables**: Authored `ATLAS_MULTI_AGENT_CODING.md`, `ATLAS_AGENT_ROLE_SPECIFICATIONS.md`, `ATLAS_AGENT_COORDINATION.md`, `ATLAS_AGENT_WORKSPACE_ISOLATION.md`, `ATLAS_INDEPENDENT_CODE_REVIEW.md`.
 
-### Stage 6: Tool Ecosystem & Extensibility Engine (GATED - PENDING AUTHORIZATION)
-- [ ] Model Context Protocol (MCP) client and server integrations
-- [ ] Sandboxed plugin runtime and lifecycle
-- [ ] Dynamic tool registry and Action Firewall authorization gates
+### Stage 6: Tool Ecosystem & Extensibility Engine (COMPLETE)
+- [x] **Workstream 1: Model Context Protocol (MCP) Integration**: Built `MCPClientManager`, `MCPServerConfig`, `MCPToolSchema`, `MCPToolResult` supporting stdio/sse server discovery, parameter validation, Action Firewall gates under `mcp.<tool>`, secret masking, untrusted output tagging.
+- [x] **Workstream 2: Plugin Ecosystem Management**: Built `PluginManager`, `InstalledPlugin`, `PluginAuditEvent` supporting package manifest validation, SHA-256 archive checksums, publisher signature verification, lifecycle transitions (`INSTALLED`, `ENABLED`, `DISABLED`, `UNINSTALL`), append-only audit trail.
+- [x] **Workstream 3: Skill Ecosystem & Prompt Defense**: Built `SkillManager`, `RegisteredSkill` providing 7 standard built-in engineering workflows, parameter schema validation, adversarial prompt injection regex pre-screening against policy override attacks.
+- [x] **Workstream 4: Workspace Profiles & Privilege Boundaries**: Built `WorkspaceProfileManager`, `WorkspaceProfile` with 6 built-in profiles, auto-detection via repository manifests, strict privilege ceiling enforcement preventing privilege elevation.
+- [x] **Workstream 5: Enterprise Connectivity**: Built `EnterpriseClientAdapter`, `EnterpriseSessionInfo` integrating with `atlas-enterprise` for multi-tenant organization binding, RBAC hierarchies, fleet security policy distribution into Action Firewall, tamper-evident centralized audit logging.
+- [x] **Workstream 6: Remote Runtime Federation**: Built `RemoteRuntimeClient`, `RemoteNodeInfo`, `RemoteSessionLease` for remote worker discovery, session leasing with token masking, streamed event polling, connection recovery / session re-attachment.
+- [x] **Workstream 7: Open-Source Core Separation**: Built `EditionFeatureMatrix`, `EditionTier` guaranteeing a 100% offline-ready open-source core with zero cloud dependencies; graceful degradation reporting clear error on enterprise features.
+- [x] **Workstream 8: CLI Integration**: Connected `atlas edition`, `atlas skills list`, `atlas profiles list`, `atlas plugins list`, `atlas mcp list`.
+- [x] **Workstream 9: Comprehensive Testing**: Authored 18 comprehensive unit tests in `tests/unit/test_enterprise_ecosystem.py` (69/69 total CLI suite passing).
+- [x] **Deliverables**: Authored `ATLAS_MCP_INTEGRATION.md`, `ATLAS_PLUGIN_ARCHITECTURE.md`, `ATLAS_SKILL_SDK.md`, `ATLAS_WORKSPACE_PROFILES.md`, `ATLAS_ENTERPRISE_INTEGRATION.md`, `ATLAS_REMOTE_RUNTIME.md`, `ATLAS_OPEN_SOURCE_EDITION.md`.
+
+### Stage 7: Computer-Use, Browser & Desktop Automation (GATED - PENDING AUTHORIZATION)
+- [ ] Browser runtime integration (Playwright accessibility tree, ARIA targeting)
+- [ ] Desktop UI automation driver (Windows UIA / cross-platform mouse/keyboard synthesis)
+- [ ] Deterministic post-action verification engine and visual comparison
