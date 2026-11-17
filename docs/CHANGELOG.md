@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.6] - 2026-11-17 — Phase 16.6 Targeted Hardening & Distributed Execution Safety
+
+### Added
+- **Migration 018: Task Idempotency & Lease Atomicity (`migrations/018_task_idempotency_and_lease_atomicity.sql`)**:
+  - `process_operation_idempotency` table with composite primary key `(tenant_id, idempotency_key)`, SHA-256 request fingerprinting, and status constraints.
+  - Conflict target index `idx_worker_leases_conflict_target` on `process_worker_leases(task_instance_id, fencing_token)`.
+- **Durable Task Idempotency & Operation State Machine (`idempotency.py`, `storage.py`, `engine.py`)**:
+  - `DurableOperationIdempotencyManager` and `OperationStatus` state machine (`CREATED`, `IN_PROGRESS`, `SUCCEEDED`, `FAILED_RETRYABLE`, `FAILED_FINAL`, `UNKNOWN_OUTCOME`, `RECONCILIATION_REQUIRED`, `CANCELLED`).
+  - Canonical request fingerprinting detecting key reuse with altered payloads (`IdempotencyKeyReuseError`).
+  - Crash recovery invariant in `ProcessExecutionEngine.recover_after_restart()`: interrupted tasks with in-flight operations are marked `UNKNOWN_OUTCOME` / `RECONCILIATION_REQUIRED` and placed into `SUSPENDED` status rather than blindly resetting to `READY`, preventing duplicate execution of irreversible financial/external actions.
+- **Connection-Time SSRF & DNS Rebinding Protection (`connectors.py`)**:
+  - `PinnedResolutionNetworkBackend` & `PinnedResolutionAsyncTransport` for `httpx`.
+  - Intercepts TCP connection at socket dial time, resolves DNS, validates against `SSRFValidator`, and pins the socket directly to the validated IP address, eliminating TOCTOU DNS rebinding while preserving TLS SNI and X.509 certificate validation.
+- **Dedicated Phase 16.6 Test Suites**:
+  - `tests/unit/test_phase16_6_approvals_concurrency.py`: Multi-node approval cache consistency and quorum validation.
+  - `tests/unit/test_phase16_6_idempotency.py`: Durable task idempotency lifecycle, fingerprinting, and crash recovery.
+  - `tests/unit/test_phase16_6_lease_race.py`: Monotonic fencing token generation under concurrent worker contention.
+  - `tests/unit/test_phase16_6_dns_rebinding.py`: Connection-time SSRF, private IP blocking, and DNS rebinding immunity.
+  - `tests/integration/test_phase16_6_postgres_hardening.py`: Full live PostgreSQL 18.6 multi-worker concurrency and crash recovery suite.
+
+### Fixed
+- **Multi-Worker Approval Cache Inconsistency (`FINDING-16.5-01`)**:
+  - Migrated approval quorum calculation into transactional `storage.decide_approval()` using `SELECT ... FOR UPDATE` row-level locks.
+  - `HumanApprovalEngine.get_approval()` performs cache-through database reads, preventing multi-pod approval vote stalls.
+- **Initial Worker Lease Acquisition Race (`FINDING-16.5-03`)**:
+  - Transitioned `acquire_lease()` in PostgreSQL and SQLite to a single-query atomic upsert: `INSERT ... ON CONFLICT (task_instance_id) DO UPDATE SET fencing_token = process_worker_leases.fencing_token + 1 RETURNING fencing_token, lease_token`.
+  - Guarantees strictly monotonic, unique generation numbers across concurrent workers on brand-new tasks.
+
+---
+
 ## [0.16.4] - 2026-11-17 — Phase 16.4 Critical Remediation, Durable Transactions & Security Corrections
 
 ### Added

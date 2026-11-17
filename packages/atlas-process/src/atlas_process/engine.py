@@ -18,6 +18,7 @@ from atlas_process.definitions import (
     TaskType,
 )
 from atlas_process.evaluator import SafeExpressionEvaluator
+from atlas_process.idempotency import OperationStatus
 from atlas_process.state_machine import (
     ProcessStateMachine,
     ProcessStatus,
@@ -320,10 +321,21 @@ class ProcessExecutionEngine:
         if not t_inst:
             raise KeyError(f"Task '{task_def_id}' not found.")
 
-        # Check task-level idempotency first
-        if idempotency_key and idempotency_key in self._task_idempotency_cache:
-            t_inst.outputs = self._task_idempotency_cache[idempotency_key]
-            return
+        # Check task-level idempotency first (RAM cache and durable storage)
+        if idempotency_key:
+            if idempotency_key in self._task_idempotency_cache:
+                t_inst.outputs = self._task_idempotency_cache[idempotency_key]
+                return
+            if hasattr(self._storage, "get_operation"):
+                op_rec = self._storage.get_operation(instance.tenant_id, idempotency_key)
+                if (
+                    op_rec
+                    and op_rec.status == OperationStatus.SUCCEEDED
+                    and op_rec.response_payload is not None
+                ):
+                    t_inst.outputs = op_rec.response_payload
+                    self._task_idempotency_cache[idempotency_key] = op_rec.response_payload
+                    return
 
         # Fencing token invariant: must match active token
         if fencing_token != t_inst.lease_fencing_token:
@@ -346,6 +358,8 @@ class ProcessExecutionEngine:
 
         if idempotency_key:
             self._task_idempotency_cache[idempotency_key] = outputs
+            if hasattr(self._storage, "complete_operation"):
+                self._storage.complete_operation(instance.tenant_id, idempotency_key, outputs)
 
         ProcessTaskStateMachine.validate_transition(t_inst.status, ProcessTaskStatus.COMPLETED)
         t_inst.status = ProcessTaskStatus.COMPLETED
@@ -441,7 +455,29 @@ class ProcessExecutionEngine:
             if instance.status == ProcessStatus.RUNNING:
                 for t_inst in instance.task_instances.values():
                     if t_inst.status == ProcessTaskStatus.RUNNING:
-                        # If lease expired or worker disconnected
+                        # Safety Invariant: Check if task has an in-progress operation in durable storage!
+                        if hasattr(
+                            self._storage, "has_in_progress_operation"
+                        ) and self._storage.has_in_progress_operation(
+                            instance.tenant_id, instance.instance_id, t_inst.task_def_id
+                        ):
+                            # Mark operations as UNKNOWN_OUTCOME requiring reconciliation before retry
+                            if hasattr(self._storage, "mark_task_operations_unknown"):
+                                self._storage.mark_task_operations_unknown(
+                                    instance.tenant_id,
+                                    instance.instance_id,
+                                    t_inst.task_def_id,
+                                    reason="Task host crashed with operation in flight; reconciliation required before retry.",
+                                )
+                            t_inst.status = ProcessTaskStatus.SUSPENDED
+                            t_inst.error = (
+                                "Operation outcome unknown after host crash. "
+                                "Reconciliation required before retry."
+                            )
+                            instance.status = ProcessStatus.SUSPENDED
+                            continue
+
+                        # If lease expired or worker disconnected and no ambiguous operation
                         if not t_inst.lease_expires_at or t_inst.lease_expires_at < now:
                             t_inst.status = ProcessTaskStatus.READY
                             t_inst.lease_token = None

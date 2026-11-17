@@ -14,6 +14,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from atlas_process.idempotency import OperationStatus, compute_request_fingerprint
+
 
 class SagaStepStatus(StrEnum):
     """Lifecycle states of an individual saga transaction step."""
@@ -152,15 +154,55 @@ class SagaCoordinator:
         if self.storage and hasattr(self.storage, "save_saga"):
             self.storage.save_saga(saga)
 
+        # Check durable operation idempotency if key is present
+        tenant_id = saga.metadata.get("tenant_id", "tenant_default")
+        if step.idempotency_key and self.storage and hasattr(self.storage, "start_operation"):
+            op_status, cached_resp = self.storage.start_operation(
+                tenant_id=tenant_id,
+                idempotency_key=step.idempotency_key,
+                process_instance_id=saga.process_instance_id or "unknown_inst",
+                task_def_id=step.name,
+                operation_name=step.name,
+                request_fingerprint=compute_request_fingerprint(step.forward_payload),
+                request_payload=step.forward_payload,
+            )
+            if op_status == OperationStatus.SUCCEEDED and cached_resp is not None:
+                step.status = SagaStepStatus.COMPLETED
+                step.forward_result = cached_resp
+                step.executed_at = time.time()
+                if hasattr(self.storage, "save_saga"):
+                    self.storage.save_saga(saga)
+                return cached_resp
+
         try:
             result = action_fn(step.forward_payload)
             step.status = SagaStepStatus.COMPLETED
             step.forward_result = result
             step.executed_at = time.time()
+            if (
+                step.idempotency_key
+                and self.storage
+                and hasattr(self.storage, "complete_operation")
+            ):
+                self.storage.complete_operation(
+                    tenant_id=tenant_id,
+                    idempotency_key=step.idempotency_key,
+                    response_payload=result,
+                )
             if self.storage and hasattr(self.storage, "save_saga"):
                 self.storage.save_saga(saga)
             return result
         except TimeoutError as exc:
+            if (
+                step.idempotency_key
+                and self.storage
+                and hasattr(self.storage, "mark_operation_unknown_outcome")
+            ):
+                self.storage.mark_operation_unknown_outcome(
+                    tenant_id=tenant_id,
+                    idempotency_key=step.idempotency_key,
+                    reason=f"TimeoutError: {exc}",
+                )
             # Unknown outcome! If non-idempotent, DO NOT blind retry!
             step.status = SagaStepStatus.RECONCILIATION_REQUIRED
             step.error_message = f"Timeout encountered: {exc}"
@@ -186,6 +228,13 @@ class SagaCoordinator:
                 f"Step '{step.name}' entered RECONCILIATION_REQUIRED: outcome unknown after timeout."
             ) from exc
         except Exception as exc:
+            if step.idempotency_key and self.storage and hasattr(self.storage, "fail_operation"):
+                self.storage.fail_operation(
+                    tenant_id=tenant_id,
+                    idempotency_key=step.idempotency_key,
+                    error_message=str(exc),
+                    retryable=False,
+                )
             step.status = SagaStepStatus.FAILED
             step.error_message = str(exc)
             saga.status = SagaStatus.COMPENSATING

@@ -57,6 +57,17 @@ from atlas_process.engine import (
     StaleWorkerFencingError,
 )
 from atlas_process.federation import FederatedProcessDelegator
+from atlas_process.idempotency import (
+    ConcurrentOperationInProgressError,
+    DurableOperationIdempotencyManager,
+    IdempotencyError,
+    IdempotencyKeyReuseError,
+    OperationPreviouslyFailedError,
+    OperationStatus,
+    ReconciliationRequiredError,
+    TaskOperationRecord,
+    compute_request_fingerprint,
+)
 from atlas_process.security import (
     ActionFirewallBlockedError,
     PrivilegeEscalationError,
@@ -84,7 +95,6 @@ from atlas_process.state_machine import (
 )
 from atlas_process.transactions import (
     NonIdempotentBlindRetryError,
-    ReconciliationRequiredError,
     SagaCoordinator,
     SagaError,
     SagaStatus,
@@ -143,6 +153,16 @@ __all__ = [
     "ForgedEventError",
     "DuplicateEventError",
     "UnauthorizedTriggerError",
+    # Idempotency
+    "OperationStatus",
+    "IdempotencyError",
+    "ConcurrentOperationInProgressError",
+    "IdempotencyKeyReuseError",
+    "OperationPreviouslyFailedError",
+    "ReconciliationRequiredError",
+    "TaskOperationRecord",
+    "DurableOperationIdempotencyManager",
+    "compute_request_fingerprint",
     # Approvals
     "ApprovalDecision",
     "ApprovalRecord",

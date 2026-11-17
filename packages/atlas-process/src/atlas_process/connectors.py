@@ -16,6 +16,7 @@ import uuid
 from enum import StrEnum
 from typing import Any
 
+import httpcore
 import httpx
 from pydantic import BaseModel, Field, SecretStr
 
@@ -699,6 +700,112 @@ class HttpEnterpriseConnector(BaseEnterpriseConnector):
         )
 
 
+class PinnedResolutionNetworkBackend(httpcore.AsyncNetworkBackend):
+    """Network backend connecting strictly to validated IP addresses to prevent DNS rebinding TOCTOU."""
+
+    def __init__(
+        self,
+        backend: httpcore.AsyncNetworkBackend | None = None,
+        allowed_hosts: list[str] | None = None,
+    ) -> None:
+        self._backend = backend or httpcore._backends.auto.AutoBackend()
+        self.allowed_hosts = [h.lower() for h in allowed_hosts] if allowed_hosts else None
+
+    async def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: float | None = None,
+        local_address: str | None = None,
+        socket_options: Any = None,
+    ) -> httpcore.AsyncNetworkStream:
+        clean_host = host.lower().strip(".").strip("[]")
+        if self.allowed_hosts and clean_host not in self.allowed_hosts:
+            raise SSRFSecurityError(
+                f"Target host '{clean_host}' is not in configured allowed_hosts."
+            )
+
+        direct_ip = SSRFValidator._parse_raw_ip(clean_host)
+        if direct_ip is not None:
+            if SSRFValidator.is_ip_blocked(direct_ip):
+                raise SSRFSecurityError(
+                    f"Direct IP address '{direct_ip}' belongs to blocked/private range."
+                )
+            pinned_ip = str(direct_ip)
+        else:
+            if clean_host in SSRFValidator.BLOCKED_HOSTNAMES:
+                raise SSRFSecurityError(
+                    f"Target hostname '{clean_host}' is blocked (internal/metadata host)."
+                )
+            try:
+                addr_info = socket.getaddrinfo(clean_host, port)
+            except socket.gaierror as exc:
+                raise SSRFSecurityError(
+                    f"DNS resolution failed for host '{clean_host}': {exc}"
+                ) from exc
+
+            resolved_ips: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = []
+            for _, _, _, _, sockaddr in addr_info:
+                ip_str = sockaddr[0]
+                try:
+                    resolved_ips.append(ipaddress.ip_address(ip_str))
+                except ValueError:
+                    continue
+
+            if not resolved_ips:
+                raise SSRFSecurityError(f"No IP addresses resolved for host '{clean_host}'.")
+
+            for resolved_ip in resolved_ips:
+                if SSRFValidator.is_ip_blocked(resolved_ip):
+                    raise SSRFSecurityError(
+                        f"SSRF violation: Host '{clean_host}' resolves to blocked private/internal IP {resolved_ip}."
+                    )
+            pinned_ip = str(resolved_ips[0])
+
+        return await self._backend.connect_tcp(
+            host=pinned_ip,
+            port=port,
+            timeout=timeout,
+            local_address=local_address,
+            socket_options=socket_options,
+        )
+
+    async def connect_unix_socket(
+        self,
+        path: str,
+        timeout: float | None = None,
+        socket_options: Any = None,
+    ) -> httpcore.AsyncNetworkStream:
+        raise SSRFSecurityError("Unix domain socket connections are prohibited.")
+
+    async def sleep(self, seconds: float) -> None:
+        await self._backend.sleep(seconds)
+
+
+class PinnedResolutionAsyncTransport(httpx.AsyncHTTPTransport):
+    """Async transport pinning TCP connections to validated IPs to defeat DNS rebinding TOCTOU."""
+
+    def __init__(
+        self,
+        allowed_hosts: list[str] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        ssl_ctx = getattr(self._pool, "_ssl_context", None)
+        limits = kwargs.get("limits") or httpx.Limits()
+        self._pool = httpcore.AsyncConnectionPool(
+            ssl_context=ssl_ctx,
+            max_connections=limits.max_connections,
+            max_keepalive_connections=limits.max_keepalive_connections,
+            keepalive_expiry=limits.keepalive_expiry,
+            http1=kwargs.get("http1", True),
+            http2=kwargs.get("http2", False),
+            retries=kwargs.get("retries", 0),
+            network_backend=PinnedResolutionNetworkBackend(allowed_hosts=allowed_hosts),
+        )
+
+
 class AsyncHttpEnterpriseConnector(BaseEnterpriseConnector):
     """Production-grade Asynchronous HTTP enterprise connector with connection pooling, TLS, retries, backoff, and SSRF firewall."""
 
@@ -751,11 +858,15 @@ class AsyncHttpEnterpriseConnector(BaseEnterpriseConnector):
     def _create_async_client(self) -> httpx.AsyncClient:
         limits = httpx.Limits(max_keepalive_connections=20, max_connections=100)
         timeout = httpx.Timeout(self.timeout_seconds, connect=5.0)
+        transport = self._custom_transport or PinnedResolutionAsyncTransport(
+            allowed_hosts=self.allowed_hosts,
+            limits=limits,
+        )
         return httpx.AsyncClient(
             base_url=self.base_url,
             limits=limits,
             timeout=timeout,
-            transport=self._custom_transport,
+            transport=transport,
         )
 
     async def call_http_endpoint_async(

@@ -19,12 +19,29 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 if TYPE_CHECKING:
     from atlas_process.engine import ProcessInstance
 
-from atlas_process.approvals import ApprovalDecision, ApprovalRecord, ApprovalRequest
+from atlas_process.approvals import (
+    ApprovalDecision,
+    ApprovalError,
+    ApprovalExpiredError,
+    ApprovalRecord,
+    ApprovalRequest,
+    ParameterTamperedError,
+    SeparationOfDutiesViolationError,
+    UnauthorizedApproverError,
+)
 from atlas_process.definitions import (
     ProcessDefinition,
     ProcessDefinitionStatus,
     ProcessTaskDefinition,
     TaskType,
+)
+from atlas_process.idempotency import (
+    ConcurrentOperationInProgressError,
+    IdempotencyKeyReuseError,
+    OperationPreviouslyFailedError,
+    OperationStatus,
+    ReconciliationRequiredError,
+    TaskOperationRecord,
 )
 from atlas_process.state_machine import ProcessStatus, ProcessTaskStatus
 from atlas_process.transactions import (
@@ -143,6 +160,100 @@ class ProcessStorageProtocol(Protocol):
         """Retrieve human approval request by ID."""
         ...
 
+    def decide_approval(
+        self,
+        approval_id: str,
+        approver_id: str,
+        decision: ApprovalDecision,
+        comments: str = "",
+        current_parameters: dict[str, Any] | None = None,
+    ) -> ApprovalRequest:
+        """Atomically record an approval decision and update quorum against authoritative storage."""
+        ...
+
+    def start_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        process_instance_id: str,
+        task_def_id: str,
+        operation_name: str,
+        request_fingerprint: str,
+        request_payload: dict[str, Any],
+        provider_idempotency_key: str | None = None,
+        provider_name: str | None = None,
+        expires_at: float | None = None,
+    ) -> tuple[OperationStatus, dict[str, Any] | None]:
+        """Atomically initiate an operation, returning existing cached result if already completed."""
+        ...
+
+    def complete_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        response_payload: dict[str, Any],
+    ) -> None:
+        """Mark an operation successfully completed with response payload."""
+        ...
+
+    def fail_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        error_message: str,
+        retryable: bool = False,
+    ) -> None:
+        """Mark an operation failed, specifying whether retry is permitted."""
+        ...
+
+    def mark_operation_unknown_outcome(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        reason: str,
+    ) -> None:
+        """Mark an operation as UNKNOWN_OUTCOME requiring reconciliation before retry."""
+        ...
+
+    def reconcile_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        resolution_status: OperationStatus,
+        resolved_by: str,
+        notes: str = "",
+        response_payload: dict[str, Any] | None = None,
+    ) -> None:
+        """Reconcile an ambiguous operation outcome."""
+        ...
+
+    def get_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+    ) -> TaskOperationRecord | None:
+        """Retrieve a task operation record by tenant and idempotency key."""
+        ...
+
+    def has_in_progress_operation(
+        self,
+        tenant_id: str,
+        process_instance_id: str,
+        task_def_id: str,
+    ) -> bool:
+        """Check whether a task has an IN_PROGRESS operation."""
+        ...
+
+    def mark_task_operations_unknown(
+        self,
+        tenant_id: str,
+        process_instance_id: str,
+        task_def_id: str,
+        reason: str,
+    ) -> int:
+        """Mark all active IN_PROGRESS operations for a task as UNKNOWN_OUTCOME."""
+        ...
+
     def save_saga(self, saga: SagaTransaction) -> None:
         """Persist saga transaction state and steps."""
         ...
@@ -215,6 +326,7 @@ class InMemoryProcessStorage:
         self._leases: dict[str, dict[str, Any]] = {}
         self._fencing_tokens: dict[str, int] = {}
         self._approvals: dict[str, ApprovalRequest] = {}
+        self._operations: dict[tuple[str, str], TaskOperationRecord] = {}
         self._sagas: dict[str, SagaTransaction] = {}
         self._reconciliations: dict[int, dict[str, Any]] = {}
         self._reconciliation_seq: int = 0
@@ -359,6 +471,240 @@ class InMemoryProcessStorage:
         with self._lock:
             appr = self._approvals.get(approval_id)
             return appr.model_copy(deep=True) if appr else None
+
+    def decide_approval(
+        self,
+        approval_id: str,
+        approver_id: str,
+        decision: ApprovalDecision,
+        comments: str = "",
+        current_parameters: dict[str, Any] | None = None,
+    ) -> ApprovalRequest:
+        with self._lock:
+            req = self._approvals.get(approval_id)
+            if not req:
+                raise KeyError(f"Approval request '{approval_id}' not found.")
+            now = time.time()
+            if req.status != ApprovalDecision.PENDING:
+                raise ApprovalError(
+                    f"Approval request '{approval_id}' has already been resolved with status '{req.status}' and cannot accept further decisions."
+                )
+            if now > req.expires_at:
+                req.status = ApprovalDecision.EXPIRED
+                req.resolved_at = now
+                raise ApprovalExpiredError(f"Approval request '{approval_id}' has expired.")
+            if approver_id == req.requesting_identity:
+                raise SeparationOfDutiesViolationError(
+                    f"Separation of duties violation: Requestor '{approver_id}' cannot approve its own action."
+                )
+            if approver_id not in req.allowed_approver_ids:
+                raise UnauthorizedApproverError(
+                    f"Approver '{approver_id}' is not authorized to decide approval '{approval_id}'."
+                )
+            if current_parameters is not None:
+                current_hash = hashlib.sha256(
+                    json.dumps(current_parameters, sort_keys=True).encode("utf-8")
+                ).hexdigest()
+                if current_hash != req.parameter_hash:
+                    raise ParameterTamperedError(
+                        "Approval rejected: Material parameters have been altered since approval request creation."
+                    )
+            if any(d.approver_id == approver_id for d in req.decisions):
+                raise ApprovalError(f"Approver '{approver_id}' has already submitted a decision.")
+
+            req.decisions.append(
+                ApprovalRecord(
+                    approver_id=approver_id,
+                    decision=decision,
+                    decided_at=now,
+                    comments=comments,
+                )
+            )
+            if decision == ApprovalDecision.REJECTED:
+                req.status = ApprovalDecision.REJECTED
+                req.resolved_at = now
+            elif decision == ApprovalDecision.APPROVED:
+                approved_count = sum(
+                    1 for d in req.decisions if d.decision == ApprovalDecision.APPROVED
+                )
+                if approved_count >= req.required_approvals:
+                    req.status = ApprovalDecision.APPROVED
+                    req.resolved_at = now
+            return req.model_copy(deep=True)
+
+    def start_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        process_instance_id: str,
+        task_def_id: str,
+        operation_name: str,
+        request_fingerprint: str,
+        request_payload: dict[str, Any],
+        provider_idempotency_key: str | None = None,
+        provider_name: str | None = None,
+        expires_at: float | None = None,
+    ) -> tuple[OperationStatus, dict[str, Any] | None]:
+        with self._lock:
+            key = (tenant_id, idempotency_key)
+            existing = self._operations.get(key)
+            now = time.time()
+            if existing:
+                if existing.request_fingerprint != request_fingerprint:
+                    raise IdempotencyKeyReuseError(
+                        f"Idempotency key '{idempotency_key}' reused with conflicting request payload."
+                    )
+                if existing.status == OperationStatus.SUCCEEDED:
+                    return OperationStatus.SUCCEEDED, existing.response_payload
+                if existing.status == OperationStatus.IN_PROGRESS:
+                    raise ConcurrentOperationInProgressError(
+                        f"Operation with key '{idempotency_key}' is already in progress."
+                    )
+                if existing.status in (
+                    OperationStatus.UNKNOWN_OUTCOME,
+                    OperationStatus.RECONCILIATION_REQUIRED,
+                ):
+                    raise ReconciliationRequiredError(
+                        f"Operation '{idempotency_key}' outcome is ambiguous ({existing.status}); reconciliation required."
+                    )
+                if existing.status == OperationStatus.FAILED_FINAL:
+                    raise OperationPreviouslyFailedError(
+                        f"Operation '{idempotency_key}' previously failed permanently: {existing.error_message}"
+                    )
+                if existing.status == OperationStatus.FAILED_RETRYABLE:
+                    existing.status = OperationStatus.IN_PROGRESS
+                    existing.updated_at = now
+                    return OperationStatus.IN_PROGRESS, None
+
+            record = TaskOperationRecord(
+                tenant_id=tenant_id,
+                idempotency_key=idempotency_key,
+                process_instance_id=process_instance_id,
+                task_def_id=task_def_id,
+                operation_name=operation_name,
+                request_fingerprint=request_fingerprint,
+                status=OperationStatus.IN_PROGRESS,
+                provider_idempotency_key=provider_idempotency_key,
+                provider_name=provider_name,
+                request_payload=request_payload,
+                created_at=now,
+                updated_at=now,
+                expires_at=expires_at,
+            )
+            self._operations[key] = record
+            return OperationStatus.IN_PROGRESS, None
+
+    def complete_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        response_payload: dict[str, Any],
+    ) -> None:
+        with self._lock:
+            key = (tenant_id, idempotency_key)
+            op = self._operations.get(key)
+            if op:
+                op.status = OperationStatus.SUCCEEDED
+                op.response_payload = response_payload
+                op.completed_at = time.time()
+                op.updated_at = op.completed_at
+
+    def fail_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        error_message: str,
+        retryable: bool = False,
+    ) -> None:
+        with self._lock:
+            key = (tenant_id, idempotency_key)
+            op = self._operations.get(key)
+            if op:
+                op.status = (
+                    OperationStatus.FAILED_RETRYABLE if retryable else OperationStatus.FAILED_FINAL
+                )
+                op.error_message = error_message
+                op.completed_at = time.time()
+                op.updated_at = op.completed_at
+
+    def mark_operation_unknown_outcome(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        reason: str,
+    ) -> None:
+        with self._lock:
+            key = (tenant_id, idempotency_key)
+            op = self._operations.get(key)
+            if op:
+                op.status = OperationStatus.UNKNOWN_OUTCOME
+                op.error_message = reason
+                op.updated_at = time.time()
+
+    def reconcile_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        resolution_status: OperationStatus,
+        resolved_by: str,
+        notes: str = "",
+        response_payload: dict[str, Any] | None = None,
+    ) -> None:
+        with self._lock:
+            key = (tenant_id, idempotency_key)
+            op = self._operations.get(key)
+            if op:
+                op.status = resolution_status
+                op.updated_at = time.time()
+                if response_payload:
+                    op.response_payload = response_payload
+
+    def get_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+    ) -> TaskOperationRecord | None:
+        with self._lock:
+            op = self._operations.get((tenant_id, idempotency_key))
+            return op.model_copy(deep=True) if op else None
+
+    def has_in_progress_operation(
+        self,
+        tenant_id: str,
+        process_instance_id: str,
+        task_def_id: str,
+    ) -> bool:
+        with self._lock:
+            return any(
+                op.tenant_id == tenant_id
+                and op.process_instance_id == process_instance_id
+                and op.task_def_id == task_def_id
+                and op.status == OperationStatus.IN_PROGRESS
+                for op in self._operations.values()
+            )
+
+    def mark_task_operations_unknown(
+        self,
+        tenant_id: str,
+        process_instance_id: str,
+        task_def_id: str,
+        reason: str,
+    ) -> int:
+        with self._lock:
+            count = 0
+            now = time.time()
+            for op in self._operations.values():
+                if (
+                    op.tenant_id == tenant_id
+                    and op.process_instance_id == process_instance_id
+                    and op.task_def_id == task_def_id
+                    and op.status == OperationStatus.IN_PROGRESS
+                ):
+                    op.status = OperationStatus.UNKNOWN_OUTCOME
+                    op.error_message = reason
+                    op.updated_at = now
+                    count += 1
+            return count
 
     def save_saga(self, saga: SagaTransaction) -> None:
         with self._lock:
@@ -639,6 +985,28 @@ class SqliteProcessStorage:
                 received_at REAL NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_event_inbox_tenant ON process_event_inbox(tenant_id, event_id);
+
+            CREATE TABLE IF NOT EXISTS process_operation_idempotency (
+                tenant_id TEXT NOT NULL,
+                idempotency_key TEXT NOT NULL,
+                process_instance_id TEXT NOT NULL,
+                task_def_id TEXT NOT NULL,
+                operation_name TEXT NOT NULL,
+                request_fingerprint TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'CREATED',
+                provider_idempotency_key TEXT,
+                provider_name TEXT,
+                request_payload TEXT NOT NULL DEFAULT '{}',
+                response_payload TEXT,
+                error_message TEXT,
+                created_at REAL NOT NULL,
+                updated_at REAL NOT NULL,
+                completed_at REAL,
+                expires_at REAL,
+                PRIMARY KEY (tenant_id, idempotency_key)
+            );
+            CREATE INDEX IF NOT EXISTS idx_operation_idempotency_instance_task ON process_operation_idempotency(tenant_id, process_instance_id, task_def_id);
+            CREATE INDEX IF NOT EXISTS idx_operation_idempotency_status ON process_operation_idempotency(status);
             """)
 
     def save_definition(self, definition: ProcessDefinition) -> None:
@@ -884,35 +1252,31 @@ class SqliteProcessStorage:
         lease_duration_seconds: float = 60.0,
     ) -> tuple[str, int]:
         with self._lock, self._get_connection() as conn:
-            existing = conn.execute(
-                "SELECT fencing_token FROM process_worker_leases WHERE task_instance_id = ?",
-                (task_instance_id,),
-            ).fetchone()
-            current_fencing = (existing["fencing_token"] if existing else 0) + 1
             token = f"lease_{uuid.uuid4().hex[:12]}"
             expires_at = time.time() + lease_duration_seconds
 
-            conn.execute(
+            cur = conn.execute(
                 """
                 INSERT INTO process_worker_leases (
                     task_instance_id, process_instance_id, worker_id, lease_token, fencing_token, expires_at
-                ) VALUES (?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, 1, ?)
                 ON CONFLICT (task_instance_id) DO UPDATE SET
                     worker_id = excluded.worker_id,
                     lease_token = excluded.lease_token,
-                    fencing_token = excluded.fencing_token,
+                    fencing_token = process_worker_leases.fencing_token + 1,
                     expires_at = excluded.expires_at
+                RETURNING fencing_token, lease_token
                 """,
                 (
                     task_instance_id,
                     process_instance_id,
                     worker_id,
                     token,
-                    current_fencing,
                     expires_at,
                 ),
             )
-            return token, current_fencing
+            row = cur.fetchone()
+            return row["lease_token"], row["fencing_token"]
 
     def verify_lease(
         self,
@@ -1058,6 +1422,386 @@ class SqliteProcessStorage:
                 resolved_at=row["resolved_at"],
                 decisions=decisions,
             )
+
+    def decide_approval(
+        self,
+        approval_id: str,
+        approver_id: str,
+        decision: ApprovalDecision,
+        comments: str = "",
+        current_parameters: dict[str, Any] | None = None,
+    ) -> ApprovalRequest:
+        with self._lock, self._get_connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM process_approval_requests WHERE approval_id = ?",
+                (approval_id,),
+            ).fetchone()
+            if not row:
+                raise KeyError(f"Approval request '{approval_id}' not found.")
+
+            status = row["status"]
+            expires_at = row["expires_at"]
+            requesting_identity = row["requesting_identity"]
+            allowed_ids = json.loads(row["allowed_approver_ids"])
+            expected_hash = row["parameter_hash"]
+            required_approvals = row["required_approvals"]
+            now = time.time()
+
+            if status != "PENDING":
+                raise ApprovalError(
+                    f"Approval request '{approval_id}' has already been resolved with status '{status}' and cannot accept further decisions."
+                )
+            if now > expires_at:
+                conn.execute(
+                    "UPDATE process_approval_requests SET status = 'EXPIRED', resolved_at = ? WHERE approval_id = ?",
+                    (now, approval_id),
+                )
+                raise ApprovalExpiredError(f"Approval request '{approval_id}' has expired.")
+
+            if approver_id == requesting_identity:
+                raise SeparationOfDutiesViolationError(
+                    f"Separation of duties violation: Requestor '{approver_id}' cannot approve its own action."
+                )
+
+            if approver_id not in allowed_ids:
+                raise UnauthorizedApproverError(
+                    f"Approver '{approver_id}' is not authorized to decide approval '{approval_id}'."
+                )
+
+            if current_parameters is not None:
+                current_hash = hashlib.sha256(
+                    json.dumps(current_parameters, sort_keys=True).encode("utf-8")
+                ).hexdigest()
+                if current_hash != expected_hash:
+                    raise ParameterTamperedError(
+                        "Approval rejected: Material parameters have been altered since approval request creation."
+                    )
+
+            existing_decision = conn.execute(
+                "SELECT 1 FROM process_approval_decisions WHERE approval_id = ? AND approver_id = ?",
+                (approval_id, approver_id),
+            ).fetchone()
+            if existing_decision is not None:
+                raise ApprovalError(f"Approver '{approver_id}' has already submitted a decision.")
+
+            decision_val = decision.value if hasattr(decision, "value") else str(decision)
+            conn.execute(
+                """
+                INSERT INTO process_approval_decisions (
+                    approval_id, approver_id, decision, comments, decided_at
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                (approval_id, approver_id, decision_val, comments, now),
+            )
+
+            all_decisions_rows = conn.execute(
+                "SELECT decision, approver_id, comments, decided_at FROM process_approval_decisions WHERE approval_id = ? ORDER BY decided_at ASC",
+                (approval_id,),
+            ).fetchall()
+
+            decisions_list = [
+                ApprovalRecord(
+                    approver_id=r["approver_id"],
+                    decision=ApprovalDecision(r["decision"]),
+                    comments=r["comments"],
+                    decided_at=r["decided_at"],
+                )
+                for r in all_decisions_rows
+            ]
+
+            if decision_val == "REJECTED":
+                new_status = "REJECTED"
+                resolved_at = now
+            elif decision_val == "APPROVED":
+                approved_count = sum(
+                    1 for d in decisions_list if d.decision == ApprovalDecision.APPROVED
+                )
+                if approved_count >= required_approvals:
+                    new_status = "APPROVED"
+                    resolved_at = now
+                else:
+                    new_status = "PENDING"
+                    resolved_at = None
+            else:
+                new_status = "PENDING"
+                resolved_at = None
+
+            conn.execute(
+                """
+                UPDATE process_approval_requests
+                SET status = ?, resolved_at = ?, decisions_json = ?
+                WHERE approval_id = ?
+                """,
+                (
+                    new_status,
+                    resolved_at,
+                    json.dumps([d.model_dump() for d in decisions_list]),
+                    approval_id,
+                ),
+            )
+
+            return ApprovalRequest(
+                approval_id=row["approval_id"],
+                process_instance_id=row["process_instance_id"],
+                task_def_id=row["task_def_id"],
+                action_name=row["action_name"],
+                target_resource=row["target_resource"],
+                parameters=json.loads(row["parameters"]),
+                parameter_hash=row["parameter_hash"],
+                requesting_identity=row["requesting_identity"],
+                allowed_approver_ids=json.loads(row["allowed_approver_ids"]),
+                allowed_approver_roles=json.loads(row["allowed_approver_roles"]),
+                required_approvals=row["required_approvals"],
+                risk_classification=row["risk_classification"],
+                status=ApprovalDecision(new_status),
+                expires_at=row["expires_at"],
+                created_at=row["created_at"],
+                resolved_at=resolved_at,
+                decisions=decisions_list,
+            )
+
+    def start_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        process_instance_id: str,
+        task_def_id: str,
+        operation_name: str,
+        request_fingerprint: str,
+        request_payload: dict[str, Any],
+        provider_idempotency_key: str | None = None,
+        provider_name: str | None = None,
+        expires_at: float | None = None,
+    ) -> tuple[OperationStatus, dict[str, Any] | None]:
+        with self._lock, self._get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT request_fingerprint, status, response_payload, error_message, expires_at
+                FROM process_operation_idempotency
+                WHERE tenant_id = ? AND idempotency_key = ?
+                """,
+                (tenant_id, idempotency_key),
+            ).fetchone()
+            now = time.time()
+            if row:
+                fp = row["request_fingerprint"]
+                status_str = row["status"]
+                resp_json = row["response_payload"]
+                err_msg = row["error_message"]
+                if fp != request_fingerprint:
+                    raise IdempotencyKeyReuseError(
+                        f"Idempotency key '{idempotency_key}' reused with conflicting request payload."
+                    )
+                if status_str == "SUCCEEDED":
+                    resp_data = json.loads(resp_json) if resp_json else {}
+                    return OperationStatus.SUCCEEDED, resp_data
+                if status_str == "IN_PROGRESS":
+                    raise ConcurrentOperationInProgressError(
+                        f"Operation with key '{idempotency_key}' is already in progress."
+                    )
+                if status_str in ("UNKNOWN_OUTCOME", "RECONCILIATION_REQUIRED"):
+                    raise ReconciliationRequiredError(
+                        f"Operation '{idempotency_key}' outcome is ambiguous ({status_str}); reconciliation required before retry."
+                    )
+                if status_str == "FAILED_FINAL":
+                    raise OperationPreviouslyFailedError(
+                        f"Operation '{idempotency_key}' previously failed permanently: {err_msg}"
+                    )
+                if status_str == "FAILED_RETRYABLE":
+                    conn.execute(
+                        """
+                        UPDATE process_operation_idempotency
+                        SET status = 'IN_PROGRESS', updated_at = ?, error_message = NULL
+                        WHERE tenant_id = ? AND idempotency_key = ?
+                        """,
+                        (now, tenant_id, idempotency_key),
+                    )
+                    return OperationStatus.IN_PROGRESS, None
+
+            conn.execute(
+                """
+                INSERT INTO process_operation_idempotency (
+                    tenant_id, idempotency_key, process_instance_id, task_def_id, operation_name,
+                    request_fingerprint, status, provider_idempotency_key, provider_name,
+                    request_payload, created_at, updated_at, expires_at
+                ) VALUES (?, ?, ?, ?, ?, ?, 'IN_PROGRESS', ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    tenant_id,
+                    idempotency_key,
+                    process_instance_id,
+                    task_def_id,
+                    operation_name,
+                    request_fingerprint,
+                    provider_idempotency_key,
+                    provider_name,
+                    json.dumps(request_payload),
+                    now,
+                    now,
+                    expires_at,
+                ),
+            )
+            return OperationStatus.IN_PROGRESS, None
+
+    def complete_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        response_payload: dict[str, Any],
+    ) -> None:
+        with self._lock, self._get_connection() as conn:
+            now = time.time()
+            conn.execute(
+                """
+                UPDATE process_operation_idempotency
+                SET status = 'SUCCEEDED', response_payload = ?, completed_at = ?, updated_at = ?
+                WHERE tenant_id = ? AND idempotency_key = ?
+                """,
+                (json.dumps(response_payload), now, now, tenant_id, idempotency_key),
+            )
+
+    def fail_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        error_message: str,
+        retryable: bool = False,
+    ) -> None:
+        with self._lock, self._get_connection() as conn:
+            now = time.time()
+            status_val = "FAILED_RETRYABLE" if retryable else "FAILED_FINAL"
+            conn.execute(
+                """
+                UPDATE process_operation_idempotency
+                SET status = ?, error_message = ?, completed_at = ?, updated_at = ?
+                WHERE tenant_id = ? AND idempotency_key = ?
+                """,
+                (status_val, error_message, now, now, tenant_id, idempotency_key),
+            )
+
+    def mark_operation_unknown_outcome(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        reason: str,
+    ) -> None:
+        with self._lock, self._get_connection() as conn:
+            now = time.time()
+            conn.execute(
+                """
+                UPDATE process_operation_idempotency
+                SET status = 'UNKNOWN_OUTCOME', error_message = ?, updated_at = ?
+                WHERE tenant_id = ? AND idempotency_key = ?
+                """,
+                (reason, now, tenant_id, idempotency_key),
+            )
+
+    def reconcile_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        resolution_status: OperationStatus,
+        resolved_by: str,
+        notes: str = "",
+        response_payload: dict[str, Any] | None = None,
+    ) -> None:
+        with self._lock, self._get_connection() as conn:
+            now = time.time()
+            status_val = (
+                resolution_status.value
+                if hasattr(resolution_status, "value")
+                else str(resolution_status)
+            )
+            resp_json = json.dumps(response_payload) if response_payload else None
+            conn.execute(
+                """
+                UPDATE process_operation_idempotency
+                SET status = ?, response_payload = COALESCE(?, response_payload),
+                    error_message = ?, updated_at = ?, completed_at = ?
+                WHERE tenant_id = ? AND idempotency_key = ?
+                """,
+                (
+                    status_val,
+                    resp_json,
+                    f"Resolved by {resolved_by}: {notes}",
+                    now,
+                    now,
+                    tenant_id,
+                    idempotency_key,
+                ),
+            )
+
+    def get_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+    ) -> TaskOperationRecord | None:
+        with self._lock, self._get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT * FROM process_operation_idempotency
+                WHERE tenant_id = ? AND idempotency_key = ?
+                """,
+                (tenant_id, idempotency_key),
+            ).fetchone()
+            if not row:
+                return None
+            req_pl = json.loads(row["request_payload"])
+            resp_pl = json.loads(row["response_payload"]) if row["response_payload"] else None
+            return TaskOperationRecord(
+                tenant_id=row["tenant_id"],
+                idempotency_key=row["idempotency_key"],
+                process_instance_id=row["process_instance_id"],
+                task_def_id=row["task_def_id"],
+                operation_name=row["operation_name"],
+                request_fingerprint=row["request_fingerprint"],
+                status=OperationStatus(row["status"]),
+                provider_idempotency_key=row["provider_idempotency_key"],
+                provider_name=row["provider_name"],
+                request_payload=req_pl,
+                response_payload=resp_pl,
+                error_message=row["error_message"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                completed_at=row["completed_at"],
+                expires_at=row["expires_at"],
+            )
+
+    def has_in_progress_operation(
+        self,
+        tenant_id: str,
+        process_instance_id: str,
+        task_def_id: str,
+    ) -> bool:
+        with self._lock, self._get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT 1 FROM process_operation_idempotency
+                WHERE tenant_id = ? AND process_instance_id = ? AND task_def_id = ? AND status = 'IN_PROGRESS'
+                LIMIT 1
+                """,
+                (tenant_id, process_instance_id, task_def_id),
+            ).fetchone()
+            return row is not None
+
+    def mark_task_operations_unknown(
+        self,
+        tenant_id: str,
+        process_instance_id: str,
+        task_def_id: str,
+        reason: str,
+    ) -> int:
+        with self._lock, self._get_connection() as conn:
+            now = time.time()
+            cur = conn.execute(
+                """
+                UPDATE process_operation_idempotency
+                SET status = 'UNKNOWN_OUTCOME', error_message = ?, updated_at = ?
+                WHERE tenant_id = ? AND process_instance_id = ? AND task_def_id = ? AND status = 'IN_PROGRESS'
+                """,
+                (reason, now, tenant_id, process_instance_id, task_def_id),
+            )
+            return cur.rowcount
 
     def save_saga(self, saga: SagaTransaction) -> None:
         with self._lock, self._get_connection() as conn:
@@ -1544,44 +2288,42 @@ class PostgresProcessStorage:
         lease_duration_seconds: float = 60.0,
     ) -> tuple[str, int]:
         pool = self._ensure_pool()
+        token = f"lease_{uuid.uuid4().hex[:12]}"
+        now = time.time()
+        expires_at = now + lease_duration_seconds
+        lease_id = f"wl_{uuid.uuid4().hex[:10]}"
+
         with pool.connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT fencing_token FROM process_worker_leases WHERE task_instance_id = %s FOR UPDATE",
-                    (task_instance_id,),
-                )
-                existing = cur.fetchone()
-                current_fencing = (existing[0] if existing else 0) + 1
-                token = f"lease_{uuid.uuid4().hex[:12]}"
-                now = time.time()
-                expires_at = now + lease_duration_seconds
-
                 cur.execute(
                     """
                     INSERT INTO process_worker_leases (
                         lease_id, task_instance_id, process_instance_id, worker_id, lease_token, fencing_token, status, acquired_at, expires_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, 'ACTIVE', %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s, 1, 'ACTIVE', %s, %s)
                     ON CONFLICT (task_instance_id) DO UPDATE SET
                         worker_id = EXCLUDED.worker_id,
                         lease_token = EXCLUDED.lease_token,
-                        fencing_token = EXCLUDED.fencing_token,
+                        fencing_token = process_worker_leases.fencing_token + 1,
                         status = 'ACTIVE',
                         acquired_at = EXCLUDED.acquired_at,
-                        expires_at = EXCLUDED.expires_at;
+                        expires_at = EXCLUDED.expires_at
+                    RETURNING fencing_token, lease_token;
                     """,
                     (
-                        f"wl_{uuid.uuid4().hex[:10]}",
+                        lease_id,
                         task_instance_id,
                         process_instance_id,
                         worker_id,
                         token,
-                        current_fencing,
                         now,
                         expires_at,
                     ),
                 )
+                row = cur.fetchone()
+                fencing_token = row[0]
+                lease_token = row[1]
             conn.commit()
-            return token, current_fencing
+            return lease_token, fencing_token
 
     def verify_lease(
         self,
@@ -1760,6 +2502,403 @@ class PostgresProcessStorage:
                     resolved_at=row[15],
                     decisions=decisions,
                 )
+
+    def decide_approval(
+        self,
+        approval_id: str,
+        approver_id: str,
+        decision: ApprovalDecision,
+        comments: str = "",
+        current_parameters: dict[str, Any] | None = None,
+    ) -> ApprovalRequest:
+        pool = self._ensure_pool()
+        now = time.time()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT approval_id, process_instance_id, task_def_id, action_name, target_resource,
+                           parameters, parameter_hash, requesting_identity, allowed_approver_ids,
+                           allowed_approver_roles, required_approvals, risk_classification, status,
+                           expires_at, created_at, resolved_at
+                    FROM process_approval_requests
+                    WHERE approval_id = %s
+                    FOR UPDATE
+                    """,
+                    (approval_id,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    raise KeyError(f"Approval request '{approval_id}' not found.")
+
+                status = row[12]
+                expires_at = row[13]
+                requesting_identity = row[7]
+                allowed_ids = row[8] if isinstance(row[8], list) else json.loads(row[8])
+                expected_hash = row[6]
+                required_approvals = row[10]
+
+                if status != "PENDING":
+                    raise ApprovalError(
+                        f"Approval request '{approval_id}' has already been resolved with status '{status}' "
+                        "and cannot accept further decisions."
+                    )
+                if now > expires_at:
+                    cur.execute(
+                        "UPDATE process_approval_requests SET status = 'EXPIRED', resolved_at = %s WHERE approval_id = %s",
+                        (now, approval_id),
+                    )
+                    conn.commit()
+                    raise ApprovalExpiredError(f"Approval request '{approval_id}' has expired.")
+
+                if approver_id == requesting_identity:
+                    raise SeparationOfDutiesViolationError(
+                        f"Separation of duties violation: Requestor '{approver_id}' cannot approve its own action."
+                    )
+
+                if approver_id not in allowed_ids:
+                    raise UnauthorizedApproverError(
+                        f"Approver '{approver_id}' is not authorized to decide approval '{approval_id}'."
+                    )
+
+                if current_parameters is not None:
+                    current_hash = hashlib.sha256(
+                        json.dumps(current_parameters, sort_keys=True).encode("utf-8")
+                    ).hexdigest()
+                    if current_hash != expected_hash:
+                        raise ParameterTamperedError(
+                            "Approval rejected: Material parameters have been altered since approval request creation."
+                        )
+
+                cur.execute(
+                    "SELECT 1 FROM process_approval_decisions WHERE approval_id = %s AND approver_id = %s",
+                    (approval_id, approver_id),
+                )
+                if cur.fetchone() is not None:
+                    raise ApprovalError(
+                        f"Approver '{approver_id}' has already submitted a decision."
+                    )
+
+                decision_val = decision.value if hasattr(decision, "value") else str(decision)
+                cur.execute(
+                    """
+                    INSERT INTO process_approval_decisions (
+                        approval_id, approver_id, decision, comments, decided_at
+                    ) VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (approval_id, approver_id, decision_val, comments, now),
+                )
+
+                cur.execute(
+                    "SELECT decision FROM process_approval_decisions WHERE approval_id = %s",
+                    (approval_id,),
+                )
+                all_decisions = [r[0] for r in cur.fetchall()]
+
+                if decision_val == "REJECTED":
+                    new_status = "REJECTED"
+                    resolved_at = now
+                elif decision_val == "APPROVED":
+                    approved_count = sum(1 for d in all_decisions if d == "APPROVED")
+                    if approved_count >= required_approvals:
+                        new_status = "APPROVED"
+                        resolved_at = now
+                    else:
+                        new_status = "PENDING"
+                        resolved_at = None
+                else:
+                    new_status = "PENDING"
+                    resolved_at = None
+
+                cur.execute(
+                    "UPDATE process_approval_requests SET status = %s, resolved_at = %s WHERE approval_id = %s",
+                    (new_status, resolved_at, approval_id),
+                )
+            conn.commit()
+
+        result = self.get_approval(approval_id)
+        if result is None:
+            raise ApprovalError(f"Approval request '{approval_id}' not found after update.")
+        return result
+
+    def start_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        process_instance_id: str,
+        task_def_id: str,
+        operation_name: str,
+        request_fingerprint: str,
+        request_payload: dict[str, Any],
+        provider_idempotency_key: str | None = None,
+        provider_name: str | None = None,
+        expires_at: float | None = None,
+    ) -> tuple[OperationStatus, dict[str, Any] | None]:
+        pool = self._ensure_pool()
+        now = time.time()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT request_fingerprint, status, response_payload, error_message, expires_at
+                    FROM process_operation_idempotency
+                    WHERE tenant_id = %s AND idempotency_key = %s
+                    FOR UPDATE
+                    """,
+                    (tenant_id, idempotency_key),
+                )
+                row = cur.fetchone()
+                if row:
+                    fp, status_str, resp_json, err_msg, exp = row
+                    if fp != request_fingerprint:
+                        raise IdempotencyKeyReuseError(
+                            f"Idempotency key '{idempotency_key}' reused with conflicting request payload."
+                        )
+                    if status_str == "SUCCEEDED":
+                        resp_data = (
+                            resp_json
+                            if isinstance(resp_json, dict)
+                            else (json.loads(resp_json) if resp_json else {})
+                        )
+                        return OperationStatus.SUCCEEDED, resp_data
+                    if status_str == "IN_PROGRESS":
+                        raise ConcurrentOperationInProgressError(
+                            f"Operation with key '{idempotency_key}' is already in progress."
+                        )
+                    if status_str in ("UNKNOWN_OUTCOME", "RECONCILIATION_REQUIRED"):
+                        raise ReconciliationRequiredError(
+                            f"Operation '{idempotency_key}' outcome is ambiguous ({status_str}); reconciliation required before retry."
+                        )
+                    if status_str == "FAILED_FINAL":
+                        raise OperationPreviouslyFailedError(
+                            f"Operation '{idempotency_key}' previously failed permanently: {err_msg}"
+                        )
+                    if status_str == "FAILED_RETRYABLE":
+                        cur.execute(
+                            """
+                            UPDATE process_operation_idempotency
+                            SET status = 'IN_PROGRESS', updated_at = %s, error_message = NULL
+                            WHERE tenant_id = %s AND idempotency_key = %s
+                            """,
+                            (now, tenant_id, idempotency_key),
+                        )
+                        conn.commit()
+                        return OperationStatus.IN_PROGRESS, None
+
+                cur.execute(
+                    """
+                    INSERT INTO process_operation_idempotency (
+                        tenant_id, idempotency_key, process_instance_id, task_def_id, operation_name,
+                        request_fingerprint, status, provider_idempotency_key, provider_name,
+                        request_payload, created_at, updated_at, expires_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s, 'IN_PROGRESS', %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        tenant_id,
+                        idempotency_key,
+                        process_instance_id,
+                        task_def_id,
+                        operation_name,
+                        request_fingerprint,
+                        provider_idempotency_key,
+                        provider_name,
+                        json.dumps(request_payload),
+                        now,
+                        now,
+                        expires_at,
+                    ),
+                )
+            conn.commit()
+            return OperationStatus.IN_PROGRESS, None
+
+    def complete_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        response_payload: dict[str, Any],
+    ) -> None:
+        pool = self._ensure_pool()
+        now = time.time()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE process_operation_idempotency
+                    SET status = 'SUCCEEDED', response_payload = %s, completed_at = %s, updated_at = %s
+                    WHERE tenant_id = %s AND idempotency_key = %s
+                    """,
+                    (json.dumps(response_payload), now, now, tenant_id, idempotency_key),
+                )
+            conn.commit()
+
+    def fail_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        error_message: str,
+        retryable: bool = False,
+    ) -> None:
+        pool = self._ensure_pool()
+        now = time.time()
+        status_val = "FAILED_RETRYABLE" if retryable else "FAILED_FINAL"
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE process_operation_idempotency
+                    SET status = %s, error_message = %s, completed_at = %s, updated_at = %s
+                    WHERE tenant_id = %s AND idempotency_key = %s
+                    """,
+                    (status_val, error_message, now, now, tenant_id, idempotency_key),
+                )
+            conn.commit()
+
+    def mark_operation_unknown_outcome(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        reason: str,
+    ) -> None:
+        pool = self._ensure_pool()
+        now = time.time()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE process_operation_idempotency
+                    SET status = 'UNKNOWN_OUTCOME', error_message = %s, updated_at = %s
+                    WHERE tenant_id = %s AND idempotency_key = %s
+                    """,
+                    (reason, now, tenant_id, idempotency_key),
+                )
+            conn.commit()
+
+    def reconcile_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+        resolution_status: OperationStatus,
+        resolved_by: str,
+        notes: str = "",
+        response_payload: dict[str, Any] | None = None,
+    ) -> None:
+        pool = self._ensure_pool()
+        now = time.time()
+        status_val = (
+            resolution_status.value
+            if hasattr(resolution_status, "value")
+            else str(resolution_status)
+        )
+        resp_json = json.dumps(response_payload) if response_payload else None
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE process_operation_idempotency
+                    SET status = %s, response_payload = COALESCE(%s, response_payload),
+                        error_message = %s, updated_at = %s, completed_at = %s
+                    WHERE tenant_id = %s AND idempotency_key = %s
+                    """,
+                    (
+                        status_val,
+                        resp_json,
+                        f"Resolved by {resolved_by}: {notes}",
+                        now,
+                        now,
+                        tenant_id,
+                        idempotency_key,
+                    ),
+                )
+            conn.commit()
+
+    def get_operation(
+        self,
+        tenant_id: str,
+        idempotency_key: str,
+    ) -> TaskOperationRecord | None:
+        pool = self._ensure_pool()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT tenant_id, idempotency_key, process_instance_id, task_def_id, operation_name,
+                           request_fingerprint, status, provider_idempotency_key, provider_name,
+                           request_payload, response_payload, error_message, created_at, updated_at,
+                           completed_at, expires_at
+                    FROM process_operation_idempotency
+                    WHERE tenant_id = %s AND idempotency_key = %s
+                    """,
+                    (tenant_id, idempotency_key),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return None
+                req_pl = row[9] if isinstance(row[9], dict) else json.loads(row[9])
+                resp_pl = (
+                    row[10]
+                    if (row[10] is None or isinstance(row[10], dict))
+                    else json.loads(row[10])
+                )
+                return TaskOperationRecord(
+                    tenant_id=row[0],
+                    idempotency_key=row[1],
+                    process_instance_id=row[2],
+                    task_def_id=row[3],
+                    operation_name=row[4],
+                    request_fingerprint=row[5],
+                    status=OperationStatus(row[6]),
+                    provider_idempotency_key=row[7],
+                    provider_name=row[8],
+                    request_payload=req_pl,
+                    response_payload=resp_pl,
+                    error_message=row[11],
+                    created_at=row[12],
+                    updated_at=row[13],
+                    completed_at=row[14],
+                    expires_at=row[15],
+                )
+
+    def has_in_progress_operation(
+        self,
+        tenant_id: str,
+        process_instance_id: str,
+        task_def_id: str,
+    ) -> bool:
+        pool = self._ensure_pool()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT 1 FROM process_operation_idempotency
+                    WHERE tenant_id = %s AND process_instance_id = %s AND task_def_id = %s AND status = 'IN_PROGRESS'
+                    LIMIT 1
+                    """,
+                    (tenant_id, process_instance_id, task_def_id),
+                )
+                return cur.fetchone() is not None
+
+    def mark_task_operations_unknown(
+        self,
+        tenant_id: str,
+        process_instance_id: str,
+        task_def_id: str,
+        reason: str,
+    ) -> int:
+        pool = self._ensure_pool()
+        now = time.time()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE process_operation_idempotency
+                    SET status = 'UNKNOWN_OUTCOME', error_message = %s, updated_at = %s
+                    WHERE tenant_id = %s AND process_instance_id = %s AND task_def_id = %s AND status = 'IN_PROGRESS'
+                    """,
+                    (reason, now, tenant_id, process_instance_id, task_def_id),
+                )
+                count = cur.rowcount
+            conn.commit()
+            return count
 
     def save_saga(self, saga: SagaTransaction) -> None:
         pool = self._ensure_pool()

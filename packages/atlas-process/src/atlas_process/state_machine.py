@@ -29,6 +29,7 @@ class ProcessTaskStatus(StrEnum):
     READY = "READY"
     RUNNING = "RUNNING"
     WAITING_APPROVAL = "WAITING_APPROVAL"
+    SUSPENDED = "SUSPENDED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     COMPENSATING = "COMPENSATING"
@@ -129,6 +130,13 @@ class ProcessTaskStateMachine:
         },
         ProcessTaskStatus.RUNNING: {
             ProcessTaskStatus.COMPLETED,
+            ProcessTaskStatus.FAILED,
+            ProcessTaskStatus.SUSPENDED,
+            ProcessTaskStatus.CANCELLED,
+        },
+        ProcessTaskStatus.SUSPENDED: {
+            ProcessTaskStatus.READY,
+            ProcessTaskStatus.RUNNING,
             ProcessTaskStatus.FAILED,
             ProcessTaskStatus.CANCELLED,
         },

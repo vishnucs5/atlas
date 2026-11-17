@@ -141,6 +141,18 @@ class HumanApprovalEngine:
     ) -> ApprovalRequest:
         """Record an approval or rejection decision with thread-safe quorum updates and storage durability."""
         with self._lock:
+            # If durable storage provides transactional decision recording, delegate to authoritative database
+            if self.storage and hasattr(self.storage, "decide_approval"):
+                req = self.storage.decide_approval(
+                    approval_id=approval_id,
+                    approver_id=approver_id,
+                    decision=decision,
+                    comments=comments,
+                    current_parameters=current_parameters,
+                )
+                self._approvals[approval_id] = req
+                return req
+
             req = self.get_approval(approval_id)
             if not req:
                 raise KeyError(f"Approval request '{approval_id}' not found.")
@@ -216,11 +228,11 @@ class HumanApprovalEngine:
             return req
 
     def get_approval(self, approval_id: str) -> ApprovalRequest | None:
-        """Retrieve approval request by ID, checking local cache and falling back to durable storage."""
+        """Retrieve approval request by ID, checking authoritative durable storage first and falling back to local cache."""
         with self._lock:
-            appr = self._approvals.get(approval_id)
-            if not appr and self.storage and hasattr(self.storage, "get_approval"):
+            if self.storage and hasattr(self.storage, "get_approval"):
                 appr = self.storage.get_approval(approval_id)
                 if appr:
                     self._approvals[approval_id] = appr
-            return appr
+                    return appr
+            return self._approvals.get(approval_id)

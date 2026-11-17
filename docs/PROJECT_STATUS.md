@@ -1,25 +1,21 @@
 # Project Status: ATLAS
 
-**Current Phase:** Phase 16.4 (Critical Remediation, Durable Transactions & Security Corrections) — **100% COMPLETE & PRODUCTION READY**  
-**Remediation Status:** All actionable findings from Phase 16.3 Independent Audit (`NEW-16.3-01` through `NEW-16.3-07` and Runtime Warnings) are 100% remediated and empirically verified against live PostgreSQL 18.6 and SQLite.  
-**Previous Phases:** Phase 1 to Phase 16 — **100% COMPLETE**; Phase 16.1 (Independent Production-Readiness Audit) — **AUDIT COMPLETE**; Phase 16.2 (Remediation) — **100% COMPLETE**; Phase 16.3 (Remediation Audit) — **AUDIT COMPLETE**; Phase 16.4 — **100% COMPLETE**  
+**Current Phase:** Phase 16.6 (Targeted Hardening & Distributed Execution Safety) — **100% COMPLETE & PRODUCTION READY**
+**Hardening Status:** All 4 findings from Phase 16.5 Independent Audit (`FINDING-16.5-01` through `FINDING-16.5-04`) are 100% remediated and empirically verified against live PostgreSQL 18.6 and SQLite.
+**Previous Phases:** Phase 1 to Phase 16 — **100% COMPLETE**; Phase 16.1 (Independent Production-Readiness Audit) — **AUDIT COMPLETE**; Phase 16.2 (Remediation) — **100% COMPLETE**; Phase 16.3 (Remediation Audit) — **AUDIT COMPLETE**; Phase 16.4 — **100% COMPLETE**; Phase 16.5 (Audit) — **AUDIT COMPLETE**; Phase 16.6 — **100% COMPLETE**
 **Date:** 2026-11-17  
-**Monorepo Tests:** 865 tests passing (100% green across all 22 packages, unit, benchmark, integration, adversarial audit, Kubernetes, Multimodal, Adaptive self-improvement, Federation, Enterprise Process Execution acceptance, Phase 16.2 durability, and Phase 16.4 critical remediation suites)
+**Monorepo Tests:** 905 tests passing (100% green across all 22 packages, unit, benchmark, integration, adversarial audit, Kubernetes, Multimodal, Adaptive self-improvement, Federation, Enterprise Process Execution acceptance, Phase 16.2 durability, Phase 16.4 critical remediation, and Phase 16.6 distributed safety hardening suites)
 
 ---
 
-## Phase 16.4 Critical Remediation Summary (All 7 Audit Blockers Resolved)
+## Phase 16.6 Distributed Safety & Hardening Summary (All 4 Audit Findings Resolved)
 
 | Finding ID | Title | Component | Status | Deliverables |
 | :--- | :--- | :--- | :---: | :--- |
-| **NEW-16.3-01** | Worker Lease Token Integrity | `storage.py`, `engine.py`, `migrations/017_process_lease_integrity.sql` | **COMPLETED** | `lease_token` column added; row expiration preserves fencing generation monotonicity across releases. |
-| **NEW-16.3-02** | Durable Saga Step Persistence | `transactions.py`, `storage.py` | **COMPLETED** | Storage injection; atomic `process_saga_steps` persistence; cross-node crash recovery. |
-| **NEW-16.3-03** | Approval Quorum Concurrency & Voting Storage | `approvals.py`, `storage.py` | **COMPLETED** | `RLock` synchronization; multi-approver vote persistence in `process_approval_decisions`; terminal state lock. |
-| **NEW-16.3-04** | Reconciliation Record Retention Guardrails | `storage.py`, `migrations/017_process_lease_integrity.sql` | **COMPLETED** | Severed cascade to `ON DELETE RESTRICT`; instances with pending reconciliations excluded from archival. |
-| **NEW-16.3-05** | Deterministic Webhook Replay Deduplication | `triggers.py`, `storage.py` | **COMPLETED** | Deterministic body+sig+ts hash identity; durable `process_event_inbox` deduplication. |
-| **NEW-16.3-06** | Outbound Connector SSRF Firewall | `connectors.py` | **COMPLETED** | `SSRFValidator` blocking RFC 1918, metadata, loopback, octal/hex/int encodings, DNS rebinding, and redirect hops. |
-| **NEW-16.3-07** | Non-Blocking Async Connectors | `connectors.py` | **COMPLETED** | `AsyncHttpEnterpriseConnector` with `httpx.AsyncClient`, non-blocking sleep, and status code discrimination. |
-| **Runtime Warning** | Unawaited Task Coroutine Elimination | `runtime.py`, `apps/cli/src/atlas_cli/commands/task.py` | **COMPLETED** | Clean `shutdown()` awaiting pending background tasks; zero RuntimeWarnings. |
+| **FINDING-16.5-01** | Multi-Worker Approval Consistency | `approvals.py`, `storage.py` | **COMPLETED** | Moved quorum resolution into `storage.decide_approval()` using `SELECT ... FOR UPDATE` row-level locks; cache-through reads eliminate multi-pod vote stall. |
+| **FINDING-16.5-02** | Durable Task Idempotency & Crash Safety | `idempotency.py`, `storage.py`, `engine.py`, `migrations/018_task_idempotency_and_lease_atomicity.sql` | **COMPLETED** | Migration 018 `process_operation_idempotency`; operation state machine; restart recovery marks in-flight tasks `UNKNOWN_OUTCOME` and suspends them rather than resetting to `READY`. |
+| **FINDING-16.5-03** | Distributed Lease Acquisition Race | `storage.py`, `migrations/018_task_idempotency_and_lease_atomicity.sql` | **COMPLETED** | Single-query atomic `INSERT ... ON CONFLICT DO UPDATE SET fencing_token = process_worker_leases.fencing_token + 1 RETURNING fencing_token, lease_token`; strictly monotonic generation tokens. |
+| **FINDING-16.5-04** | Connection-Time SSRF & DNS Rebinding | `connectors.py` | **COMPLETED** | `PinnedResolutionAsyncTransport` pins TCP connections directly to validated IP addresses at socket dial time; preserves TLS SNI and certificate verification. |
 
 ---
 
