@@ -14,7 +14,12 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from atlas_process.idempotency import OperationStatus, compute_request_fingerprint
+from atlas_process.idempotency import (
+    OperationStatus,
+    ReconciliationRequiredError,
+    SagaError,
+    compute_request_fingerprint,
+)
 
 
 class SagaStepStatus(StrEnum):
@@ -45,16 +50,8 @@ class SagaStatus(StrEnum):
     MANUAL_INTERVENTION_REQUIRED = "MANUAL_INTERVENTION_REQUIRED"
 
 
-class SagaError(Exception):
-    """Base exception for saga transaction errors."""
-
-
 class NonIdempotentBlindRetryError(SagaError):
     """Raised when a non-idempotent operation is subjected to an unsafe blind retry."""
-
-
-class ReconciliationRequiredError(SagaError):
-    """Raised when an operation's outcome is unknown (e.g. timeout) and requires reconciliation."""
 
 
 class CompensationUnavailableError(SagaError):

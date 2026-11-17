@@ -62,8 +62,7 @@ if hasattr(self._storage, "has_in_progress_operation") and self._storage.has_in_
         )
     t_inst.status = ProcessTaskStatus.SUSPENDED
     t_inst.error = (
-        "Operation outcome unknown after host crash. "
-        "Reconciliation required before retry."
+        "Operation outcome unknown after host crash. Reconciliation required before retry."
     )
     instance.status = ProcessStatus.SUSPENDED
     continue

@@ -1,10 +1,19 @@
 # Project Status: ATLAS
 
-**Current Phase:** Phase 16.6 (Targeted Hardening & Distributed Execution Safety) — **100% COMPLETE & PRODUCTION READY**
-**Hardening Status:** All 4 findings from Phase 16.5 Independent Audit (`FINDING-16.5-01` through `FINDING-16.5-04`) are 100% remediated and empirically verified against live PostgreSQL 18.6 and SQLite.
-**Previous Phases:** Phase 1 to Phase 16 — **100% COMPLETE**; Phase 16.1 (Independent Production-Readiness Audit) — **AUDIT COMPLETE**; Phase 16.2 (Remediation) — **100% COMPLETE**; Phase 16.3 (Remediation Audit) — **AUDIT COMPLETE**; Phase 16.4 — **100% COMPLETE**; Phase 16.5 (Audit) — **AUDIT COMPLETE**; Phase 16.6 — **100% COMPLETE**
+**Current Phase:** Phase 16.8 (Mechanical Remediation & Pilot Readiness) — **100% COMPLETE & PILOT READY**
+**Hardening Status:** Both findings from Phase 16.7 Independent Audit (`FINDING-16.7-01` unified exception identity and `FINDING-16.7-02` formatting) are 100% remediated. Production readiness upgraded to PILOT GO across Scopes A–E.
+**Previous Phases:** Phase 1 to Phase 16 — **100% COMPLETE**; Phase 16.1 (Audit) — **AUDIT COMPLETE**; Phase 16.2 — **100% COMPLETE**; Phase 16.3 (Audit) — **AUDIT COMPLETE**; Phase 16.4 — **100% COMPLETE**; Phase 16.5 (Audit) — **AUDIT COMPLETE**; Phase 16.6 — **100% COMPLETE**; Phase 16.7 (Audit) — **AUDIT COMPLETE**; Phase 16.8 — **100% COMPLETE**
 **Date:** 2026-11-17  
-**Monorepo Tests:** 905 tests passing (100% green across all 22 packages, unit, benchmark, integration, adversarial audit, Kubernetes, Multimodal, Adaptive self-improvement, Federation, Enterprise Process Execution acceptance, Phase 16.2 durability, Phase 16.4 critical remediation, and Phase 16.6 distributed safety hardening suites)
+**Monorepo Tests:** 905 tests passing (100% green across all 22 packages, unit, benchmark, integration, adversarial audit, Kubernetes, Multimodal, Adaptive self-improvement, Federation, Enterprise Process Execution acceptance (45/45), Phase 16.2 durability, Phase 16.4 critical remediation, and Phase 16.6 distributed safety hardening suites)
+
+---
+
+## Phase 16.8 Mechanical Remediation & Pilot Readiness Summary
+
+| Finding ID | Title | Component | Status | Deliverables |
+| :--- | :--- | :--- | :---: | :--- |
+| **FINDING-16.7-01** | Unified Exception Identity (`ReconciliationRequiredError`) | `idempotency.py`, `transactions.py`, `__init__.py` | **COMPLETED** | `SagaError` base and `ReconciliationRequiredError(IdempotencyError, SagaError)` defined in `idempotency.py`; imported directly in `transactions.py`; re-exported in root. Resolves `PROC-29` test failure. |
+| **FINDING-16.7-02** | Markdown Code Fence Formatting | `docs/PHASE_16_6_DURABLE_IDEMPOTENCY.md`, `docs/PHASE_16_7_IDEMPOTENCY_AUDIT.md` | **COMPLETED** | Re-formatted code block string literals to pass `ruff format --check .` cleanly. |
 
 ---
 

@@ -32,6 +32,10 @@ class IdempotencyError(Exception):
     """Base exception for durable task idempotency violations."""
 
 
+class SagaError(Exception):
+    """Base exception for saga transaction errors."""
+
+
 class ConcurrentOperationInProgressError(IdempotencyError):
     """Raised when an operation with the same idempotency key is already in progress."""
 
@@ -44,7 +48,7 @@ class OperationPreviouslyFailedError(IdempotencyError):
     """Raised when an operation previously failed with a final non-retryable error."""
 
 
-class ReconciliationRequiredError(IdempotencyError):
+class ReconciliationRequiredError(IdempotencyError, SagaError):
     """Raised when an operation outcome is unknown and requires reconciliation before retry."""
 
 

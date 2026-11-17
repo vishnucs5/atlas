@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.8] - 2026-11-17 — Phase 16.8 Mechanical Remediation & Pilot Readiness
+
+### Fixed
+- **Unified Exception Identity for `ReconciliationRequiredError` (`FINDING-16.7-01`)**:
+  - Unified `ReconciliationRequiredError` class across `atlas_process.idempotency` and `atlas_process.transactions`.
+  - Defined base `SagaError` in `idempotency.py` and structured `ReconciliationRequiredError(IdempotencyError, SagaError)`.
+  - Imported `SagaError` and `ReconciliationRequiredError` directly in `transactions.py` and re-exported both at root `atlas_process`.
+  - Fixed acceptance test failure in `PROC-29` (`test_proc29_unknown_outcome_reconciliation`), bringing acceptance suite to 45/45 passing (100%).
+- **Code Block Formatting in Documentation (`FINDING-16.7-02`)**:
+  - Formatted Python code fences in `docs/PHASE_16_6_DURABLE_IDEMPOTENCY.md` and `docs/PHASE_16_7_IDEMPOTENCY_AUDIT.md`.
+  - Verified `ruff format --check .` (547 files formatted) and `ruff check .` (0 errors).
+
+---
+
 ## [0.16.6] - 2026-11-17 — Phase 16.6 Targeted Hardening & Distributed Execution Safety
 
 ### Added
