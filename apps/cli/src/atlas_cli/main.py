@@ -447,6 +447,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command is None:
         print(render_banner())
+        if hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+            from atlas_cli.configuration.manager import ConfigManager
+
+            cfg = ConfigManager()
+            mode = cfg.get("default_mode", "minimal")
+            if mode == "tui":
+                return run_tui()
+            elif mode == "minimal":
+                return run_minimal()
         parser.print_help()
         return 0
 

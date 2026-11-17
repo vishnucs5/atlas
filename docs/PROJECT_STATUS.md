@@ -798,6 +798,18 @@
   11. Comprehensive test suite (`tests/unit/test_coding_engine.py`: 12/12 passing; 21/21 total CLI suite passing)
   12. Formal documentation: `ATLAS_CLI_CODING_ENGINE.md`, `ATLAS_CLI_FILE_OPERATIONS.md`, `ATLAS_CLI_TERMINAL_SECURITY.md`, `ATLAS_CLI_PATCH_ENGINE.md`, `ATLAS_CLI_CODING_WORKFLOWS.md`.
 
+### Stage 3: Minimal Mode & Advanced TUI Dashboard (COMPLETE)
+- Branch: `feat/atlas-cli-tui`
+- Workstreams Completed:
+  1. Minimal Mode REPL & Headless Execution (`atlas_cli.minimal`: REPL prompt, streaming text, Pygments syntax highlighting, markdown rendering, tool indicators, diff previews, cancellation, session resume)
+  2. Advanced Interactive TUI Dashboard (`atlas_cli.tui`: 8 responsive panels: Conversation, Agent Activity, Task Graph, Terminal, File Changes, Approvals, Timeline, Runtime)
+  3. Event Streaming & Deduplication (`atlas_cli.events`: `EventStreamSubscriber`, sequence ordering, duplicate rejection, `reconstruct_state_from_events`)
+  4. Terminal Interaction & Small Dimensions Support (80x24 resilience, keyboard shortcuts `1-8`, `Tab`, `a`, `d`, `r`, `q`)
+  5. Action Firewall Approval UX (`atlas_cli.approvals.interactive`: exact action cards with operation, target, parameters, risk, scope, duration, policy version)
+  6. Interaction Modes (`atlas`, `atlas --minimal`, `atlas --tui`, default configurable)
+  7. Comprehensive Interface Test Suite (`tests/unit/test_cli_interfaces.py`: 12/12 passing; 33/33 total CLI suite passing)
+  8. Formal documentation: `ATLAS_CLI_MINIMAL_MODE.md`, `ATLAS_CLI_TUI_ARCHITECTURE.md`, `ATLAS_CLI_KEYBOARD_REFERENCE.md`, `ATLAS_CLI_APPROVAL_UX.md`.
+
 ---
 
 ## Next Steps: Phase 2 Kickoff

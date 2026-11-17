@@ -11,6 +11,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "default_model": "atlas:hermetic-default",
     "timeout_seconds": 30.0,
     "output_format": "text",
+    "default_mode": "minimal",
     "auto_approve_safe": False,
     "theme": "dark",
 }

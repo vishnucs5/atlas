@@ -948,7 +948,17 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Workstream 11: Comprehensive Test Suite**: Created `tests/unit/test_coding_engine.py` (12/12 passing). Total CLI suite passing: 21/21.
 - [x] **Deliverables**: Authored `ATLAS_CLI_CODING_ENGINE.md`, `ATLAS_CLI_FILE_OPERATIONS.md`, `ATLAS_CLI_TERMINAL_SECURITY.md`, `ATLAS_CLI_PATCH_ENGINE.md`, `ATLAS_CLI_CODING_WORKFLOWS.md`.
 
-### Stage 3: Repository Intelligence & Context Engine (GATED - PENDING AUTHORIZATION)
+### Stage 3: Minimal Mode & Advanced TUI Dashboard (COMPLETE)
+- [x] **Workstream 1: Minimal Mode**: Interactive REPL, conversation history, streaming responses, Pygments syntax highlighting, markdown rendering, tool execution indicators, diff previews, session resume, slash commands (`/help`, `/diff`, `/status`, `/plan`, `/test`, `/approvals`).
+- [x] **Workstream 2: Advanced Interactive TUI**: 8 responsive operational panels: Conversation, Agent Activity, Task Graph, Terminal, File Changes, Approvals, Timeline, Runtime.
+- [x] **Workstream 3: Event Streaming**: Monotonic sequence ordering, duplicate event rejection, stale event handling, UI state projection via `reconstruct_state_from_events`.
+- [x] **Workstream 4: Terminal Interaction**: Keyboard navigation (`1-8`, `Tab`), small terminal resilience (80x24), cancellation invariant (`Ctrl+C` does not abort durable tasks).
+- [x] **Workstream 5: Action Firewall Approval UX**: High-integrity approval cards with exact operation, target, parameters, risk, scope, duration, policy version.
+- [x] **Workstream 6: Interaction Modes**: Seamless support for `atlas`, `atlas --minimal`, and `atlas --tui`.
+- [x] **Workstream 7: Testing**: 12 unit/integration tests in `tests/unit/test_cli_interfaces.py` (33/33 total CLI suite passing).
+- [x] **Deliverables**: Authored `ATLAS_CLI_MINIMAL_MODE.md`, `ATLAS_CLI_TUI_ARCHITECTURE.md`, `ATLAS_CLI_KEYBOARD_REFERENCE.md`, `ATLAS_CLI_APPROVAL_UX.md`.
+
+### Stage 4: Repository Intelligence & Context Engine (GATED - PENDING AUTHORIZATION)
 - [ ] Language server protocol (LSP) and tree-sitter AST analysis
 - [ ] Repository graph and symbol dependency indexing
 - [ ] Context pruning and relevance scoring
