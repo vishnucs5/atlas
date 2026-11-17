@@ -19,6 +19,19 @@ class AgentCapability(StrEnum):
     SUPERVISOR = "SUPERVISOR"
     GENERAL = "GENERAL"
 
+    # Specialist Engineering Capabilities (Stage 5)
+    ARCHITECT = "ARCHITECT"
+    EXPLORER = "EXPLORER"
+    BACKEND = "BACKEND"
+    FRONTEND = "FRONTEND"
+    DATABASE = "DATABASE"
+    INFRASTRUCTURE = "INFRASTRUCTURE"
+    TESTING = "TESTING"
+    SECURITY_AUDITOR = "SECURITY_AUDITOR"
+    CODE_REVIEWER = "CODE_REVIEWER"
+    DOCUMENTATION = "DOCUMENTATION"
+    DEBUGGING = "DEBUGGING"
+
 
 class AgentStatus(StrEnum):
     """Lifecycle availability status for an agent instance."""

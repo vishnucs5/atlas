@@ -140,34 +140,25 @@ class DashboardTUI:
         ]
         agents = self.client.list_agents()
         if not agents:
-            # Local autonomous agent info
-            lines.append(
-                f"  {colorize('Primary Agent:', BOLD)} CodingSpecialist (Autonomous Coding & QA)"
+            from atlas_cli.commands.agents import DEFAULT_SPECIALISTS
+
+            agents = DEFAULT_SPECIALISTS
+
+        headers = ["Agent ID", "Name", "Role", "Status", "Tokens"]
+        rows = []
+        for ag in agents:
+            st = ag.get("status", "READY")
+            badge = render_badge(st, "success" if st in ("READY", "IDLE") else "warning")
+            rows.append(
+                [
+                    ag.get("agent_id"),
+                    ag.get("name"),
+                    ag.get("role"),
+                    badge,
+                    str(ag.get("budget", {}).get("tokens_used", ag.get("tokens", 0))),
+                ]
             )
-            lines.append(f"  {colorize('Role:', BOLD)}          Autonomous Engineering Lead")
-            lines.append(f"  {colorize('Current Task:', BOLD)}   {self.ui_state.task_id or 'IDLE'}")
-            lines.append(
-                f"  {colorize('State:', BOLD)}          {render_badge(self.ui_state.status, 'success' if self.ui_state.status == 'COMPLETED' else 'warning')}"
-            )
-            lines.append(
-                f"  {colorize('Last Evidence:', BOLD)}  Deterministic verification passed ({self.ui_state.event_count} events)"
-            )
-        else:
-            headers = ["Agent ID", "Name", "Role", "Status", "Tokens"]
-            rows = []
-            for ag in agents:
-                st = ag.get("status", "READY")
-                badge = render_badge(st, "success" if st in ("READY", "IDLE") else "warning")
-                rows.append(
-                    [
-                        ag.get("agent_id"),
-                        ag.get("name"),
-                        ag.get("role"),
-                        badge,
-                        str(ag.get("budget", {}).get("tokens_used", 0)),
-                    ]
-                )
-            lines.append(render_table(headers, rows))
+        lines.append(render_table(headers, rows))
         return "\n".join(lines)
 
     def render_task_graph_panel(self, width: int) -> str:

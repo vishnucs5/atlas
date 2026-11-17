@@ -16,6 +16,8 @@ dependencies = [
     "atlas-observability",
     "atlas-verification",
     "atlas-browser",
+    "atlas-coding",
+    "atlas-code-intelligence",
     "pydantic>=2.7.0",
 ]
 
@@ -28,6 +30,8 @@ atlas-coordination = { workspace = true }
 atlas-observability = { workspace = true }
 atlas-verification = { workspace = true }
 atlas-browser = { workspace = true }
+atlas-coding = { workspace = true }
+atlas-code-intelligence = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/atlas_orchestration"]
