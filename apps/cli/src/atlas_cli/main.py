@@ -62,9 +62,9 @@ from atlas_cli.commands.tools_plugins import (
     run_tools_list,
 )
 from atlas_cli.commands.worker import run_worker_daemon
+from atlas_cli.conversation.app import run_conversation_app
 from atlas_cli.minimal.runner import run_minimal
 from atlas_cli.rendering.formatters import render_banner
-from atlas_cli.tui.app import run_tui
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -75,6 +75,9 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--tui", action="store_true", help="Launch interactive Terminal User Interface (TUI)"
+    )
+    parser.add_argument(
+        "--inspector", action="store_true", help="Launch on-demand diagnostic inspector"
     )
     parser.add_argument(
         "--minimal", action="store_true", help="Run in minimal headless scriptable mode"
@@ -464,7 +467,13 @@ def main(argv: list[str] | None = None) -> int:
     if args_list:
         first = args_list[0]
         if first == "--tui":
-            return run_tui()
+            return run_conversation_app()
+        if first == "--inspector":
+            from atlas_cli.conversation.inspector import AdvancedInspector
+
+            inspector = AdvancedInspector()
+            inspector.show()
+            return 0
         if first == "--minimal":
             obj = " ".join(args_list[1:]) if len(args_list) > 1 else None
             return run_minimal(objective=obj)
@@ -491,7 +500,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.tui:
-        return run_tui()
+        return run_conversation_app()
+
+    if getattr(args, "inspector", False):
+        from atlas_cli.conversation.inspector import AdvancedInspector
+
+        inspector = AdvancedInspector()
+        inspector.show()
+        return 0
 
     if args.minimal:
         return run_minimal()
@@ -500,16 +516,9 @@ def main(argv: list[str] | None = None) -> int:
         return run_coding_task(args.objective)
 
     if args.command is None:
-        print(render_banner())
         if hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
-            from atlas_cli.configuration.manager import ConfigManager
-
-            cfg = ConfigManager()
-            mode = cfg.get("default_mode", "minimal")
-            if mode == "tui":
-                return run_tui()
-            elif mode == "minimal":
-                return run_minimal()
+            return run_conversation_app()
+        print(render_banner())
         parser.print_help()
         return 0
 
