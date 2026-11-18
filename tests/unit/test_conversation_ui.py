@@ -52,7 +52,7 @@ def test_conversation_header_and_welcome(tmp_path: Path) -> None:
     # 5. Welcome rendering
     welcome = header.render_welcome()
     assert "ATLAS" in welcome
-    assert "Your autonomous development environment." in welcome
+    assert "AUTONOMOUS DEVELOPMENT ENVIRONMENT" in welcome
     assert "What would you like to build today?" in welcome
     assert "/help" in welcome
     assert "/plan" in welcome

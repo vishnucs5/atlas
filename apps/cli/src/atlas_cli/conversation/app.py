@@ -190,6 +190,11 @@ class ConversationApp:
             )
         )
 
+        from atlas_cli.conversation.branding import AegisBranding
+
+        branding = AegisBranding()
+        print(branding.render_completion_badge(task.task_id, verified=True))
+
         # Ingest events to subscriber
         from datetime import UTC, datetime
 
@@ -242,6 +247,7 @@ class ConversationApp:
         )
 
         print()
+        print(branding.render_assistant_marker())
         stream_markdown(reply)
         self.session["messages"].append({"role": "assistant", "content": reply})
         self.sess_mgr.save_session(self.session["session_id"], self.session)

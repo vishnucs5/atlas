@@ -9,15 +9,6 @@ from atlas_coding.explorer import RepositoryExplorer
 from atlas_coding.git import GitPorcelain
 
 from atlas_cli.adapters.client import AtlasClient
-from atlas_cli.rendering.formatters import (
-    BOLD,
-    CYAN,
-    DIM,
-    GREEN,
-    RESET,
-    YELLOW,
-    colorize,
-)
 
 VERSION = "0.16.8"
 
@@ -71,33 +62,35 @@ class ConversationHeader:
         return "Local"
 
     def render_header(self, session_id: str | None = None) -> str:
-        """Generate a compact 2-line header adhering to Section 3.1."""
+        """Generate compact 2-line header with Aegis emblem."""
+        from atlas_cli.conversation.branding import AegisBranding
+
+        branding = AegisBranding()
         branch = self.get_git_branch()
         model = self.get_model_identifier()
         mode = self.get_execution_mode()
-        cwd_str = str(self.repo_root)
 
-        sess_str = f" · {session_id[:12]}" if session_id else ""
-        mode_badge = colorize(f"[{mode}]", GREEN if mode == "Local" else CYAN)
-
-        line1 = f"{BOLD}ATLAS v{VERSION}{RESET}"
-        line2 = (
-            f"{colorize(cwd_str, DIM)} · "
-            f"{colorize(branch, BOLD + CYAN)} · "
-            f"{colorize(model, YELLOW)} · "
-            f"{mode_badge}{colorize(sess_str, DIM)}"
+        return branding.render_compact_header(
+            repo_path=str(self.repo_root),
+            branch=branch,
+            model=model,
+            mode=mode,
+            session_id=session_id,
         )
-        return f"{line1}\n{line2}\n"
 
     def render_welcome(self) -> str:
-        """Generate minimal welcome screen adhering to Section 3.2."""
-        header = self.render_header()
-        welcome_text = (
-            f"{header}\n"
-            f"{BOLD}ATLAS{RESET}\n"
-            f"{colorize('Your autonomous development environment.', DIM)}\n\n"
-            f"What would you like to build today?\n\n"
-            f"{colorize('Commands: /help  /plan  /test  /review  /status  /approvals  /exit', DIM)}\n"
-            f"{colorize('─' * 72, DIM)}"
+        """Generate full Aegis welcome screen matching the visual identity."""
+        from atlas_cli.conversation.branding import AegisBranding
+
+        branding = AegisBranding()
+        branch = self.get_git_branch()
+        model = self.get_model_identifier()
+        mode = self.get_execution_mode()
+
+        return branding.render_welcome_screen(
+            repo_path=str(self.repo_root),
+            branch=branch,
+            model=model,
+            mode=mode,
+            status="Ready",
         )
-        return welcome_text
