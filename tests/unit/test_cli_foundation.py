@@ -265,3 +265,54 @@ def test_cross_platform_and_signal_handling() -> None:
 
     # Should execute cleanly without raising errors on Windows/Linux/macOS
     _setup_signal_handlers()
+
+
+def test_cli_invalid_command_and_dispatch_matrix(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify regression coverage for invalid commands, prompt flags, and piped input."""
+    import io
+    import sys
+
+    # 1. Invalid subcommand raises SystemExit with non-zero (code 2)
+    with pytest.raises(SystemExit) as exc_info:
+        main(["invalid-subcommand-xyz"])
+    assert exc_info.value.code != 0
+
+    # 2. Misspelled valid command raises SystemExit with non-zero
+    with pytest.raises(SystemExit) as exc_info:
+        main(["docter"])
+    assert exc_info.value.code != 0
+
+    # 3. Explicit coding command: atlas run <objective>
+    called = []
+    monkeypatch.setattr(
+        "atlas_cli.main.run_coding_task",
+        lambda obj: called.append(obj) or 0,
+    )
+    res_run = main(["run", "Build unit test fixture"])
+    assert res_run == 0
+    assert called == ["Build unit test fixture"]
+
+    # 4. Explicit prompt flag: atlas -p <objective>
+    called.clear()
+    res_p = main(["-p", "Refactor authentication layer"])
+    assert res_p == 0
+    assert called == ["Refactor authentication layer"]
+
+    # 5. Explicit long prompt flag: atlas --prompt <objective>
+    called.clear()
+    res_prompt = main(["--prompt", "Generate integration schema"])
+    assert res_prompt == 0
+    assert called == ["Generate integration schema"]
+
+    # 6. Direct multi-word prompt without flags
+    called.clear()
+    res_direct = main(["Deploy", "canary", "cluster"])
+    assert res_direct == 0
+    assert called == ["Deploy canary cluster"]
+
+    # 7. Piped input when no args passed and not isatty
+    called.clear()
+    monkeypatch.setattr(sys, "stdin", io.StringIO("Piped objective task"))
+    res_piped = main([])
+    assert res_piped == 0
+    assert called == ["Piped objective task"]

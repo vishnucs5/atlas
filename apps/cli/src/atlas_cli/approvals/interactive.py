@@ -79,7 +79,9 @@ def run_interactive_approvals(client: AtlasClient | None = None) -> int:
     )
 
     for idx, req in enumerate(approvals, 1):
-        req_id = req.get("request_id")
+        req_id = str(req.get("request_id", ""))
+        if not req_id:
+            continue
         print(f"\nApproval Request #{idx} of {len(approvals)}:")
         print(format_approval_card(req))
 

@@ -8,6 +8,7 @@ Comprehensive syntax, arguments, options, and exit codes for all ATLAS CLI subco
 
 - `--minimal`: Launch in headless, scriptable, minimal interactive mode.
 - `--tui`: Launch the 8-panel interactive Terminal User Interface.
+- `-p "<prompt>"`, `--prompt "<prompt>"`: Execute an autonomous coding task with specified objective.
 - `--version`, `-v`: Display ATLAS CLI version metadata.
 - `--help`, `-h`: Show contextual help message and exit.
 
@@ -43,8 +44,14 @@ atlas edition
 
 ## 2. Coding & Engineering Workflows
 
+### `atlas run "<objective>"`
+Execute an autonomous coding task with an explicit subcommand.
+```bash
+atlas run "Implement healthcheck endpoint returning JSON uptime"
+```
+
 ### `atlas "<objective>"`
-Execute an autonomous coding task directly from a terminal prompt.
+Execute an autonomous coding task directly from a multi-word terminal prompt.
 ```bash
 atlas "Implement healthcheck endpoint returning JSON uptime"
 ```

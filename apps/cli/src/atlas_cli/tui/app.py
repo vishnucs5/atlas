@@ -147,15 +147,19 @@ class DashboardTUI:
         headers = ["Agent ID", "Name", "Role", "Status", "Tokens"]
         rows = []
         for ag in agents:
-            st = ag.get("status", "READY")
+            st = str(ag.get("status", "READY"))
             badge = render_badge(st, "success" if st in ("READY", "IDLE") else "warning")
+            budget = ag.get("budget")
+            tokens = (
+                budget.get("tokens_used", 0) if isinstance(budget, dict) else ag.get("tokens", 0)
+            )
             rows.append(
                 [
-                    ag.get("agent_id"),
-                    ag.get("name"),
-                    ag.get("role"),
+                    str(ag.get("agent_id")),
+                    str(ag.get("name")),
+                    str(ag.get("role")),
                     badge,
-                    str(ag.get("budget", {}).get("tokens_used", ag.get("tokens", 0))),
+                    str(tokens),
                 ]
             )
         lines.append(render_table(headers, rows))

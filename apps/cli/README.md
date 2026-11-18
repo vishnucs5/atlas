@@ -68,6 +68,8 @@ atlas --tui
 
 | Command | Description |
 | :--- | :--- |
+| `atlas run "<goal>"` | Execute an autonomous coding task with specified goal. |
+| `atlas -p "<goal>"` | Execute an autonomous coding task with prompt flag. |
 | `atlas plan "<goal>"` | Generate a structured engineering implementation plan without executing modifications. |
 | `atlas review [--diff]` | Run independent adversarial code review on active working tree or diff. |
 | `atlas test` | Run project test suites with automated framework detection (`pytest`, `npm`, `cargo`, `go`). |

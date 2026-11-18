@@ -30,7 +30,7 @@ class SessionManager:
         """Create and initialize a new CLI session record."""
         session_id = f"cli_sess_{int(time.time())}_{os.urandom(3).hex()}"
         now = datetime.now(UTC).isoformat()
-        session_data = {
+        session_data: dict[str, Any] = {
             "session_id": session_id,
             "created_at": now,
             "updated_at": now,

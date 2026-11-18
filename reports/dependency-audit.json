@@ -1,6 +1,6 @@
 {
-  "audit_id": "dep-audit-1794927791",
-  "generated_at": "2026-11-17T15:03:11.387129+00:00",
+  "audit_id": "dep-audit-1794984892",
+  "generated_at": "2026-11-18T06:54:52.525973+00:00",
   "scanner": "pip-audit",
   "scanner_version": "2.10.1",
   "vulnerability_database": "PyPI / OSV Advisory Database",
@@ -8,7 +8,7 @@
   "evaluation": {
     "status": "PASS",
     "threshold": "MODERATE",
-    "total_packages_scanned": 25,
+    "total_packages_scanned": 26,
     "violations_count": 0,
     "exempted_count": 0,
     "ignored_low_severity_count": 0,
@@ -121,6 +121,11 @@
       {
         "name": "pydantic-core",
         "version": "2.50.4",
+        "vulns": []
+      },
+      {
+        "name": "pygments",
+        "version": "2.21.0",
         "vulns": []
       },
       {

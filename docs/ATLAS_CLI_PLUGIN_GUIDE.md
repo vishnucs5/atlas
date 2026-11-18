@@ -49,16 +49,16 @@ In `main.py`, define the tool registration hook:
 
 ```python
 """Entrypoint for custom-linter-pack."""
+
 from typing import Any
+
 
 def run_custom_linter(arguments: dict[str, Any]) -> dict[str, Any]:
     """Execute organization-specific static checks."""
     target_file = arguments.get("file_path")
     # Execute checks safely
-    return {
-        "status": "success",
-        "violations": []
-    }
+    return {"status": "success", "violations": []}
+
 
 def register_tools(mcp_manager) -> None:
     """Called by ATLAS CLI upon plugin activation."""

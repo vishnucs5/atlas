@@ -105,3 +105,12 @@ pip uninstall atlas-cli
 # Optional: To purge local workspace state and session logs
 rm -rf .atlas/
 ```
+
+---
+
+## 5. Platform Support Matrix & Status
+
+- **Windows 11**: Locally verified pass (PowerShell, Windows Terminal, Python 3.11.9).
+- **Ubuntu Linux**: CI configured in `.github/workflows/ci.yml`; pending execution on remote GitHub Actions runners.
+- **macOS**: CI configured in `.github/workflows/ci.yml`; pending execution on remote GitHub Actions runners.
+

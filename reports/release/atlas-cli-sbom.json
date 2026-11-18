@@ -2,15 +2,15 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:5ecbbef7-6438-46e5-84b7-fa7bfca1e50b",
+  "serialNumber": "urn:uuid:c9c40662-a7a8-45b7-b312-73c8c281de8b",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-17T15:03:23Z",
+    "timestamp": "2026-11-18T06:50:06Z",
     "tools": [
       {
         "vendor": "ATLAS Engineering",
         "name": "atlas-sbom-generator",
-        "version": "1.0.0"
+        "version": "1.1.0"
       }
     ],
     "component": {
@@ -34,8 +34,16 @@
       "bom-ref": "pkg:pypi/annotated-doc@0.0.6",
       "name": "annotated-doc",
       "version": "0.0.6",
-      "purl": "pkg:pypi/annotated-doc@0.0.6",
+      "description": "Document parameters, class attributes, return types, and variables inline, with Annotated.",
       "scope": "required",
+      "purl": "pkg:pypi/annotated-doc@0.0.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -52,8 +60,16 @@
       "bom-ref": "pkg:pypi/annotated-types@0.8.0",
       "name": "annotated-types",
       "version": "0.8.0",
-      "purl": "pkg:pypi/annotated-types@0.8.0",
+      "description": "Reusable constraint types to use with typing.Annotated",
       "scope": "required",
+      "purl": "pkg:pypi/annotated-types@0.8.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -70,8 +86,16 @@
       "bom-ref": "pkg:pypi/anyio@4.16.0",
       "name": "anyio",
       "version": "4.16.0",
-      "purl": "pkg:pypi/anyio@4.16.0",
+      "description": "High-level concurrency and networking framework on top of asyncio or Trio",
       "scope": "required",
+      "purl": "pkg:pypi/anyio@4.16.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -85,211 +109,644 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-adaptive@0.14.0",
+      "bom-ref": "pkg:generic/atlas/atlas-adaptive@0.14.0",
       "name": "atlas-adaptive",
       "version": "0.14.0",
-      "purl": "pkg:pypi/atlas-adaptive@0.14.0",
-      "scope": "required"
+      "description": "ATLAS Autonomous Self-Improvement, Evaluation & Adaptive Intelligence Platform",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-adaptive@0.14.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "dceae7a2bdd93c1e445988cc0edd5d2dc4b496fcaa9c50da92272e1bb686b1cc"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-agent@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-agent@0.1.0",
       "name": "atlas-agent",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-agent@0.1.0",
-      "scope": "required"
+      "description": "Autonomous Planning Engine, Context Management, and Agent Loop for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-agent@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ba1c6630e2913fac12b522815960523e704a6c656f8b78c5631b5e750b75e319"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-api@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-api@0.1.0",
       "name": "atlas-api",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-api@0.1.0",
-      "scope": "required"
+      "description": "ATLAS API - FastAPI Application Service",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-api@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "acd74fe976e9fc0ac023cc21a5b413b132b9a5d37f3ea6cc1430a37ba35451b1"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-browser@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-browser@0.1.0",
       "name": "atlas-browser",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-browser@0.1.0",
-      "scope": "required"
+      "description": "Browser automation driver and execution runtime for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-browser@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "37054d4d6ba59b4961f75a33e9c59d1e1e31eb14a270652533ec66dd1ef63450"
+        }
+      ]
     },
     {
-      "type": "library",
-      "bom-ref": "pkg:pypi/atlas-cli@0.16.8",
+      "type": "application",
+      "bom-ref": "pkg:generic/atlas/atlas-cli@0.16.8",
       "name": "atlas-cli",
       "version": "0.16.8",
-      "purl": "pkg:pypi/atlas-cli@0.16.8",
-      "scope": "required"
+      "description": "ATLAS CLI \u2014 Native, Autonomous Developer Environment and Enterprise Coding Agent",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-cli@0.16.8",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "42ebc84f4b582b0df4fce761787961abb67b42280b38e84cd4988289eefb97c0"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-code-intelligence@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-code-intelligence@0.1.0",
       "name": "atlas-code-intelligence",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-code-intelligence@0.1.0",
-      "scope": "required"
+      "description": "ATLAS Code Intelligence and Context Engine - Multi-Language Parsing, Indexing, Search & Graph",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-code-intelligence@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7b3bb605edfcbe9a69ed48ade366160a75a33960c3d75f8479e6be298d423afd"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-coding@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-coding@0.1.0",
       "name": "atlas-coding",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-coding@0.1.0",
-      "scope": "required"
+      "description": "ATLAS Autonomous Coding Engine - Repository Exploration, Patching, Terminal & Testing",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-coding@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "19676849d5952a8fbf404d9e42c7df5596ece693f287028911fc1a280ad76487"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-coordination@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-coordination@0.1.0",
       "name": "atlas-coordination",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-coordination@0.1.0",
-      "scope": "required"
+      "description": "Control Plane Coordination, Checkpointing, Worker Leases, and Durable Recovery for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-coordination@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e2bfc5d68fdc4634ed6718ffefb7cb3e36fd1e1a9125f90b54f53ceb05ed0348"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-core@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-core@0.1.0",
       "name": "atlas-core",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-core@0.1.0",
-      "scope": "required"
+      "description": "ATLAS Core - Domain Contracts, State Machine, and Interfaces",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-core@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bb0749cccd107aea401be7ca55ba03395193ebadec222d436ad6c2d01a80b61e"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-distributed@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-distributed@0.1.0",
       "name": "atlas-distributed",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-distributed@0.1.0",
-      "scope": "required"
+      "description": "Distributed Execution Network, Worker Agent, Enrollment, Remote Protocol, and Fault-Tolerant Scheduler for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-distributed@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "419307aed74cc242cc2900f44ce660d11b071ed30aba740288743b3b7c2369ce"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-enterprise@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-enterprise@0.1.0",
       "name": "atlas-enterprise",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-enterprise@0.1.0",
-      "scope": "required"
+      "description": "Enterprise Autonomous Operating Platform: Multi-Tenancy, IAM, Governance, Integrations & Compliance for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-enterprise@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "baa07d312a24ceffd9ddd9519c584a1b11c2c8fc4f79630157ac6fb61052397e"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-federation@0.15.0",
+      "bom-ref": "pkg:generic/atlas/atlas-federation@0.15.0",
       "name": "atlas-federation",
       "version": "0.15.0",
-      "purl": "pkg:pypi/atlas-federation@0.15.0",
-      "scope": "required"
+      "description": "ATLAS Federated Autonomous Intelligence Network & Global Agent Interoperability Platform",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-federation@0.15.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "307061458dd2eb634b0bfd7341cbaffd83786efdb9d0756b57c249a30f5f9400"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-marketplace@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-marketplace@0.1.0",
       "name": "atlas-marketplace",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-marketplace@0.1.0",
-      "scope": "required"
+      "description": "Autonomous Workflow Marketplace, Package Format, Dependency Resolution, and Registry for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-marketplace@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "87bea2418025bcb88cd73a17376b5d0376ea0bec3cc5e8484e9de18ff5396534"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-models@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-models@0.1.0",
       "name": "atlas-models",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-models@0.1.0",
-      "scope": "required"
+      "description": "Model Provider Adapters, Router, and Normalization Engine for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-models@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "400160f6ba2513bea5d71f2c152b79565219befd7e0d4425934a4dd77df0a964"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-monorepo@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-monorepo@0.1.0",
       "name": "atlas-monorepo",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-monorepo@0.1.0",
-      "scope": "required"
+      "description": "ATLAS - Autonomous Task & Lifecycle Automation System",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-monorepo@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6f14f704bb907a5049d91de96e32d927e1ab2aaf68495fc8805006517216b1ea"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-multimodal@0.13.0",
+      "bom-ref": "pkg:generic/atlas/atlas-multimodal@0.13.0",
       "name": "atlas-multimodal",
       "version": "0.13.0",
-      "purl": "pkg:pypi/atlas-multimodal@0.13.0",
-      "scope": "required"
+      "description": "ATLAS Multimodal Perception, Visual Grounding, Audio/Video & Document Intelligence Platform",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-multimodal@0.13.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2bd102b3b62988eb934152c75e27467e511dd39bf874cdd3b0d0193a9863288a"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-observability@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-observability@0.1.0",
       "name": "atlas-observability",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-observability@0.1.0",
-      "scope": "required"
+      "description": "ATLAS Observability - Context-Bound Structured Logging and Secret Redaction",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-observability@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e2a0fb7f41c86fc68ace20fa523bd8107941185ed85d2f1583f01f71a5407cc3"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-observation@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-observation@0.1.0",
       "name": "atlas-observation",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-observation@0.1.0",
-      "scope": "required"
+      "description": "Computer state and observation engine for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-observation@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7659d3c1d844c9148e38769fb0421b0965bb931b1d9362f0ef6a0cb05c9a3432"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-operator@0.12.0",
+      "bom-ref": "pkg:generic/atlas/atlas-operator@0.12.0",
       "name": "atlas-operator",
       "version": "0.12.0",
-      "purl": "pkg:pypi/atlas-operator@0.12.0",
-      "scope": "required"
+      "description": "ATLAS Kubernetes Operator and Cloud-Native Infrastructure Controller",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-operator@0.12.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fb6b308c47a2211b5b49dedbc19737f4dd0afb8d2e56356252aa7b6642e26856"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-orchestration@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-orchestration@0.1.0",
       "name": "atlas-orchestration",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-orchestration@0.1.0",
-      "scope": "required"
+      "description": "Multi-Agent Intelligence, Autonomous Orchestration, DAG Planning, and Specialist Agents for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-orchestration@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "009d5d662afc1cf9e475ba52706c199960be7ee981c385cafb59184fbb45c8f3"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-policy@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-policy@0.1.0",
       "name": "atlas-policy",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-policy@0.1.0",
-      "scope": "required"
+      "description": "ATLAS Policy - Action Firewall and Policy Engine",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-policy@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1fb8ea9f8517cfd456db597e29f08d9802928f7502fb0833ee2e889ea36dfab4"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-process@0.16.0",
+      "bom-ref": "pkg:generic/atlas/atlas-process@0.16.0",
       "name": "atlas-process",
       "version": "0.16.0",
-      "purl": "pkg:pypi/atlas-process@0.16.0",
-      "scope": "required"
+      "description": "ATLAS Autonomous Enterprise Process Execution & Digital Workforce Platform",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-process@0.16.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5024283aaf55be2157e8853ae150b7cdbfecec552de151ec1701c984ecf36e43"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-skills@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-skills@0.1.0",
       "name": "atlas-skills",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-skills@0.1.0",
-      "scope": "required"
+      "description": "ATLAS Skill SDK - Framework for Building and Executing Autonomous Specialist Skills",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-skills@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "79cc91c5e1c97c5985a6bff177c067cfc4720872ffd44dd42f7a7b98cbcc480b"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-storage@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-storage@0.1.0",
       "name": "atlas-storage",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-storage@0.1.0",
-      "scope": "required"
+      "description": "ATLAS Storage - Event-Sourced Storage (SQLite & PostgreSQL Interface)",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-storage@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2ad10ae34fffe8f95e174a5903970c73170e9bc1a1c8ff3a6a102b61794e40ad"
+        }
+      ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/atlas-verification@0.1.0",
+      "bom-ref": "pkg:generic/atlas/atlas-verification@0.1.0",
       "name": "atlas-verification",
       "version": "0.1.0",
-      "purl": "pkg:pypi/atlas-verification@0.1.0",
-      "scope": "required"
+      "description": "Deterministic post-condition verification engine for ATLAS",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-verification@0.1.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "392077e5957e6047a3c59cd97870cfebb037724d76d7a4242bf154abdb6b88a4"
+        }
+      ]
     },
     {
       "type": "library",
       "bom-ref": "pkg:pypi/certifi@2026.10.23",
       "name": "certifi",
       "version": "2026.10.23",
-      "purl": "pkg:pypi/certifi@2026.10.23",
+      "description": "Python package for providing Mozilla's CA Bundle.",
       "scope": "required",
+      "purl": "pkg:pypi/certifi@2026.10.23",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -306,8 +763,16 @@
       "bom-ref": "pkg:pypi/cffi@2.1.1",
       "name": "cffi",
       "version": "2.1.1",
-      "purl": "pkg:pypi/cffi@2.1.1",
+      "description": "Foreign Function Interface for Python calling C code.",
       "scope": "required",
+      "purl": "pkg:pypi/cffi@2.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT-0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -668,8 +1133,16 @@
       "bom-ref": "pkg:pypi/colorama@0.4.6",
       "name": "colorama",
       "version": "0.4.6",
-      "purl": "pkg:pypi/colorama@0.4.6",
+      "description": "Cross-platform colored terminal text",
       "scope": "required",
+      "purl": "pkg:pypi/colorama@0.4.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -686,8 +1159,16 @@
       "bom-ref": "pkg:pypi/cryptography@50.0.2",
       "name": "cryptography",
       "version": "50.0.2",
-      "purl": "pkg:pypi/cryptography@50.0.2",
+      "description": "cryptography is a package which provides cryptographic recipes and primitives to Python developers.",
       "scope": "required",
+      "purl": "pkg:pypi/cryptography@50.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0 OR BSD-3-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -932,8 +1413,16 @@
       "bom-ref": "pkg:pypi/embedded-postgres@18.6.3",
       "name": "embedded-postgres",
       "version": "18.6.3",
+      "description": "Embedded PostgreSQL database engine for testing",
+      "scope": "excluded",
       "purl": "pkg:pypi/embedded-postgres@18.6.3",
-      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "PostgreSQL"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -966,8 +1455,16 @@
       "bom-ref": "pkg:pypi/fastapi@0.162.5",
       "name": "fastapi",
       "version": "0.162.5",
-      "purl": "pkg:pypi/fastapi@0.162.5",
+      "description": "FastAPI framework, high performance, easy to learn, fast to code, ready for production",
       "scope": "required",
+      "purl": "pkg:pypi/fastapi@0.162.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -984,8 +1481,16 @@
       "bom-ref": "pkg:pypi/fasteners@0.20",
       "name": "fasteners",
       "version": "0.20",
-      "purl": "pkg:pypi/fasteners@0.20",
+      "description": "Cross-platform locks for threads and processes",
       "scope": "required",
+      "purl": "pkg:pypi/fasteners@0.20",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1002,8 +1507,16 @@
       "bom-ref": "pkg:pypi/greenlet@3.5.6",
       "name": "greenlet",
       "version": "3.5.6",
-      "purl": "pkg:pypi/greenlet@3.5.6",
+      "description": "Lightweight in-process concurrent programming",
       "scope": "required",
+      "purl": "pkg:pypi/greenlet@3.5.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT AND PSF-2.0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1292,8 +1805,16 @@
       "bom-ref": "pkg:pypi/h11@0.16.0",
       "name": "h11",
       "version": "0.16.0",
-      "purl": "pkg:pypi/h11@0.16.0",
+      "description": "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1",
       "scope": "required",
+      "purl": "pkg:pypi/h11@0.16.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1310,8 +1831,16 @@
       "bom-ref": "pkg:pypi/httpcore@1.0.9",
       "name": "httpcore",
       "version": "1.0.9",
-      "purl": "pkg:pypi/httpcore@1.0.9",
+      "description": "A minimal low-level HTTP client.",
       "scope": "required",
+      "purl": "pkg:pypi/httpcore@1.0.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1328,8 +1857,16 @@
       "bom-ref": "pkg:pypi/httpx@0.28.1",
       "name": "httpx",
       "version": "0.28.1",
-      "purl": "pkg:pypi/httpx@0.28.1",
+      "description": "The next generation HTTP client.",
       "scope": "required",
+      "purl": "pkg:pypi/httpx@0.28.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1346,8 +1883,16 @@
       "bom-ref": "pkg:pypi/idna@3.20",
       "name": "idna",
       "version": "3.20",
-      "purl": "pkg:pypi/idna@3.20",
+      "description": "Internationalized Domain Names in Applications (IDNA)",
       "scope": "required",
+      "purl": "pkg:pypi/idna@3.20",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1364,8 +1909,16 @@
       "bom-ref": "pkg:pypi/iniconfig@2.3.1",
       "name": "iniconfig",
       "version": "2.3.1",
+      "description": "brain-dead simple config-ini parsing",
+      "scope": "excluded",
       "purl": "pkg:pypi/iniconfig@2.3.1",
-      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1382,8 +1935,16 @@
       "bom-ref": "pkg:pypi/opentelemetry-api@1.45.2",
       "name": "opentelemetry-api",
       "version": "1.45.2",
-      "purl": "pkg:pypi/opentelemetry-api@1.45.2",
+      "description": "OpenTelemetry Python API",
       "scope": "required",
+      "purl": "pkg:pypi/opentelemetry-api@1.45.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1400,8 +1961,16 @@
       "bom-ref": "pkg:pypi/packaging@26.3",
       "name": "packaging",
       "version": "26.3",
-      "purl": "pkg:pypi/packaging@26.3",
+      "description": "Core utilities for Python packages",
       "scope": "required",
+      "purl": "pkg:pypi/packaging@26.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0 OR BSD-2-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1418,8 +1987,16 @@
       "bom-ref": "pkg:pypi/platformdirs@4.14.5",
       "name": "platformdirs",
       "version": "4.14.5",
-      "purl": "pkg:pypi/platformdirs@4.14.5",
+      "description": "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`.",
       "scope": "required",
+      "purl": "pkg:pypi/platformdirs@4.14.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1436,8 +2013,16 @@
       "bom-ref": "pkg:pypi/playwright@1.65.1",
       "name": "playwright",
       "version": "1.65.1",
-      "purl": "pkg:pypi/playwright@1.65.1",
+      "description": "Fast and reliable end-to-end testing and automation for modern web apps",
       "scope": "required",
+      "purl": "pkg:pypi/playwright@1.65.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1482,8 +2067,16 @@
       "bom-ref": "pkg:pypi/pluggy@1.7.0",
       "name": "pluggy",
       "version": "1.7.0",
+      "description": "plugin and hook calling mechanisms for python",
+      "scope": "excluded",
       "purl": "pkg:pypi/pluggy@1.7.0",
-      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1500,8 +2093,16 @@
       "bom-ref": "pkg:pypi/psutil@7.2.2",
       "name": "psutil",
       "version": "7.2.2",
-      "purl": "pkg:pypi/psutil@7.2.2",
+      "description": "Cross-platform lib for process and system monitoring.",
       "scope": "required",
+      "purl": "pkg:pypi/psutil@7.2.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1594,8 +2195,16 @@
       "bom-ref": "pkg:pypi/psycopg@3.3.9",
       "name": "psycopg",
       "version": "3.3.9",
-      "purl": "pkg:pypi/psycopg@3.3.9",
+      "description": "PostgreSQL database adapter for Python",
       "scope": "required",
+      "purl": "pkg:pypi/psycopg@3.3.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-3.0-only"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1612,8 +2221,16 @@
       "bom-ref": "pkg:pypi/psycopg-binary@3.3.9",
       "name": "psycopg-binary",
       "version": "3.3.9",
-      "purl": "pkg:pypi/psycopg-binary@3.3.9",
+      "description": "PostgreSQL database adapter for Python (binary wheel)",
       "scope": "required",
+      "purl": "pkg:pypi/psycopg-binary@3.3.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-3.0-only"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1842,8 +2459,16 @@
       "bom-ref": "pkg:pypi/psycopg-pool@3.3.3",
       "name": "psycopg-pool",
       "version": "3.3.3",
-      "purl": "pkg:pypi/psycopg-pool@3.3.3",
+      "description": "Connection pool for psycopg",
       "scope": "required",
+      "purl": "pkg:pypi/psycopg-pool@3.3.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-3.0-only"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1860,8 +2485,16 @@
       "bom-ref": "pkg:pypi/pycparser@3.12",
       "name": "pycparser",
       "version": "3.12",
-      "purl": "pkg:pypi/pycparser@3.12",
+      "description": "C parser in Python",
       "scope": "required",
+      "purl": "pkg:pypi/pycparser@3.12",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1878,8 +2511,16 @@
       "bom-ref": "pkg:pypi/pydantic@2.14.3",
       "name": "pydantic",
       "version": "2.14.3",
-      "purl": "pkg:pypi/pydantic@2.14.3",
+      "description": "Data validation using Python type hints",
       "scope": "required",
+      "purl": "pkg:pypi/pydantic@2.14.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -1896,8 +2537,16 @@
       "bom-ref": "pkg:pypi/pydantic-core@2.50.4",
       "name": "pydantic-core",
       "version": "2.50.4",
-      "purl": "pkg:pypi/pydantic-core@2.50.4",
+      "description": "Core functionality for Pydantic validation and serialization",
       "scope": "required",
+      "purl": "pkg:pypi/pydantic-core@2.50.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2410,8 +3059,16 @@
       "bom-ref": "pkg:pypi/pygments@2.21.0",
       "name": "pygments",
       "version": "2.21.0",
-      "purl": "pkg:pypi/pygments@2.21.0",
+      "description": "Pygments is a syntax highlighting package written in Python.",
       "scope": "required",
+      "purl": "pkg:pypi/pygments@2.21.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2428,8 +3085,16 @@
       "bom-ref": "pkg:pypi/pytest@9.2.0",
       "name": "pytest",
       "version": "9.2.0",
+      "description": "pytest: simple powerful testing with Python",
+      "scope": "excluded",
       "purl": "pkg:pypi/pytest@9.2.0",
-      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2446,8 +3111,16 @@
       "bom-ref": "pkg:pypi/pytest-asyncio@1.4.1.post1",
       "name": "pytest-asyncio",
       "version": "1.4.1.post1",
+      "description": "Pytest support for asyncio",
+      "scope": "excluded",
       "purl": "pkg:pypi/pytest-asyncio@1.4.1.post1",
-      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2464,8 +3137,16 @@
       "bom-ref": "pkg:pypi/pyyaml@6.0.3",
       "name": "pyyaml",
       "version": "6.0.3",
-      "purl": "pkg:pypi/pyyaml@6.0.3",
+      "description": "YAML parser and emitter for Python",
       "scope": "required",
+      "purl": "pkg:pypi/pyyaml@6.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2666,8 +3347,16 @@
       "bom-ref": "pkg:pypi/starlette@1.10.0",
       "name": "starlette",
       "version": "1.10.0",
-      "purl": "pkg:pypi/starlette@1.10.0",
+      "description": "The little ASGI library that shines.",
       "scope": "required",
+      "purl": "pkg:pypi/starlette@1.10.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2684,8 +3373,16 @@
       "bom-ref": "pkg:pypi/typing-extensions@4.16.0",
       "name": "typing-extensions",
       "version": "4.16.0",
-      "purl": "pkg:pypi/typing-extensions@4.16.0",
+      "description": "Backported and Experimental Type Hints for Python 3.9+",
       "scope": "required",
+      "purl": "pkg:pypi/typing-extensions@4.16.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "PSF-2.0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2702,8 +3399,16 @@
       "bom-ref": "pkg:pypi/typing-inspection@0.4.5",
       "name": "typing-inspection",
       "version": "0.4.5",
-      "purl": "pkg:pypi/typing-inspection@0.4.5",
+      "description": "Runtime typing introspection tools",
       "scope": "required",
+      "purl": "pkg:pypi/typing-inspection@0.4.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2720,8 +3425,16 @@
       "bom-ref": "pkg:pypi/tzdata@2026.6",
       "name": "tzdata",
       "version": "2026.6",
-      "purl": "pkg:pypi/tzdata@2026.6",
+      "description": "Provider of IANA time zone data",
       "scope": "required",
+      "purl": "pkg:pypi/tzdata@2026.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "hashes": [
         {
           "alg": "SHA256",
@@ -2732,6 +3445,473 @@
           "content": "85d2cd9c09f81f0bb29db27759fc83af4f1e620efb814f8c5bf8b4cc4feece6d"
         }
       ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:pypi/annotated-doc@0.0.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/annotated-types@0.8.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/anyio@4.16.0",
+      "dependsOn": [
+        "pkg:pypi/idna",
+        "pkg:pypi/typing-extensions"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-adaptive@0.14.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-agent",
+        "pkg:generic/atlas/atlas-coordination",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-models",
+        "pkg:generic/atlas/atlas-multimodal",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-agent@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-models",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-observation",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-verification",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-api@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-distributed",
+        "pkg:generic/atlas/atlas-enterprise",
+        "pkg:generic/atlas/atlas-marketplace",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-orchestration",
+        "pkg:generic/atlas/atlas-skills",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/fastapi",
+        "pkg:pypi/httpx",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-browser@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-observation",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-verification",
+        "pkg:pypi/playwright",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-cli@0.16.8",
+      "dependsOn": [
+        "pkg:pypi/cryptography",
+        "pkg:pypi/httpx",
+        "pkg:pypi/playwright",
+        "pkg:pypi/psutil",
+        "pkg:pypi/psycopg",
+        "pkg:pypi/psycopg-pool",
+        "pkg:pypi/pydantic",
+        "pkg:pypi/pygments"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-code-intelligence@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-coding",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-coding@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-coordination@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-core@0.1.0",
+      "dependsOn": [
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-distributed@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-coordination",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-orchestration",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/httpx",
+        "pkg:pypi/psutil",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-enterprise@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-coordination",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-distributed",
+        "pkg:generic/atlas/atlas-marketplace",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-orchestration",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-skills",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/cryptography",
+        "pkg:pypi/httpx",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-federation@0.15.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-coordination",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-enterprise",
+        "pkg:generic/atlas/atlas-marketplace",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-skills",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-marketplace@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-coordination",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-orchestration",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-models@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:pypi/httpx",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-monorepo@0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-multimodal@0.13.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-coordination",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-distributed",
+        "pkg:generic/atlas/atlas-models",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-observation",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-observability@0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-observation@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:pypi/playwright",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-operator@0.12.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-coordination",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-distributed",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-orchestration@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-browser",
+        "pkg:generic/atlas/atlas-code-intelligence",
+        "pkg:generic/atlas/atlas-coding",
+        "pkg:generic/atlas/atlas-coordination",
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-models",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:generic/atlas/atlas-verification",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-policy@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-process@0.16.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-enterprise",
+        "pkg:generic/atlas/atlas-federation",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-skills@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-storage@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:pypi/psycopg",
+        "pkg:pypi/psycopg-pool",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-verification@0.1.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:pypi/playwright",
+        "pkg:pypi/pydantic"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/certifi@2026.10.23",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/cffi@2.1.1",
+      "dependsOn": [
+        "pkg:pypi/pycparser"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/colorama@0.4.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/cryptography@50.0.2",
+      "dependsOn": [
+        "pkg:pypi/cffi"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/embedded-postgres@18.6.3",
+      "dependsOn": [
+        "pkg:pypi/fasteners",
+        "pkg:pypi/platformdirs",
+        "pkg:pypi/psutil"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/fastapi@0.162.5",
+      "dependsOn": [
+        "pkg:pypi/annotated-doc",
+        "pkg:pypi/anyio",
+        "pkg:pypi/opentelemetry-api",
+        "pkg:pypi/pydantic",
+        "pkg:pypi/starlette",
+        "pkg:pypi/typing-extensions",
+        "pkg:pypi/typing-inspection"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/fasteners@0.20",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/greenlet@3.5.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/h11@0.16.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/httpcore@1.0.9",
+      "dependsOn": [
+        "pkg:pypi/certifi",
+        "pkg:pypi/h11"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/httpx@0.28.1",
+      "dependsOn": [
+        "pkg:pypi/anyio",
+        "pkg:pypi/certifi",
+        "pkg:pypi/httpcore",
+        "pkg:pypi/idna"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/idna@3.20",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/iniconfig@2.3.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/opentelemetry-api@1.45.2",
+      "dependsOn": [
+        "pkg:pypi/typing-extensions"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/packaging@26.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/platformdirs@4.14.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/playwright@1.65.1",
+      "dependsOn": [
+        "pkg:pypi/greenlet"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/pluggy@1.7.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/psutil@7.2.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/psycopg@3.3.9",
+      "dependsOn": [
+        "pkg:pypi/typing-extensions",
+        "pkg:pypi/tzdata"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/psycopg-binary@3.3.9",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/psycopg-pool@3.3.3",
+      "dependsOn": [
+        "pkg:pypi/typing-extensions"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/pycparser@3.12",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pydantic@2.14.3",
+      "dependsOn": [
+        "pkg:pypi/annotated-types",
+        "pkg:pypi/pydantic-core",
+        "pkg:pypi/typing-extensions",
+        "pkg:pypi/typing-inspection"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/pydantic-core@2.50.4",
+      "dependsOn": [
+        "pkg:pypi/typing-extensions"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/pygments@2.21.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pytest@9.2.0",
+      "dependsOn": [
+        "pkg:pypi/colorama",
+        "pkg:pypi/iniconfig",
+        "pkg:pypi/packaging",
+        "pkg:pypi/pluggy",
+        "pkg:pypi/pygments"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/pytest-asyncio@1.4.1.post1",
+      "dependsOn": [
+        "pkg:pypi/pytest",
+        "pkg:pypi/typing-extensions"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/pyyaml@6.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/starlette@1.10.0",
+      "dependsOn": [
+        "pkg:pypi/anyio",
+        "pkg:pypi/typing-extensions"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/typing-extensions@4.16.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/typing-inspection@0.4.5",
+      "dependsOn": [
+        "pkg:pypi/typing-extensions"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/tzdata@2026.6",
+      "dependsOn": []
     }
   ]
 }

@@ -179,38 +179,26 @@ name = "atlas-cli"
 version = "0.16.8"
 source = { editable = "apps/cli" }
 dependencies = [
-    { name = "atlas-agent" },
-    { name = "atlas-browser" },
-    { name = "atlas-code-intelligence" },
-    { name = "atlas-coding" },
-    { name = "atlas-core" },
-    { name = "atlas-enterprise" },
-    { name = "atlas-federation" },
-    { name = "atlas-marketplace" },
-    { name = "atlas-models" },
-    { name = "atlas-observability" },
-    { name = "atlas-orchestration" },
-    { name = "atlas-policy" },
-    { name = "atlas-skills" },
-    { name = "atlas-storage" },
+    { name = "cryptography" },
+    { name = "httpx" },
+    { name = "playwright" },
+    { name = "psutil" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "psycopg-pool" },
+    { name = "pydantic" },
+    { name = "pygments" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "atlas-agent", editable = "packages/atlas-agent" },
-    { name = "atlas-browser", editable = "packages/atlas-browser" },
-    { name = "atlas-code-intelligence", editable = "packages/atlas-code-intelligence" },
-    { name = "atlas-coding", editable = "packages/atlas-coding" },
-    { name = "atlas-core", editable = "packages/atlas-core" },
-    { name = "atlas-enterprise", editable = "packages/atlas-enterprise" },
-    { name = "atlas-federation", editable = "packages/atlas-federation" },
-    { name = "atlas-marketplace", editable = "packages/atlas-marketplace" },
-    { name = "atlas-models", editable = "packages/atlas-models" },
-    { name = "atlas-observability", editable = "packages/atlas-observability" },
-    { name = "atlas-orchestration", editable = "packages/atlas-orchestration" },
-    { name = "atlas-policy", editable = "packages/atlas-policy" },
-    { name = "atlas-skills", editable = "packages/atlas-skills" },
-    { name = "atlas-storage", editable = "packages/atlas-storage" },
+    { name = "cryptography", specifier = ">=50.0.2" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "playwright", specifier = ">=1.40.0" },
+    { name = "psutil", specifier = ">=5.9.0" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.2.0" },
+    { name = "psycopg-pool", specifier = ">=3.2.0" },
+    { name = "pydantic", specifier = ">=2.7.0" },
+    { name = "pygments", specifier = ">=2.17.0" },
 ]
 
 [[package]]

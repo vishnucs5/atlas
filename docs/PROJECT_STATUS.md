@@ -871,6 +871,19 @@
   9. Independent Release Audit: 14-point release checklist certified in `docs/RELEASE_AUDIT_MANIFEST.md`.
 - Governance Boundary: Release candidate generated and certified; physical publishing to PyPI, release tagging, and merging to master are halted pending explicit human release authorization.
 
+### Stage 7.1: Release Blocker Remediation (COMPLETE & VERIFIED)
+- Branch: `feat/atlas-cli-release-remediation`
+- Base Commit: `21579b6` (Stage 7 Release Candidate)
+- Workstreams Remediated:
+  1. Packaging: Created custom Hatchling build hook (`apps/cli/hatch_build.py`) bundling all 22 internal modules; isolated wheel installation passes in clean-room environment with zero PyPI dependency confusion.
+  2. CLI Invalid Command Handling: Restored non-zero exit code (code 2) for invalid/misspelled subcommands in `apps/cli/src/atlas_cli/main.py`; added `atlas run` and `--prompt` options; added regression test `test_cli_invalid_command_and_dispatch_matrix`. Full integration suite passes (7/7).
+  3. Ruff Format: Reformatted embedded Python code block in `docs/ATLAS_CLI_PLUGIN_GUIDE.md`; `ruff check` and `ruff format --check` pass across all 721 files.
+  4. SBOM Generator: Upgraded `scripts/generate_sbom.py` with 100% license coverage, descriptions, internal package SHA-256 hashes, separated dev scope, and eliminated colliding PyPI PURLs.
+  5. Cross-Platform Documentation: Transparently classified Windows 11 as locally verified pass, and Ubuntu Linux & macOS as CI-configured (pending remote execution).
+  6. Type Checking: Fixed typing errors across CLI code (`manager.py`, `agents.py`, `interactive.py`, `enterprise.py`, `app.py`, `stream.py`); `mypy` reports 0 CLI errors.
+  7. Regression Suite: Monorepo test suite passing: **998/998 passed (0 failed, 148.51s)**; security suite 34/34 passed; dependency scan 0 CVEs.
+- Status: Ready for independent re-audit (`A. READY FOR INDEPENDENT RE-AUDIT`).
+
 ---
 
 ## Next Steps: Phase 2 Kickoff

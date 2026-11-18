@@ -79,9 +79,21 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--minimal", action="store_true", help="Run in minimal headless scriptable mode"
     )
+    parser.add_argument(
+        "-p",
+        "--prompt",
+        dest="prompt",
+        type=str,
+        default=None,
+        help="Execute an autonomous coding task with specified prompt",
+    )
     parser.add_argument("--version", "-v", action="store_true", help="Display ATLAS CLI version")
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Command: atlas run <objective>
+    run_parser = subparsers.add_parser("run", help="Execute an autonomous coding task")
+    run_parser.add_argument("objective", type=str, help="Coding task objective")
 
     # Command: atlas doctor
     subparsers.add_parser(
@@ -410,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Check for direct prompt execution: e.g. atlas "Build a FastAPI backend"
     known_commands = {
+        "run",
         "doctor",
         "environment",
         "init",
@@ -438,6 +451,16 @@ def main(argv: list[str] | None = None) -> int:
         "logs",
     }
 
+    # Support piped input when no arguments are provided
+    if not args_list:
+        try:
+            if hasattr(sys.stdin, "isatty") and not sys.stdin.isatty():
+                piped = sys.stdin.read().strip()
+                if piped:
+                    return run_coding_task(piped)
+        except (OSError, ValueError, AttributeError):
+            pass
+
     if args_list:
         first = args_list[0]
         if first == "--tui":
@@ -449,12 +472,19 @@ def main(argv: list[str] | None = None) -> int:
             print("ATLAS v0.16.8 (Autonomous Task & Lifecycle Automation System)")
             return 0
         if not first.startswith("-") and first not in known_commands:
-            # Direct prompt execution
-            prompt = " ".join(args_list)
-            return run_coding_task(prompt)
+            # Direct prompt execution only for natural language sentences (contains spaces)
+            # or multi-token prompts (len(args_list) > 1 without leading flags).
+            # Single-token non-commands (e.g. typos, invalid subcommands) must fall through
+            # to parser.parse_args so argparse rejects them with non-zero exit code.
+            if " " in first or len(args_list) > 1:
+                prompt = " ".join(args_list)
+                return run_coding_task(prompt)
 
     parser = create_parser()
     args = parser.parse_args(args_list)
+
+    if getattr(args, "prompt", None):
+        return run_coding_task(args.prompt)
 
     if args.version:
         print("ATLAS v0.16.8")
@@ -465,6 +495,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.minimal:
         return run_minimal()
+
+    if args.command == "run":
+        return run_coding_task(args.objective)
 
     if args.command is None:
         print(render_banner())

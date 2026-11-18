@@ -1006,3 +1006,13 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Workstream 8: Release Artifacts**: Source distribution, wheel, CycloneDX v1.5 SBOM (`dist/atlas-cli-sbom.json`), `SHA256SUMS.txt`, `RELEASE_NOTES_v0.16.8.md`, `CHANGELOG.md`, `DEPENDENCY_INVENTORY.md`, `BENCHMARK_REPORT.md`, `SECURITY_AUDIT_REPORT.md`, `INSTALLATION_VERIFICATION_REPORT.md`.
 - [x] **Workstream 9: Independent Release Audit**: 14-point release checklist certified in `docs/RELEASE_AUDIT_MANIFEST.md`.
 - **Governance Boundary**: Release candidate generated and certified; physical publishing to PyPI, release tagging, and merging to master are halted pending explicit human release authorization.
+
+### Stage 7.1: Release Blocker Remediation (COMPLETE & VERIFIED)
+- [x] **Workstream 1: Packaging & Dependency Confusion**: Self-contained wheel architecture created with `apps/cli/hatch_build.py` bundling all 22 internal packages; unpinned internal dependencies replaced with verified PyPI packages; clean-room install and out-of-tree execution verified pass.
+- [x] **Workstream 2: CLI Invalid Command Handling**: Restored standard non-zero exit code (code 2) on invalid and misspelled subcommands in `apps/cli/src/atlas_cli/main.py`; added `atlas run` and `--prompt` options; added regression test `test_cli_invalid_command_and_dispatch_matrix`. Integration suite 7/7 pass.
+- [x] **Workstream 3: Ruff Format**: Fixed unformatted Python block in `docs/ATLAS_CLI_PLUGIN_GUIDE.md`; `ruff check` and `ruff format --check` pass on 721 files.
+- [x] **Workstream 4: SBOM Generator**: Upgraded `scripts/generate_sbom.py` to extract verifiable licenses and descriptions, populate package hashes, separate development scope, and eliminate colliding PyPI PURLs.
+- [x] **Workstream 5: Cross-Platform Documentation**: Updated release manifests and installation reports to classify Windows 11 as locally verified pass, and Ubuntu & macOS as CI-configured (pending remote execution).
+- [x] **Workstream 6: Static Type Checking**: Resolved all type annotation and covariance issues across `apps/cli/src`; `mypy` reports 0 errors in CLI code.
+- [x] **Workstream 7: Full Regression**: Executed full monorepo test suite (998/998 passed, 0 failed, 148.51s); security suite (34/34 passed); live dependency scan (0 CVEs).
+- **Status**: Ready for independent re-audit (`A. READY FOR INDEPENDENT RE-AUDIT`).

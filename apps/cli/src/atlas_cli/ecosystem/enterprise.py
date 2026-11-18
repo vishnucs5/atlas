@@ -7,6 +7,7 @@ import threading
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from atlas_core.contracts.policy import PolicyDecisionType, RiskLevel
 from atlas_enterprise.audit import EnterpriseAuditLedger
 from atlas_enterprise.iam import EnterpriseIAMEngine, UnauthorizedError
 from atlas_enterprise.models import (
@@ -151,8 +152,8 @@ class EnterpriseClientAdapter:
                 name="Enterprise Secret File Protection",
                 exact_action_type="file.modify",
                 action_prefix="",
-                decision="DENY",
-                risk_level="CRITICAL",
+                decision=PolicyDecisionType.DENY,
+                risk_level=RiskLevel.CRITICAL,
                 description="Enterprise compliance: modifying root credentials strictly prohibited.",
             ),
         ]

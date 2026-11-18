@@ -1,6 +1,6 @@
 """Event streaming, subscription management, sequence ordering, and deduplication."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from atlas_core.contracts.event import ExecutionEvent
@@ -66,7 +66,7 @@ class EventStreamSubscriber:
 
         return True
 
-    def ingest_batch(self, events: list[ExecutionEvent | dict[str, Any]]) -> int:
+    def ingest_batch(self, events: Sequence[ExecutionEvent | dict[str, Any]]) -> int:
         """Ingest a batch of events, sorting by sequence to guarantee ordering."""
         # Normalize and sort
         normalized: list[ExecutionEvent] = []
