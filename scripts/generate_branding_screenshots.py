@@ -2,6 +2,7 @@
 
 import asyncio
 from pathlib import Path
+
 from playwright.async_api import async_playwright
 
 OUT_DIR = Path(r"C:\Users\pc\.gemini\antigravity\brain\277f040d-eef5-42df-bc25-6a548b4612e5")
@@ -317,6 +318,7 @@ AFTER_HTML = """
 </html>
 """
 
+
 async def generate():
     async with async_playwright() as p:
         browser = await p.chromium.launch()
@@ -335,6 +337,7 @@ async def generate():
         print(f"Generated After: {after_path}")
 
         await browser.close()
+
 
 if __name__ == "__main__":
     asyncio.run(generate())

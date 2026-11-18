@@ -302,10 +302,9 @@ class AegisBranding:
         dot = "·" if use_unicode else "|"
         sess_str = f" {dot} {session_id[:12]}" if session_id else ""
         mode_badge = self.colorize(f"[{mode}]", GREEN if mode == "Local" else CYAN)
+        aegis_tag = self.colorize("[AEGIS]", TEAL + BOLD)
 
-        line1 = (
-            f"{emblem} {self.colorize('ATLAS', WHITE + BOLD)} {self.colorize(f'v{VERSION}', CYAN)}"
-        )
+        line1 = f"{aegis_tag} {emblem} {self.colorize('ATLAS', WHITE + BOLD)} {self.colorize(f'v{VERSION}', CYAN)}"
         line2 = (
             f"{self.colorize(repo_path, DIM)} {dot} "
             f"{self.colorize(branch, CYAN + BOLD)} {dot} "
