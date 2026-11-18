@@ -163,7 +163,7 @@ Command: `uv run mypy apps/cli/src --ignore-missing-imports` (with `MYPYPATH` po
 ## 6. Complete Diff & File Change Summary
 
 Branch: `feat/atlas-cli-release-remediation`  
-Commits since Stage 7 baseline: Remediation changes staged.
+Commits since Stage 7 baseline: Commit `a84052f` (`feat(cli): complete Stage 7.1 release blocker remediation, self-contained packaging, tests, and docs`).
 
 ### Files Modified:
 - `apps/cli/hatch_build.py`: Custom Hatchling build hook to package internal monorepo modules into the wheel and sdist.
