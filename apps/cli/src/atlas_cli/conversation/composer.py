@@ -1,9 +1,16 @@
-"""Prompt composer, history, and slash command dispatcher for conversation-first UI."""
+"""Prompt composer, interactive slash menu, and command dispatcher for full-screen TUI."""
 
 from __future__ import annotations
 
 import os
+import shutil
+import sys
 from typing import Any
+
+from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.shortcuts import PromptSession
+from prompt_toolkit.styles import Style
 
 from atlas_cli.rendering.formatters import (
     BOLD,
@@ -37,17 +44,142 @@ SLASH_COMMANDS = {
 }
 
 
-class PromptComposer:
-    """Handles multiline prompt composition, history, and slash command validation."""
+class SlashCompleter(Completer):
+    """Floating autocomplete menu for slash commands appearing directly above input."""
 
-    def __init__(self) -> None:
+    COMMANDS = [
+        ("/help", "Display interactive command guide and shortcuts"),
+        ("/plan", "Synthesize execution plan without modifying files"),
+        ("/test", "Discover and execute repository test suites"),
+        ("/review", "Perform Action Firewall and git diff review"),
+        ("/status", "Inspect workspace, git porcelain, and health"),
+        ("/approvals", "Review and decide pending authorization requests"),
+        ("/exit", "Exit ATLAS conversation mode"),
+    ]
+
+    def get_completions(self, document: Any, complete_event: Any) -> Any:
+        text = document.text_before_cursor
+        if text.startswith("/"):
+            for cmd, desc in self.COMMANDS:
+                if cmd.startswith(text):
+                    yield Completion(
+                        cmd,
+                        start_position=-len(text),
+                        display=cmd,
+                        display_meta=desc,
+                    )
+
+
+class PromptComposer:
+    """Handles rounded container input box, floating slash menu, and persistent footer."""
+
+    def __init__(
+        self,
+        repo_name: str = "workspace",
+        branch: str = "main",
+        model: str = "atlas:hermetic-default",
+    ) -> None:
         self.history: list[str] = []
+        self.repo_name = repo_name
+        self.branch = branch
+        self.model = model
+        self._session: PromptSession[str] | None = None
+
+    def update_context(self, repo_name: str, branch: str, model: str) -> None:
+        """Update context displayed in the persistent bottom footer."""
+        self.repo_name = repo_name
+        self.branch = branch
+        self.model = model
+
+    def _is_interactive(self) -> bool:
+        """Verify whether stdout and stdin are attached to an interactive console."""
+        if not hasattr(sys.stdin, "isatty") or not sys.stdin.isatty():
+            return False
+        if not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty():
+            return False
+        return True
+
+    def _get_bottom_toolbar(self) -> FormattedText:
+        """Generate persistent 2-line status footer for prompt_toolkit."""
+        dir_icon = "📁" if sys.platform != "win32" or os.environ.get("WT_SESSION") else "[DIR]"
+        branch_icon = (
+            "🔀" if sys.platform != "win32" or os.environ.get("WT_SESSION") else "[BRANCH]"
+        )
+        model_icon = "⚙" if sys.platform != "win32" or os.environ.get("WT_SESSION") else "[MODEL]"
+
+        line1 = f" {dir_icon} {self.repo_name}  │  {branch_icon} {self.branch}  │  {model_icon} {self.model}"
+        line2 = " ? shortcuts  •  / commands  •  Esc cancel  •  Ctrl+C exit"
+
+        return FormattedText(
+            [
+                ("class:bottom-toolbar", f"{line1}\n{line2}"),
+            ]
+        )
 
     def prompt(self) -> str | None:
-        """Read single or multiline input from user.
+        """Read prompt with rounded input box container, floating slash menu, and footer."""
+        if not self._is_interactive():
+            return self._prompt_fallback()
 
-        Supports line continuation using trailing backslash '\\' or empty line completion.
-        """
+        try:
+            term_cols = shutil.get_terminal_size((80, 24)).columns
+            width = min(term_cols, 96)
+            top_border = "╭" + "─" * (width - 2) + "╮"
+            bot_border = "╰" + "─" * (width - 2) + "╯"
+
+            # Dual-accent TrueColor palette for prompt_toolkit
+            pt_style = Style.from_dict(
+                {
+                    "border": "#F97316 bold",  # Warm Coral active focus
+                    "prompt": "#38BDF8 bold",  # Sky Cyan
+                    "placeholder": "#64748B",  # Slate Gray
+                    "bottom-toolbar": "#64748B",  # Slate Gray
+                    "completion-menu": "bg:#0D1117 #F1F5F9",
+                    "completion-menu.completion": "#F1F5F9",
+                    "completion-menu.completion.current": "bg:#38BDF8 #0D1117 bold",
+                    "completion-menu.meta": "#64748B",
+                }
+            )
+
+            if self._session is None:
+                self._session = PromptSession(
+                    completer=SlashCompleter(),
+                    complete_while_typing=True,
+                    style=pt_style,
+                )
+
+            # Print active top container border in Warm Coral #F97316
+            print(f"\033[38;2;249;115;22m{top_border}\033[0m")
+
+            user_input = self._session.prompt(
+                message=FormattedText(
+                    [
+                        ("class:border", "│ "),
+                        ("class:prompt", "> "),
+                    ]
+                ),
+                placeholder=FormattedText(
+                    [
+                        ("class:placeholder", "What would you like to build today?"),
+                    ]
+                ),
+                bottom_toolbar=self._get_bottom_toolbar,
+            ).strip()
+
+            # Print active bottom container border in Warm Coral #F97316
+            print(f"\033[38;2;249;115;22m{bot_border}\033[0m")
+
+            if user_input:
+                self.history.append(user_input)
+            return user_input
+
+        except (KeyboardInterrupt, EOFError):
+            return None
+        except Exception:
+            return self._prompt_fallback()
+
+    def _prompt_fallback(self) -> str | None:
+        """Graceful standard input fallback for non-TTY / testing environments."""
         try:
             first_line = input(f"{BOLD}{CYAN}› {RESET}").strip()
         except (KeyboardInterrupt, EOFError):
@@ -56,7 +188,6 @@ class PromptComposer:
         if not first_line:
             return ""
 
-        # Multiline check: if line ends with '\', continue reading
         if first_line.endswith("\\"):
             lines = [first_line[:-1].strip()]
             print(colorize("  ... (Enter blank line to finish)", DIM))
@@ -118,10 +249,10 @@ class SlashCommandDispatcher:
         """Execute slash command. Returns True to continue, False to exit."""
         parts = cmd_line.strip().split(maxsplit=1)
         cmd = parts[0].lower()
-        args = parts[1] if len(parts) > 1 else ""
+        arg = parts[1] if len(parts) > 1 else ""
 
         if cmd in ("/exit", "/quit"):
-            print(colorize("Exiting ATLAS. Goodbye!", DIM))
+            print(colorize("Exiting ATLAS. Goodbye!", BOLD + GREEN))
             return False
 
         if cmd == "/help":
@@ -133,43 +264,19 @@ class SlashCommandDispatcher:
             print(self.app.header.render_welcome())
             return True
 
+        if cmd == "/inspector":
+            self.app.open_inspector()
+            return True
+
+        if cmd == "/compact":
+            self.app.compact_session()
+            return True
+
+        # Operations delegating to CLI commands
         if cmd == "/status":
             from atlas_cli.commands.governance import run_status
 
             run_status()
-            return True
-
-        if cmd in ("/model", "/models"):
-            from atlas_cli.commands.models import run_models_list
-
-            run_models_list()
-            return True
-
-        if cmd == "/plan":
-            if not args:
-                print(colorize("Usage: /plan <goal>", YELLOW))
-            else:
-                from atlas_cli.commands.coding import run_plan
-
-                run_plan(goal=args, repo_root=self.repo_root)
-            return True
-
-        if cmd == "/review":
-            from atlas_cli.commands.coding import run_review
-
-            run_review(diff=True, repo_root=self.repo_root)
-            return True
-
-        if cmd == "/debug":
-            from atlas_cli.commands.coding import run_debug
-
-            run_debug(repo_root=self.repo_root)
-            return True
-
-        if cmd == "/test":
-            from atlas_cli.commands.coding import run_test
-
-            run_test(repo_root=self.repo_root)
             return True
 
         if cmd == "/permissions":
@@ -179,9 +286,9 @@ class SlashCommandDispatcher:
             return True
 
         if cmd == "/approvals":
-            from atlas_cli.approvals.interactive import run_interactive_approvals
+            from atlas_cli.commands.approval import run_approval_list
 
-            run_interactive_approvals(self.app.client)
+            run_approval_list()
             return True
 
         if cmd == "/agents":
@@ -196,22 +303,41 @@ class SlashCommandDispatcher:
             run_sessions_list()
             return True
 
-        if cmd == "/inspector":
-            self.app.open_inspector()
-            return True
+        if cmd in ("/model", "/models"):
+            from atlas_cli.commands.models import run_models_list, run_models_use
 
-        if cmd == "/compact":
-            if hasattr(self.app, "compact_session"):
-                self.app.compact_session()
+            if arg:
+                run_models_use(arg)
             else:
-                print(colorize("Session history compacted.", GREEN))
+                run_models_list()
             return True
 
-        # Unknown command handling
-        print(
-            colorize(
-                f"Unknown command: '{cmd}'. Type {colorize('/help', BOLD)} for available commands.",
-                RED,
-            )
-        )
+        if cmd == "/plan":
+            if not arg:
+                print(colorize("Usage: /plan <goal>", YELLOW))
+            else:
+                from atlas_cli.commands.coding import run_plan
+
+                run_plan(goal=arg)
+            return True
+
+        if cmd == "/review":
+            from atlas_cli.commands.coding import run_review
+
+            run_review(diff=True)
+            return True
+
+        if cmd == "/debug":
+            from atlas_cli.commands.coding import run_debug
+
+            run_debug()
+            return True
+
+        if cmd == "/test":
+            from atlas_cli.commands.coding import run_test
+
+            run_test()
+            return True
+
+        print(colorize(f"Unknown command: '{cmd}'. Type /help for available commands.", RED))
         return True

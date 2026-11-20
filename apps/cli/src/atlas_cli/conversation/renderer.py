@@ -80,6 +80,25 @@ class ConversationRenderer:
         return f"\n{colorize('›', BOLD + CYAN)} {colorize(prompt, BOLD)}\n"
 
     @staticmethod
+    def render_execution_tree(
+        task_id: str,
+        target: str,
+        policy_status: str = "Action Firewall verified",
+        next_hint: str = "Type /test to run suites or /review to inspect diffs",
+        status: str = "completed",
+    ) -> str:
+        """Render clean tree connector execution summary adhering to Section 2.2."""
+        from atlas_cli.conversation.branding import AegisBranding
+
+        return AegisBranding().render_execution_tree(
+            task_id=task_id,
+            target=target,
+            policy_status=policy_status,
+            next_hint=next_hint,
+            status=status,
+        )
+
+    @staticmethod
     def render_activity(
         action: str,
         detail: str = "",

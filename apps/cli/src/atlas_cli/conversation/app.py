@@ -193,7 +193,15 @@ class ConversationApp:
         from atlas_cli.conversation.branding import AegisBranding
 
         branding = AegisBranding()
-        print(branding.render_completion_badge(task.task_id, verified=True))
+        print(
+            self.renderer.render_execution_tree(
+                task_id=task.task_id,
+                target=str(task.repo_root),
+                policy_status="Action Firewall verified",
+                next_hint="Type /test to run suites or /review to inspect diffs",
+                status="completed",
+            )
+        )
 
         # Ingest events to subscriber
         from datetime import UTC, datetime
@@ -254,6 +262,13 @@ class ConversationApp:
 
     def run(self) -> int:
         """Main interactive conversation loop."""
+        # Update composer context for persistent bottom footer
+        self.composer.update_context(
+            repo_name=self.repo_root.name,
+            branch=self.header.get_git_branch(),
+            model=self.header.get_model_identifier(),
+        )
+
         # Print welcome banner
         print(self.header.render_welcome())
 
