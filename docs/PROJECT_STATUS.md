@@ -970,3 +970,13 @@
 - Gemini response usage reports zero estimated cost for the approved free models. Provider errors are sanitized before diagnostic logging.
 - Incomplete: Cloudflare account-plan status relies on user attestation; secure-file fallback is not implemented. OpenRouter free inventory refresh is user-triggered, and the CLI/runtime cover only explicitly audited sources/routes.
 - No tests were added or run, per task execution constraints. Static code review only; no live provider credentials were used.
+
+## 2026-11-20 — Cloud Deployment Preparation
+
+- Added `deploy/cloud` with a production-oriented Compose stack for API, PostgreSQL, Redis, and worker. The Docker-VM overlay exposes only Caddy TLS ports 80/443 and refuses to start until every required secret is supplied.
+- Production API authentication now rejects missing role keys, and production browser access requires explicit CORS origins instead of a wildcard.
+- The worker now uses PostgreSQL when `ATLAS_DATABASE_URL` is configured, sharing task state, leases, and approvals with the API rather than creating an isolated SQLite worker database.
+- Added a Docker-VM + Supabase PostgreSQL Compose variant. It keeps the long-running API and worker on the VM, while both connect to the same managed Supabase database.
+- Added `deploy/cloud/deploy-supabase-vm.sh`: it does not print secrets, requires mode `0600` on the VM secret file, validates all Compose variables, and verifies the public `/readyz` endpoint after deployment.
+- Documented no-custom-domain deployment via an IP-derived `sslip.io` hostname; Caddy preserves HTTPS while PostgreSQL, Redis, and the internal API port remain private.
+- Cloud publishing is not yet performed: a provider account, public domain/ingress choice, and provider-secret configuration remain required. No credentials were written to the repository.

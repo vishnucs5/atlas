@@ -1051,3 +1051,14 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [ ] Add the deterministic verification matrix defined in the specification. Do not use live credentials or paid endpoints in tests.
 - [x] Update this plan and `docs/PROJECT_STATUS.md` with actual implementation status; the workstream remains partial pending the items above.
 
+## Cloud Runtime Deployment — Prepared, Provider Selection Pending
+
+- [x] Add a cloud-safe Docker Compose bundle for the API, PostgreSQL, Redis, and a shared-state worker; the Docker-VM overlay exposes only a TLS reverse proxy.
+- [x] Require cloud secrets and explicit production CORS origins at startup; production API keys no longer fall back to development defaults.
+- [x] Make worker storage select PostgreSQL when `ATLAS_DATABASE_URL` is configured, so task orchestration and durable approvals are shared across API and worker processes.
+- [x] Add a deployment runbook with readiness verification and remote CLI connection instructions.
+- [x] Add a Supabase PostgreSQL deployment variant for the Docker VM; API and worker share the managed database while Redis and execution remain private on the VM.
+- [x] Add a VM deploy script that requires owner-only secret-file permissions, validates the complete Compose configuration, and verifies public HTTPS readiness before success.
+- [x] Document a no-custom-domain preview path using an IP-derived `sslip.io` hostname, without weakening TLS or exposing data services.
+- [ ] Select a cloud provider, configure its account-level secrets and HTTPS ingress, publish the deployment, and verify `/readyz` on the assigned public URL.
+

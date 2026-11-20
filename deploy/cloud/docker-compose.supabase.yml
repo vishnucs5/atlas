@@ -1,0 +1,92 @@
+name: atlas-supabase
+
+services:
+  redis:
+    image: redis:7.4.2-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - atlas_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+    environment: &atlas_environment
+      ATLAS_ENV: production
+      ATLAS_DATABASE_URL: ${ATLAS_DATABASE_URL:?set ATLAS_DATABASE_URL from Supabase Connect}
+      ATLAS_REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379/0
+      ATLAS_VAULT_ENCRYPTION_KEY: ${ATLAS_VAULT_ENCRYPTION_KEY:?set ATLAS_VAULT_ENCRYPTION_KEY}
+      ATLAS_API_KEY_ADMIN: ${ATLAS_API_KEY_ADMIN:?set ATLAS_API_KEY_ADMIN}
+      ATLAS_API_KEY_OPERATOR: ${ATLAS_API_KEY_OPERATOR:?set ATLAS_API_KEY_OPERATOR}
+      ATLAS_API_KEY_WORKER: ${ATLAS_API_KEY_WORKER:?set ATLAS_API_KEY_WORKER}
+      ATLAS_API_KEY_VIEWER: ${ATLAS_API_KEY_VIEWER:?set ATLAS_API_KEY_VIEWER}
+      ATLAS_CORS_ORIGINS: ${ATLAS_CORS_ORIGINS:?set ATLAS_CORS_ORIGINS}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment: *atlas_environment
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      ATLAS_DOMAIN: ${ATLAS_DOMAIN:?set ATLAS_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+volumes:
+  atlas_redis_data:
+  caddy_data:
+  caddy_config:

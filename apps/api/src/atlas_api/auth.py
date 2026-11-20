@@ -28,12 +28,22 @@ class AuthenticatedUser(BaseModel):
     user_id: str
 
 
-# Configurable API keys per role
+def _configured_api_key(name: str, development_default: str) -> str:
+    """Load an API key, refusing unsafe implicit credentials in production."""
+    value = os.getenv(name)
+    if value:
+        return value
+    if os.getenv("ATLAS_ENV", "development").lower() == "production":
+        raise RuntimeError(f"{name} must be set when ATLAS_ENV=production.")
+    return development_default
+
+
+# Configurable API keys per role. Production must always provide unique secrets.
 DEFAULT_KEYS = {
-    Role.ADMIN: os.getenv("ATLAS_API_KEY_ADMIN", "admin-key"),
-    Role.OPERATOR: os.getenv("ATLAS_API_KEY_OPERATOR", "operator-key"),
-    Role.WORKER: os.getenv("ATLAS_API_KEY_WORKER", "worker-key"),
-    Role.VIEWER: os.getenv("ATLAS_API_KEY_VIEWER", "viewer-key"),
+    Role.ADMIN: _configured_api_key("ATLAS_API_KEY_ADMIN", "admin-key"),
+    Role.OPERATOR: _configured_api_key("ATLAS_API_KEY_OPERATOR", "operator-key"),
+    Role.WORKER: _configured_api_key("ATLAS_API_KEY_WORKER", "worker-key"),
+    Role.VIEWER: _configured_api_key("ATLAS_API_KEY_VIEWER", "viewer-key"),
 }
 
 # Role permission hierarchy mapping: which roles are satisfied by a given user role

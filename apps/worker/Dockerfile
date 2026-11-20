@@ -66,7 +66,7 @@ COPY --from=builder --chown=atlas:atlas /build/pyproject.toml /app/pyproject.tom
 USER atlas
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')" || exit 0
+    CMD python -c "from pathlib import Path; assert b'atlas' in Path('/proc/1/cmdline').read_bytes()"
 
 ENTRYPOINT ["atlas", "worker", "run"]
 CMD ["--capabilities", "desktop,browser", "--heartbeat-interval", "5.0", "--poll-interval", "1.0"]

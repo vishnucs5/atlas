@@ -26,6 +26,17 @@ logger = get_logger("atlas.api")
 API_VERSION = "0.1.0"
 
 
+def _cors_origins_from_environment() -> list[str]:
+    """Read explicit browser origins and reject permissive CORS in production."""
+    configured = os.getenv("ATLAS_CORS_ORIGINS", "")
+    origins = [origin.strip() for origin in configured.split(",") if origin.strip()]
+    if origins:
+        return origins
+    if os.getenv("ATLAS_ENV", "development").lower() == "production":
+        raise RuntimeError("ATLAS_CORS_ORIGINS must be set when ATLAS_ENV=production.")
+    return ["*"]
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle manager handling startup and shutdown initialization."""
@@ -90,7 +101,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=_cors_origins_from_environment(),
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],

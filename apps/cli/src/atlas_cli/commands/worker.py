@@ -43,7 +43,7 @@ class WorkerDaemon:
         self.once = once
         self.hostname = platform.node() or "localhost"
 
-        self.storage: SQLiteStorage | None = None
+        self.storage: Any = None
         self.runtime: ProductionRuntime | None = None
         self._running = False
         self._tasks_processed = 0
@@ -51,11 +51,18 @@ class WorkerDaemon:
     async def start(self) -> int:
         """Start worker lifecycle: register node, initiate heartbeat, and enter poll loop."""
         print(f"[*] Starting ATLAS Worker Daemon '{self.worker_id}' on '{self.hostname}'")
-        print(f"[*] Database: {self.db_path}")
+        database_url = os.environ.get("ATLAS_DATABASE_URL")
+        database_target = database_url.rsplit("@", maxsplit=1)[-1] if database_url else self.db_path
+        print(f"[*] Database: {database_target}")
         print(f"[*] Capabilities: {', '.join(self.capabilities)}")
 
         # Initialize storage & runtime
-        self.storage = SQLiteStorage(self.db_path)
+        if database_url and database_url.startswith(("postgresql://", "postgres://")):
+            from atlas_storage.postgres import PostgresStorage
+
+            self.storage = PostgresStorage(database_url)
+        else:
+            self.storage = SQLiteStorage(self.db_path)
         self.storage.initialize()
 
         if sys.platform == "win32" and "desktop" in self.capabilities:
@@ -198,9 +205,16 @@ class WorkerDaemon:
         finally:
             # 6. Release lease and restore worker to IDLE
             try:
-                self.runtime.lease_mgr.release_lease(task_id, self.worker_id)
-            except Exception:
-                pass
+                self.runtime.lease_mgr.release_lease(lease.lease_id, self.worker_id)
+            except Exception as exc:
+                logger.error(
+                    "Failed to release worker lease",
+                    extra={
+                        "lease_id": lease.lease_id,
+                        "worker_id": self.worker_id,
+                        "error": str(exc),
+                    },
+                )
             self.runtime.worker_registry.mark_idle(self.worker_id)
 
     async def _cleanup(self) -> None:
@@ -208,8 +222,11 @@ class WorkerDaemon:
         if self.runtime:
             try:
                 self.runtime.worker_registry.mark_disconnected(self.worker_id)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.error(
+                    "Failed to mark worker disconnected",
+                    extra={"worker_id": self.worker_id, "error": str(exc)},
+                )
             await self.runtime.shutdown()
 
 

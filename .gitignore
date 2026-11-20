@@ -12,3 +12,7 @@ build/
 *.db-wal
 .atlas/
 artifacts/
+.env
+.env.production
+.env.cloud
+.env.supabase
