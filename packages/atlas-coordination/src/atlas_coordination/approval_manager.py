@@ -143,6 +143,38 @@ class ApprovalManager:
         self._requests[req_id] = request
         return request
 
+    def restore_request(self, raw_request: ApprovalRequest | dict[str, Any]) -> ApprovalRequest:
+        """Restore a persisted approval only if its cryptographic bindings still match."""
+        request = (
+            raw_request
+            if isinstance(raw_request, ApprovalRequest)
+            else ApprovalRequest.model_validate(raw_request)
+        )
+        parameter_hash = compute_parameter_hash(request.parameters)
+        if parameter_hash != request.parameter_hash:
+            raise ApprovalSecurityError(
+                f"Persisted approval '{request.request_id}' has an invalid parameter hash."
+            )
+        signature = compute_action_signature(
+            task_id=request.task_id,
+            action_id=request.action_id,
+            action_type=request.action_type,
+            parameter_hash=request.parameter_hash,
+            risk_level=request.risk_level,
+            policy_version=request.policy_version,
+        )
+        if signature != request.action_signature:
+            raise ApprovalSecurityError(
+                f"Persisted approval '{request.request_id}' has an invalid action signature."
+            )
+        existing = self._requests.get(request.request_id)
+        if existing and existing != request:
+            raise ApprovalSecurityError(
+                f"Approval request ID collision for '{request.request_id}'."
+            )
+        self._requests[request.request_id] = request
+        return request
+
     def get_request(self, request_id: str) -> ApprovalRequest | None:
         """Fetch request by ID, evaluating expiration if still pending."""
         req = self._requests.get(request_id)

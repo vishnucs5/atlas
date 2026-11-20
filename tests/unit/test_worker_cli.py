@@ -11,8 +11,11 @@ from atlas_storage.sqlite import SQLiteStorage
 
 
 @pytest.mark.asyncio
-async def test_worker_daemon_processing_and_lease(tmp_path: Path) -> None:
+async def test_worker_daemon_processing_and_lease(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Verify WorkerDaemon registers, discovers QUEUED task, executes it, and releases lease."""
+    monkeypatch.setenv("ATLAS_HERMETIC_TEST", "1")
     db_file = tmp_path / "worker_test.db"
     storage = SQLiteStorage(str(db_file))
     storage.initialize()

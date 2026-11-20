@@ -16,7 +16,7 @@ class OpenAICompatibleAdapter(OpenAIAdapter):
         api_key: str | None = None,
         provider_name: str = "openai-compatible",
         client: httpx.AsyncClient | None = None,
-        timeout: float = 60.0,
+        timeout: float = 90.0,
     ) -> None:
         super().__init__(
             model_name=model_name,
@@ -24,6 +24,8 @@ class OpenAICompatibleAdapter(OpenAIAdapter):
             base_url=base_url,
             client=client,
             timeout=timeout,
+            cost_per_1k_input_tokens=0.0,
+            cost_per_1k_output_tokens=0.0,
         )
         self._provider_name = provider_name
 

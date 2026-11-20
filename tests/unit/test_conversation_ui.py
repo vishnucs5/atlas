@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from atlas_cli.conversation.app import ConversationApp
@@ -36,7 +36,12 @@ def test_conversation_header_and_welcome(tmp_path: Path) -> None:
 
     # 2. Model identifier
     model_id = header.get_model_identifier()
-    assert "atlas" in model_id.lower() or "default" in model_id.lower()
+    assert (
+        "atlas" in model_id.lower()
+        or "default" in model_id.lower()
+        or "free" in model_id.lower()
+        or "openrouter" in model_id.lower()
+    )
 
     # 3. Execution mode
     mode = header.get_execution_mode()
@@ -350,23 +355,40 @@ def test_conversation_app_turn_execution(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Verify execute_turn performs planning, verification, and session persistence."""
+    from atlas_core.contracts.model import ModelResponse, TokenUsage
+
     app = ConversationApp(repo_root=tmp_path)
+
+    # Inject mock router for deterministic hermetic unit testing
+    mock_router = MagicMock()
+    mock_router.default_free_model = "openrouter/free"
+    mock_response = ModelResponse(
+        response_id="resp_test_123",
+        request_id="conv_test_123",
+        model_name="openrouter/free",
+        content="Here is the auth module unit test suite.",
+        latency_ms=350,
+        usage=TokenUsage(prompt_tokens=10, completion_tokens=20, total_tokens=30),
+    )
+    mock_router.complete = AsyncMock(return_value=mock_response)
+    app._model_router = mock_router
 
     # Execute a turn
     app.execute_turn("Build unit test suite for auth module")
     out = capsys.readouterr().out
 
-    # Check that tool activities were emitted
-    assert "Exploring repository structure" in out
-    assert "Synthesizing execution plan" in out
-    assert "Verifying deterministic post-conditions" in out
-    assert "Task ID" in out
+    # Check that turn activity badges and response content were emitted
+    assert "Requesting free model" in out
+    assert "Free model responded" in out
+    assert "openrouter/free" in out
+    assert "Here is the auth module unit test suite." in out
 
     # Verify session persisted in SessionManager
     saved = app.sess_mgr.get_session(app.session["session_id"])
     assert saved is not None
     assert len(saved.get("messages", [])) >= 2
     assert saved["messages"][0]["content"] == "Build unit test suite for auth module"
+    assert "Here is the auth module unit test suite." in saved["messages"][1]["content"]
 
 
 # ============================================================================

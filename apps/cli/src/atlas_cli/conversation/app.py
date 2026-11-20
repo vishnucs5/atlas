@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
-import time
+import uuid
 from pathlib import Path
 
 from atlas_coding.engine import CodingEngine
+from atlas_models.router import PaidRoutingBlockedError
 
 from atlas_cli.adapters.client import AtlasClient
 from atlas_cli.conversation.composer import PromptComposer, SlashCommandDispatcher
@@ -53,6 +55,7 @@ class ConversationApp:
             subscriber=self.subscriber,
         )
         self.engine = CodingEngine(repo_root=self.repo_root)
+        self._model_router = None
 
         if session_id:
             existing = self.sess_mgr.get_session(session_id)
@@ -135,127 +138,90 @@ class ConversationApp:
 
         return True
 
+    def _get_model_router(self):
+        """Create the shared strict free-only router when a conversation first needs it."""
+        if self._model_router is None:
+            from atlas_agent.runtime import ProductionRuntime
+
+            self._model_router = ProductionRuntime().router
+        return self._model_router
+
     def execute_turn(self, prompt: str) -> None:
-        """Execute a single conversational coding turn."""
-        print(self.renderer.render_user_prompt(prompt))
-        self.session["messages"].append({"role": "user", "content": prompt})
-
-        # Activity: Exploring & indexing
-        print(
-            self.renderer.render_activity(
-                "Exploring repository structure", str(self.repo_root), status="RUNNING"
-            )
-        )
-        time.sleep(0.04)
-        print(
-            self.renderer.render_activity(
-                "Exploring repository structure", "Done", status="SUCCESS"
-            )
-        )
-
-        # Activity: Planning
-        print(self.renderer.render_activity("Synthesizing execution plan", status="RUNNING"))
-        task = self.engine.create_task(user_request=prompt)
-        self.session["task_id"] = task.task_id
-        self.engine.plan_task(task)
-        time.sleep(0.04)
-
-        steps = task.plan.get("steps", [])
-        print(
-            self.renderer.render_activity(
-                "Execution plan synthesized",
-                f"({len(steps)} verified steps)",
-                status="SUCCESS",
-            )
-        )
-
-        # Action Firewall check
-        can_proceed = self.handle_pending_approvals()
-        if not can_proceed:
-            return
-
-        # Verification step
-        print(
-            self.renderer.render_activity(
-                "Verifying deterministic post-conditions", status="RUNNING"
-            )
-        )
-        self.engine.verify_task(task)
-        time.sleep(0.04)
-        print(
-            self.renderer.render_activity(
-                "Verifying deterministic post-conditions",
-                f"Task `{task.task_id}` verified",
-                status="SUCCESS",
-            )
-        )
+        """Send a conversational turn to the configured free model without fabricating task state."""
+        from atlas_core.contracts.model import ModelMessage, ModelRequest
 
         from atlas_cli.conversation.branding import AegisBranding
 
-        branding = AegisBranding()
+        print(self.renderer.render_user_prompt(prompt))
+        self.session["messages"].append({"role": "user", "content": prompt})
+        router = self._get_model_router()
+        messages = [
+            ModelMessage(role=item["role"], content=item["content"])
+            for item in self.session["messages"][-12:]
+            if item.get("role") in {"user", "assistant"} and isinstance(item.get("content"), str)
+        ]
+        request = ModelRequest(
+            request_id=f"conv_{uuid.uuid4().hex}",
+            task_id=f"conversation_{self.session['session_id']}",
+            model_name="default",
+            messages=messages,
+            system_prompt=(
+                "You are ATLAS. Answer the user directly and accurately. "
+                "Do not claim that files, tests, or actions were completed unless the user sees "
+                "a verified ATLAS action result."
+            ),
+            max_tokens=4096,
+        )
         print(
-            self.renderer.render_execution_tree(
-                task_id=task.task_id,
-                target=str(task.repo_root),
-                policy_status="Action Firewall verified",
-                next_hint="Type /test to run suites or /review to inspect diffs",
-                status="completed",
+            self.renderer.render_activity(
+                "Requesting free model", router.default_free_model, status="RUNNING"
             )
         )
+        try:
+            response = asyncio.run(router.complete(request, fallback=False))
+        except Exception as exc:
+            cause = exc.__cause__ or exc
+            cause_str = str(cause)
+            if "AUTHENTICATION" in cause_str or "denied" in cause_str.lower():
+                detail = "provider denied inference access"
+            elif (
+                "RATE_LIMIT" in cause_str or "429" in cause_str or "rate limit" in cause_str.lower()
+            ):
+                detail = "provider rate limit reached"
+            elif "TIMEOUT" in cause_str or "timed out" in cause_str.lower():
+                detail = "request timed out"
+            elif "FreeModelPriceChangedError" in type(cause).__name__:
+                detail = "model pricing changed from free"
+            elif isinstance(exc, PaidRoutingBlockedError) and exc.__cause__:
+                detail = f"provider error: {exc.__cause__}"
+            elif isinstance(exc, PaidRoutingBlockedError):
+                detail = str(exc)
+            else:
+                detail = type(exc).__name__
+            print(
+                self.renderer.render_activity("Free model request failed", detail, status="FAILED")
+            )
+            print(
+                colorize(
+                    "No task or filesystem action was performed. Check the selected provider's key and account restrictions.",
+                    DIM,
+                )
+            )
+            return
 
-        # Ingest events to subscriber
-        from datetime import UTC, datetime
-
-        from atlas_core.contracts.event import EventType, ExecutionEvent
-
-        events = [
-            ExecutionEvent(
-                event_id=f"ev_{int(time.time())}_1",
-                task_id=task.task_id,
-                sequence=1,
-                event_type=EventType.TASK_CREATED,
-                timestamp=datetime.now(UTC),
-                payload={"objective": prompt},
-                correlation_id=task.task_id,
-            ),
-            ExecutionEvent(
-                event_id=f"ev_{int(time.time())}_2",
-                task_id=task.task_id,
-                sequence=2,
-                event_type=EventType.PLAN_GENERATED,
-                timestamp=datetime.now(UTC),
-                payload=task.plan,
-                correlation_id=task.task_id,
-            ),
-            ExecutionEvent(
-                event_id=f"ev_{int(time.time())}_3",
-                task_id=task.task_id,
-                sequence=3,
-                event_type=EventType.TASK_COMPLETED,
-                timestamp=datetime.now(UTC),
-                payload={"status": "COMPLETED"},
-                correlation_id=task.task_id,
-            ),
-        ]
-        self.subscriber.ingest_batch(events)
-
-        # Render file changes if any
-        changes = getattr(task, "file_changes", [])
-        if changes:
-            print(self.renderer.render_file_changes(changes))
-
-        # Render structured assistant response
-        reply = (
-            f"I have analyzed and verified the objective: **{prompt}**\n\n"
-            f"- **Task ID**: `{task.task_id}`\n"
-            f"- **Target Root**: `{task.repo_root}`\n"
-            f"- **Status**: `{task.status.value}`\n\n"
-            f"All planned steps verified under Action Firewall governance. "
-            f"Type `/test` to run test suites or `/review` to inspect diffs."
+        print(
+            self.renderer.render_activity(
+                "Free model responded",
+                response.model_name,
+                status="SUCCESS",
+                duration_ms=response.latency_ms,
+            )
         )
-
+        reply = response.content or "The provider returned no text response."
+        if response.tool_calls:
+            reply += "\n\nThe model proposed tools, but ATLAS did not execute any action in this conversation turn."
         print()
-        print(branding.render_assistant_marker())
+        print(AegisBranding().render_assistant_marker())
         stream_markdown(reply)
         self.session["messages"].append({"role": "assistant", "content": reply})
         self.sess_mgr.save_session(self.session["session_id"], self.session)

@@ -16,7 +16,6 @@ from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name, guess_lexer
 
 from atlas_cli.adapters.client import AtlasClient
-from atlas_cli.approvals.interactive import format_approval_card
 from atlas_cli.rendering.formatters import (
     BOLD,
     CYAN,
@@ -26,7 +25,6 @@ from atlas_cli.rendering.formatters import (
     RESET,
     YELLOW,
     colorize,
-    render_badge,
     render_banner,
     render_diff,
 )
@@ -149,12 +147,6 @@ class MinimalREPL:
         print(f"  {colorize('/exit', BOLD)} or {colorize('/quit', BOLD)}    Exit minimal mode")
         print("-" * 72)
 
-    def handle_tool_indicator(self, tool_name: str, target: str) -> None:
-        """Render clean tool execution indicator badge."""
-        print(
-            f"\n{render_badge('TOOL', 'primary')} {colorize(tool_name, BOLD)} {colorize(str(target), CYAN)}"
-        )
-
     def handle_file_change_summary(self, changes: list[Any]) -> None:
         """Render file change summary cards."""
         if not changes:
@@ -171,53 +163,19 @@ class MinimalREPL:
             )
 
     def execute_prompt(self, prompt: str) -> None:
-        """Execute an engineering turn within the conversation session."""
+        """Dispatch an engineering turn through the real orchestration runtime."""
         self.session["messages"].append({"role": "user", "content": prompt})
+        from atlas_cli.commands.coding import run_coding_task
 
-        print(colorize(f"\n[ATLAS] Analyzing objective: '{prompt}'...", BOLD + CYAN))
-
-        # Check for approval requests first
-        pending = self.client.list_approvals(status="PENDING")
-        if pending:
-            print(
-                colorize(
-                    f"[!] Action Firewall: {len(pending)} pending action(s) require authorization.",
-                    BOLD + YELLOW,
-                )
-            )
-            for req in pending:
-                print(format_approval_card(req))
-
-        # Synthesize plan via engine
-        task = self.engine.create_task(user_request=prompt)
-        self.engine.plan_task(task)
-
-        steps = task.plan.get("steps", [])
-        print(colorize(f"Synthesized Plan ({len(steps)} steps):", BOLD))
-        for s in steps:
-            risk = s.get("risk_level", "LOW")
-            badge = render_badge(risk, "danger" if risk in ("HIGH", "CRITICAL") else "success")
-            print(f"  * {s.get('name')} {badge}")
-
-        # Simulate responsive tool execution
-        self.handle_tool_indicator("file.explore", self.repo_root)
-        self.handle_tool_indicator("terminal.execute", "test discovery")
-
-        # Execute verified task state
-        self.engine.verify_task(task)
-
-        # Render response
-        reply = (
-            f"**Execution Completed**: Task `{task.task_id}` has been planned and verified.\n\n"
-            f"- **Target Root**: `{task.repo_root}`\n"
-            f"- **Status**: `{task.status.value}`\n"
-            f"- **Verification**: All post-conditions verified deterministically."
+        result = run_coding_task(prompt=prompt, repo_root=self.repo_root)
+        self.session["messages"].append(
+            {
+                "role": "assistant",
+                "content": "Orchestration completed."
+                if result == 0
+                else "Orchestration did not complete.",
+            }
         )
-
-        print(colorize("\nAgent Response:", BOLD + GREEN))
-        stream_text_chunks(render_terminal_markdown(reply))
-
-        self.session["messages"].append({"role": "assistant", "content": reply})
         self.sess_mgr.save_session(self.session["session_id"], self.session)
 
     def run_loop(self) -> int:
@@ -276,9 +234,9 @@ class MinimalREPL:
                     continue
 
                 if prompt == "/approvals":
-                    from atlas_cli.approvals.interactive import run_interactive_approvals
+                    from atlas_cli.commands.approval import run_approval_list
 
-                    run_interactive_approvals(self.client)
+                    run_approval_list()
                     continue
 
                 if prompt == "/sessions":
@@ -337,29 +295,15 @@ def run_minimal(
 
     # 2. If objective supplied -> single-shot execution
     if objective:
-        client = AtlasClient()
-        is_complex = any(k in objective.lower() for k in ["dag", "multi-agent", "specialist"])
-        if is_complex:
-            result = client.submit_multi_agent_dag(objective, execute_async=False)
-        else:
-            result = client.submit_task(objective, wait=True)
-
-        if "error" in result:
-            print(colorize(f"FAILED: {result['error']}", RED), file=sys.stderr)
-            return 1
-
         if json_output:
-            import json
-
-            print(json.dumps(result, indent=2))
-        else:
-            status = result.get("status", "COMPLETED")
-            task_id = result.get("task_id", "")
-            output = (
-                result.get("metadata", {}).get("output") or result.get("message") or "Completed"
+            print(
+                "JSON output is unavailable for local orchestration; use 'atlas task inspect <id>'.",
+                file=sys.stderr,
             )
-            print(f"[{colorize(status, GREEN)}] {task_id}: {output}")
-        return 0
+            return 2
+        from atlas_cli.commands.coding import run_coding_task
+
+        return run_coding_task(prompt=objective, repo_root=os.getcwd())
 
     # 3. Interactive REPL mode
     repl = MinimalREPL(session_id=session_id)

@@ -210,6 +210,7 @@ class AutonomousAgentLoop:
                     try:
                         self._approval_mgr.validate_action(req_id, action)
                         self._approval_mgr.mark_consumed(req_id)
+                        task.metadata.pop("pending_approval", None)
                     except Exception as sec_err:
                         await self._emit_event(
                             task.task_id,
@@ -471,6 +472,8 @@ class AutonomousAgentLoop:
                 if req_id:
                     action_data["_approval_request_id"] = req_id
                 task.metadata["pending_approval_action"] = action_data
+                if self._approval_mgr and req_id:
+                    task.metadata["pending_approval"] = req.model_dump(mode="json")
 
                 payload: dict[str, Any] = {
                     "action_id": action.action_id,

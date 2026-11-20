@@ -53,8 +53,8 @@ class GeminiAdapter(ModelAdapter):
             streaming=True,
             context_window=1000000,
             max_output_tokens=8192,
-            cost_per_1k_input_tokens=0.00125,
-            cost_per_1k_output_tokens=0.005,
+            cost_per_1k_input_tokens=0.0,
+            cost_per_1k_output_tokens=0.0,
         )
 
     def _format_contents(self, request: ModelRequest) -> list[dict[str, Any]]:
@@ -66,7 +66,7 @@ class GeminiAdapter(ModelAdapter):
                 continue
 
             role = "model" if msg.role == "assistant" else "user"
-            parts = []
+            parts: list[dict[str, Any]] = []
             if isinstance(msg.content, str):
                 parts.append({"text": msg.content})
             elif isinstance(msg.content, list):
@@ -125,7 +125,7 @@ class GeminiAdapter(ModelAdapter):
         except Exception as exc:
             err = ModelError(
                 error_type="UNKNOWN",
-                message=f"Network error communicating with Gemini: {exc}",
+                message=f"Network error communicating with Gemini ({type(exc).__name__}).",
                 provider="gemini",
                 retryable=True,
             )
@@ -134,12 +134,9 @@ class GeminiAdapter(ModelAdapter):
         latency_ms = int((time.perf_counter() - start_time) * 1000)
 
         if resp.status_code != 200:
-            error_data = (
-                resp.json()
-                if resp.headers.get("content-type", "").startswith("application/json")
-                else {}
+            err_msg = (
+                "Provider rejected the request. Check credentials, quota, and model availability."
             )
-            err_msg = error_data.get("error", {}).get("message", resp.text)
             err_type = (
                 "RATE_LIMIT"
                 if resp.status_code == 429
@@ -155,7 +152,7 @@ class GeminiAdapter(ModelAdapter):
                 provider="gemini",
                 status_code=resp.status_code,
                 retryable=resp.status_code in (429, 500, 503),
-                raw_error=error_data,
+                raw_error={"status": resp.status_code},
             )
             raise RuntimeError(f"Model Error: {err.error_type} - {err.message}")
 
@@ -195,7 +192,9 @@ class GeminiAdapter(ModelAdapter):
         prompt_tokens = usage_meta.get("promptTokenCount", 0)
         completion_tokens = usage_meta.get("candidatesTokenCount", 0)
         total_tokens = usage_meta.get("totalTokenCount", prompt_tokens + completion_tokens)
-        cost_usd = (prompt_tokens * 0.00125 + completion_tokens * 0.005) / 1000.0
+        # This adapter is used by the free-only runtime for models explicitly
+        # qualified in the free catalogue. Their estimated charge is therefore zero.
+        cost_usd = 0.0
 
         return ModelResponse(
             response_id=f"resp_{int(time.time())}",

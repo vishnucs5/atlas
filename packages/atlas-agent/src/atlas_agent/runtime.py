@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -50,7 +51,7 @@ class QueueBackpressureError(Exception):
 
 
 class HermeticFallbackAdapter(ModelAdapter):
-    """Hermetic local fallback adapter used when no external API credentials are provided."""
+    """Hermetic local fallback adapter used in unit tests when ATLAS_HERMETIC_TEST=1."""
 
     @property
     def name(self) -> str:
@@ -74,42 +75,7 @@ class HermeticFallbackAdapter(ModelAdapter):
             if m.content:
                 obj_text += str(m.content) + " "
 
-        lower_obj = obj_text.lower()
-        if any(
-            k in lower_obj for k in ["vector", "latency", "benchmark", "p95", "p99", "distribution"]
-        ):
-            content = (
-                "### Vector Database Latency Benchmark Analysis\n\n"
-                "**Dataset Analyzed**: 100,000 similarity search queries (768-dim embeddings)\n\n"
-                "**Calculated Latency Percentiles**:\n"
-                "- **p50 (Median)**: 12.4 ms\n"
-                "- **p90**: 21.8 ms\n"
-                "- **p95**: 28.7 ms (Target SLA: < 50.0 ms — PASSED)\n"
-                "- **p99**: 45.2 ms (Target SLA: < 100.0 ms — PASSED)\n"
-                "- **Max Latency**: 78.1 ms\n\n"
-                "**Generated Visualization Script** (`scripts/plot_benchmark.py`):\n"
-                "```python\n"
-                "import matplotlib.pyplot as plt\n\n"
-                "percentiles = ['p50', 'p90', 'p95', 'p99']\n"
-                "latencies = [12.4, 21.8, 28.7, 45.2]\n"
-                "plt.figure(figsize=(8, 4))\n"
-                "plt.bar(percentiles, latencies, color='royalblue')\n"
-                "plt.axhline(50, color='red', linestyle='--', label='p95 SLA (50ms)')\n"
-                "plt.axhline(100, color='darkred', linestyle=':', label='p99 SLA (100ms)')\n"
-                "plt.ylabel('Latency (ms)')\n"
-                "plt.title('Vector Database Query Latency Distribution')\n"
-                "plt.legend()\n"
-                "plt.tight_layout()\n"
-                "plt.savefig('artifacts/vector_benchmark_latency.png')\n"
-                "```\n\n"
-                "**Test Assertions Verified**:\n"
-                "- `assert p95 < 50.0`: **PASSED** (28.7 ms < 50.0 ms)\n"
-                "- `assert p99 < 100.0`: **PASSED** (45.2 ms < 100.0 ms)\n"
-                "- `assert len(dataset) == 100000`: **PASSED**\n"
-                "- State transition invariant verified: RUNNING -> VERIFYING -> COMPLETED"
-            )
-        else:
-            content = f"Task objective processed and verified successfully: {obj_text.strip()[:120] if obj_text.strip() else 'Objective completed.'}"
+        content = f"Task objective processed and verified successfully: {obj_text.strip()[:120] if obj_text.strip() else 'Objective completed.'}"
 
         return ModelResponse(
             response_id=f"res_{uuid.uuid4().hex[:8]}",
@@ -181,9 +147,95 @@ class ProductionRuntime(AtlasRuntime):
         # Model routing & Planning
         if model_router is not None:
             self.router = model_router
+        elif os.environ.get("ATLAS_HERMETIC_TEST") == "1":
+            hermetic_adapter = HermeticFallbackAdapter()
+            self.router = ModelRouter(
+                free_only=True,
+                allowed_free_models={"hermetic-default", "openrouter/free"},
+                default_free_model="hermetic-default",
+            )
+            self.router.register_adapter(hermetic_adapter, priority=100)
         else:
-            self.router = ModelRouter()
-            self.router.register_adapter(HermeticFallbackAdapter(), priority=0)
+            allowed_free_models: set[str] = set()
+            default_free_model = os.environ.get("ATLAS_DEFAULT_MODEL")
+            from atlas_models.credentials import get_credential
+            from atlas_models.free_inventory import load_cached_free_ids, load_selected_model
+
+            if not default_free_model:
+                try:
+                    default_free_model = load_selected_model()
+                except ValueError:
+                    logger.exception(
+                        "ATLAS model configuration is malformed; using the safe OpenRouter Free default."
+                    )
+                    default_free_model = "openrouter/free"
+
+            self.router = ModelRouter(
+                free_only=True,
+                allowed_free_models=allowed_free_models,
+                default_free_model=default_free_model,
+            )
+
+            openrouter_key = get_credential("openrouter")
+            if openrouter_key:
+                from atlas_models.adapters.openai_compatible import OpenAICompatibleAdapter
+
+                openrouter_adapter = OpenAICompatibleAdapter(
+                    model_name="openrouter/free",
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=openrouter_key,
+                    provider_name="openrouter",
+                )
+                self.router.register_adapter(openrouter_adapter, priority=100)
+                allowed_free_models.add("openrouter/free")
+                try:
+                    discovered_ids = load_cached_free_ids()
+                except ValueError:
+                    logger.exception(
+                        "Ignoring malformed OpenRouter free inventory cache; exact free route remains available."
+                    )
+                    discovered_ids = ()
+                from atlas_models.openrouter_free import OpenRouterFreeAdapter
+
+                for discovered_model_id in discovered_ids:
+                    self.router.register_adapter(
+                        OpenRouterFreeAdapter(
+                            model_name=discovered_model_id,
+                            base_url="https://openrouter.ai/api/v1",
+                            api_key=openrouter_key,
+                            provider_name="openrouter",
+                        ),
+                        priority=90,
+                    )
+                    allowed_free_models.add(discovered_model_id)
+
+            gemini_key = get_credential("google")
+            gemini_attested = os.environ.get("ATLAS_GEMINI_FREE_TIER_ATTESTED") == "1"
+            if gemini_key and gemini_attested:
+                from atlas_models.adapters.gemini import GeminiAdapter
+
+                for model_id in ("gemini-2.5-flash", "gemini-2.5-flash-lite"):
+                    self.router.register_adapter(
+                        GeminiAdapter(model_name=model_id, api_key=gemini_key), priority=50
+                    )
+                    allowed_free_models.add(model_id)
+            cloudflare_token = get_credential("cloudflare")
+            cloudflare_account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
+            cloudflare_attested = os.environ.get("ATLAS_CLOUDFLARE_WORKERS_FREE_ATTESTED") == "1"
+            if cloudflare_token and cloudflare_account_id and cloudflare_attested:
+                from atlas_models.adapters.cloudflare import CloudflareWorkersAIAdapter
+
+                cloudflare_model = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+                self.router.register_adapter(
+                    CloudflareWorkersAIAdapter(
+                        api_token=cloudflare_token,
+                        account_id=cloudflare_account_id,
+                        model_name=cloudflare_model,
+                    ),
+                    priority=40,
+                )
+                allowed_free_models.add(cloudflare_model)
+            self.router.allowed_free_models = allowed_free_models
         self.planner = planner or StructuredPlanner()
         self.context_mgr = context_manager or ContextManager()
         self.state_machine = TaskStateMachine()
@@ -648,6 +700,8 @@ class ProductionRuntime(AtlasRuntime):
         sess_id = session.session_id if session else None
 
         if task.status == TaskStatus.WAITING_APPROVAL:
+            task.metadata.pop("pending_approval_action", None)
+            task.metadata.pop("pending_approval", None)
             await self._transition_task(
                 task,
                 TaskStatus.FAILED,

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://atlas.dev/schemas/free-model-catalogue-v1.json",
+  "version": "1.1.0",
+  "last_audit_date": "2026-11-20T00:00:00Z",
+  "default_model": "openrouter/free",
+  "providers": {
+    "openrouter": {
+      "display_name": "OpenRouter Free",
+      "signup_url": "https://openrouter.ai/keys",
+      "env_var": "OPENROUTER_API_KEY",
+      "approved_origins": ["https://openrouter.ai"],
+      "approved_api_bases": ["https://openrouter.ai/api/v1"],
+      "account_billing_policy": "Use the free route only; dynamic free provider inventory is discovered without enabling paid IDs.",
+      "inventory_source": {
+        "url": "https://openrouter.ai/api/v1/models",
+        "method": "GET",
+        "auth": "optional OPENROUTER_API_KEY",
+        "refresh_interval_minutes": 60,
+        "eligibility_filter": "Exact openrouter/free route, or provider-declared free ID with every price explicitly zero"
+      },
+      "models": [
+        {
+          "id": "openrouter/free",
+          "name": "OpenRouter Free Meta-Router",
+          "provider": "openrouter",
+          "classification": "dynamic_meta_router",
+          "availability_class": "community_free",
+          "context_window": "dynamic",
+          "max_output_tokens": "dynamic",
+          "capabilities": "dynamic",
+          "eligibility_status": "FREE_VERIFIED",
+          "official_verification_sources": [
+            "https://openrouter.ai/collections/free-models/",
+            "https://openrouter.ai/docs/api/api-reference/api-keys/get-current-key"
+          ],
+          "verification_date": "2026-11-20T00:00:00Z",
+          "review_expiry": "2026-12-20T00:00:00Z",
+          "privacy_disclosure": "Underlying free community endpoints have their own data retention and privacy policies.",
+          "billing_and_overage_policy": "Only the exact free meta-route is enabled. Never retry through paid IDs.",
+          "is_default": true
+        }
+      ]
+    },
+    "google": {
+      "display_name": "Google AI Studio",
+      "signup_url": "https://aistudio.google.com/app/apikey",
+      "env_var": "GEMINI_API_KEY",
+      "approved_origins": ["https://generativelanguage.googleapis.com"],
+      "approved_api_bases": ["https://generativelanguage.googleapis.com/v1beta"],
+      "account_billing_policy": "Require explicit free-tier attestation; inference free tier and privacy limits apply.",
+      "inventory_source": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/models",
+        "method": "GET",
+        "auth": "GEMINI_API_KEY via x-goog-api-key header",
+        "refresh_interval_minutes": 1440,
+        "eligibility_filter": "Model is in approved free inference set and available to the attested free-tier project"
+      },
+      "models": [
+        {
+          "id": "gemini-2.5-flash",
+          "name": "Gemini 2.5 Flash",
+          "provider": "google",
+          "context_window": 1000000,
+          "max_output_tokens": 8192,
+          "capabilities": ["coding", "reasoning", "general", "vision", "tools"],
+          "pricing": {"input": 0.0, "output": 0.0},
+          "eligibility_status": "FREE_VERIFIED",
+          "official_verification_sources": ["https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash"],
+          "verification_date": "2026-11-20T00:00:00Z",
+          "review_expiry": "2026-12-20T00:00:00Z",
+          "privacy_disclosure": "Free-tier prompts and responses may be reviewed by humans and used to improve Google products.",
+          "billing_and_overage_policy": "Requires ATLAS_GEMINI_FREE_TIER_ATTESTED=1; auxiliary services remain blocked."
+        },
+        {
+          "id": "gemini-2.5-flash-lite",
+          "name": "Gemini 2.5 Flash-Lite",
+          "provider": "google",
+          "context_window": 1000000,
+          "max_output_tokens": 8192,
+          "capabilities": ["coding", "general", "vision", "tools"],
+          "pricing": {"input": 0.0, "output": 0.0},
+          "eligibility_status": "FREE_VERIFIED",
+          "official_verification_sources": ["https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-lite"],
+          "verification_date": "2026-11-20T00:00:00Z",
+          "review_expiry": "2026-12-20T00:00:00Z",
+          "privacy_disclosure": "Free-tier prompts and responses may be used to improve Google products.",
+          "billing_and_overage_policy": "Requires ATLAS_GEMINI_FREE_TIER_ATTESTED=1; auxiliary services remain blocked."
+        }
+      ]
+    },
+    "cloudflare": {
+      "display_name": "Cloudflare Workers AI",
+      "signup_url": "https://dash.cloudflare.com/profile/api-tokens",
+      "env_var": "CLOUDFLARE_API_TOKEN",
+      "approved_origins": ["https://api.cloudflare.com"],
+      "approved_api_bases": ["https://api.cloudflare.com/client/v4"],
+      "required_account_config": ["CLOUDFLARE_ACCOUNT_ID"],
+      "account_billing_policy": "Require Workers Free plan attestation; stop at the daily free allocation and never permit overages.",
+      "inventory_source": {
+        "url": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/models/search",
+        "method": "GET",
+        "auth": "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID",
+        "refresh_interval_minutes": 1440,
+        "eligibility_filter": "Exact model is available and user attests to Workers Free plan hard cap"
+      },
+      "models": [
+        {
+          "id": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "name": "Cloudflare Llama 3.3 70B",
+          "provider": "cloudflare",
+          "context_window": 24000,
+          "max_output_tokens": 4096,
+          "capabilities": ["general", "coding"],
+          "pricing": {"inference_on_workers_free": 0.0},
+          "eligibility_status": "FREE_VERIFIED",
+          "official_verification_sources": ["https://developers.cloudflare.com/workers-ai/platform/pricing/"],
+          "verification_date": "2026-11-20T00:00:00Z",
+          "review_expiry": "2026-12-20T00:00:00Z",
+          "privacy_disclosure": "Workers AI model inference data retention follows Cloudflare Workers AI terms.",
+          "billing_and_overage_policy": "Requires CLOUDFLARE_ACCOUNT_ID and ATLAS_CLOUDFLARE_WORKERS_FREE_ATTESTED=1."
+        }
+      ]
+    }
+  }
+}

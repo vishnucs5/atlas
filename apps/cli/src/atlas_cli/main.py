@@ -32,6 +32,9 @@ from atlas_cli.commands.init import run_init
 from atlas_cli.commands.models import (
     run_models_configure,
     run_models_list,
+    run_models_refresh,
+    run_models_remove,
+    run_models_test,
     run_models_use,
 )
 from atlas_cli.commands.runtime import (
@@ -146,13 +149,19 @@ def create_parser() -> argparse.ArgumentParser:
     # Command: atlas test
     subparsers.add_parser("test", help="Dispatch QA specialist to run deterministic test suite")
 
-    # Command: atlas models (list, use, configure)
+    # Command: atlas models (free-only catalog and credential governance)
     models_parser = subparsers.add_parser("models", help="Model adapter management")
     models_sub = models_parser.add_subparsers(dest="models_command", help="Models subcommands")
-    models_sub.add_parser("list", help="List registered and available model adapters")
+    models_sub.add_parser("list", help="List eligible zero-cost model routes")
     m_use = models_sub.add_parser("use", help="Switch default active model")
-    m_use.add_argument("model_name", type=str, help="Model name or identifier (e.g. openai/gpt-4o)")
-    models_sub.add_parser("configure", help="Configure model credentials and provider keys")
+    m_use.add_argument("model_name", type=str, help="Exact free catalog model ID")
+    m_configure = models_sub.add_parser("configure", help="Configure a free provider key")
+    m_configure.add_argument("provider", nargs="?", help="openrouter, google, or cloudflare")
+    m_test = models_sub.add_parser("test", help="Run a non-billable provider metadata probe")
+    m_test.add_argument("provider", help="Provider ID")
+    m_remove = models_sub.add_parser("remove", help="Remove a keyring credential")
+    m_remove.add_argument("provider", help="Provider ID")
+    models_sub.add_parser("refresh", help="Inspect current OpenRouter free model inventory")
 
     # Command: atlas agents (list, inspect, run)
     agents_parser = subparsers.add_parser("agents", help="Specialist agent fleet management")
@@ -539,7 +548,13 @@ def main(argv: list[str] | None = None) -> int:
         if getattr(args, "models_command", None) == "use":
             return run_models_use(args.model_name)
         if getattr(args, "models_command", None) == "configure":
-            return run_models_configure()
+            return run_models_configure(args.provider)
+        if getattr(args, "models_command", None) == "test":
+            return run_models_test(args.provider)
+        if getattr(args, "models_command", None) == "remove":
+            return run_models_remove(args.provider)
+        if getattr(args, "models_command", None) == "refresh":
+            return run_models_refresh()
         parser.parse_args(["models", "--help"])
         return 0
 
@@ -602,9 +617,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "permissions":
         return run_permissions()
     if args.command == "approvals":
-        from atlas_cli.approvals.interactive import run_interactive_approvals
-
-        return run_interactive_approvals()
+        return run_approval_list()
     if args.command == "status":
         return run_status()
     if args.command == "doctor":

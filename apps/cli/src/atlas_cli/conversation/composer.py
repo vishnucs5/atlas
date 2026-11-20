@@ -27,7 +27,8 @@ SLASH_COMMANDS = {
     "/help": "Display interactive command guide and shortcuts",
     "/status": "Inspect workspace, git porcelain, and platform status",
     "/model": "Display or switch active model provider",
-    "/models": "List available model providers and capabilities",
+    "/models": "List, refresh, select, or configure free model providers",
+    "/run": "Dispatch an objective through the full agent orchestration runtime",
     "/plan": "Synthesize a multi-step execution plan without modifying files",
     "/review": "Perform Action Firewall and git diff code review",
     "/debug": "Diagnose runtime errors and environment anomalies",
@@ -50,6 +51,7 @@ class SlashCompleter(Completer):
     COMMANDS = [
         ("/help", "Display interactive command guide and shortcuts"),
         ("/plan", "Synthesize execution plan without modifying files"),
+        ("/run", "Dispatch a task through model, firewall, driver, and verification"),
         ("/test", "Discover and execute repository test suites"),
         ("/review", "Perform Action Firewall and git diff review"),
         ("/status", "Inspect workspace, git porcelain, and health"),
@@ -77,7 +79,7 @@ class PromptComposer:
         self,
         repo_name: str = "workspace",
         branch: str = "main",
-        model: str = "atlas:hermetic-default",
+        model: str = "openrouter/free",
     ) -> None:
         self.history: list[str] = []
         self.repo_name = repo_name
@@ -304,9 +306,27 @@ class SlashCommandDispatcher:
             return True
 
         if cmd in ("/model", "/models"):
-            from atlas_cli.commands.models import run_models_list, run_models_use
+            from atlas_cli.commands.models import (
+                run_models_configure,
+                run_models_list,
+                run_models_refresh,
+                run_models_remove,
+                run_models_test,
+                run_models_use,
+            )
 
-            if arg:
+            action, _, value = arg.partition(" ")
+            if action == "use" and value:
+                run_models_use(value.strip())
+            elif action == "configure":
+                run_models_configure(value.strip() or None)
+            elif action == "test" and value:
+                run_models_test(value.strip())
+            elif action == "remove" and value:
+                run_models_remove(value.strip())
+            elif action == "refresh":
+                run_models_refresh()
+            elif arg:
                 run_models_use(arg)
             else:
                 run_models_list()
@@ -319,6 +339,15 @@ class SlashCommandDispatcher:
                 from atlas_cli.commands.coding import run_plan
 
                 run_plan(goal=arg)
+            return True
+
+        if cmd == "/run":
+            if not arg:
+                print(colorize("Usage: /run <objective>", YELLOW))
+            else:
+                from atlas_cli.commands.coding import run_coding_task
+
+                run_coding_task(prompt=arg, repo_root=self.repo_root)
             return True
 
         if cmd == "/review":

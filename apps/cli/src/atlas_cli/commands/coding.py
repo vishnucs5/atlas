@@ -1,5 +1,6 @@
 """Coding and software engineering CLI commands for ATLAS."""
 
+import asyncio
 from pathlib import Path
 
 from atlas_coding.engine import CodingEngine
@@ -8,8 +9,11 @@ from atlas_coding.git import GitPorcelain
 from atlas_coding.planner import CodingPlanner
 from atlas_coding.terminal import AuthorizedTerminalDriver
 from atlas_coding.test_runner import TestRunner
+from atlas_core.contracts.task import TaskRequest, TaskStatus
+from atlas_storage import SQLiteStorage
 
 from atlas_cli.adapters.client import AtlasClient
+from atlas_cli.config import get_atlas_dir, get_db_path
 from atlas_cli.rendering.formatters import (
     BOLD,
     CYAN,
@@ -21,7 +25,6 @@ from atlas_cli.rendering.formatters import (
     render_badge,
     render_diff,
 )
-from atlas_cli.sessions.manager import SessionManager
 
 
 def run_coding_task(
@@ -29,80 +32,59 @@ def run_coding_task(
     client: AtlasClient | None = None,
     repo_root: str | Path | None = None,
 ) -> int:
-    """Execute direct autonomous coding prompt with CodingEngine orchestration."""
+    """Execute a task through ATLAS's real model, firewall, driver, and verification loop."""
+    from atlas_agent.runtime import ProductionRuntime
+
     root_path = Path(repo_root or ".").resolve()
-    sess_mgr = SessionManager()
-
     print(colorize(f"\n[ATLAS CODING] Objective: {prompt}", BOLD + CYAN))
-    print(colorize("Initializing Autonomous Coding Engine...", DIM))
+    print(colorize("Dispatching to the ATLAS orchestration runtime...", DIM))
 
-    session = sess_mgr.create_session(objective=prompt)
-    engine = CodingEngine(repo_root=root_path, auto_approve=True)
-
-    # Create task and construct plan
-    task = engine.create_task(user_request=prompt)
-    session["task_id"] = task.task_id
-    engine.plan_task(task)
-
-    plan = task.plan
-    steps = plan.get("steps", [])
-    print(colorize(f"\nStructured Plan ({len(steps)} steps):", BOLD))
-    for s in steps:
-        risk_badge = render_badge(
-            s.get("risk_level", "LOW"),
-            "danger" if s.get("risk_level") in ("HIGH", "CRITICAL") else "success",
-        )
-        print(f"  [{s.get('step_id')}] {colorize(s.get('name', ''), BOLD)} {risk_badge}")
-        print(f"      {colorize(s.get('description', ''), DIM)}")
-
-    # Check if remote multi-agent DAG client execution is configured
-    client = client or AtlasClient()
-    is_dag = any(
-        k in prompt.lower()
-        for k in ["backend", "refactor", "build", "api", "multi-agent", "benchmark"]
+    atlas_dir = get_atlas_dir()
+    atlas_dir.mkdir(parents=True, exist_ok=True)
+    runtime = ProductionRuntime(
+        storage=SQLiteStorage(str(get_db_path())),
+        artifacts_dir=root_path / "artifacts",
     )
-    if is_dag:
-        try:
-            res = client.submit_multi_agent_dag(prompt, execute_async=False)
-            task_id = res.get("task_id", task.task_id)
-            session["task_id"] = task_id
+    try:
+        task = asyncio.run(
+            runtime.submit_task(
+                TaskRequest(
+                    objective=prompt,
+                    metadata={"workspace_root": str(root_path)},
+                )
+            )
+        )
+    except Exception as exc:
+        print(colorize(f"\nERROR: Orchestration failed to start: {type(exc).__name__}", RED))
+        return 1
+    finally:
+        asyncio.run(runtime.shutdown())
 
-            if "error" in res:
-                print(colorize(f"\n✗ Execution failed: {res['error']}", RED))
-                session["status"] = "FAILED"
-                sess_mgr.save_session(session["session_id"], session)
-                return 1
-
-            print(colorize(f"\n✓ Multi-Agent Execution Completed: {task_id}", BOLD + GREEN))
-            graph = res.get("graph", {})
-            nodes = graph.get("nodes", {})
-            for _nid, node in nodes.items():
-                name = node.get("name")
-                cap = node.get("required_capability")
-                out = node.get("output", {})
-                print(f"\n* {colorize(name, BOLD)} {render_badge(cap, 'primary')}:")
-                out_str = str(out)
-                if len(out_str) > 200:
-                    print(f"  {out_str[:200]}...")
-                else:
-                    print(f"  {out_str}")
-
-            session["status"] = "COMPLETED"
-            session["deliverables"] = nodes
-            sess_mgr.save_session(session["session_id"], session)
-            return 0
-        except Exception:
-            # Fallback to local execution verification
-            pass
-
-    # Deterministic verification of current workspace state
-    engine.verify_task(task)
-    print(colorize(f"\n✓ Task Verified: {task.task_id}", BOLD + GREEN))
-    print(colorize(f"Target repository: {task.repo_root}", DIM))
-    session["status"] = task.status.value
-    session["deliverables"] = task.verification_evidence
-    sess_mgr.save_session(session["session_id"], session)
-    return 0
+    print(f"\nTask: {task.task_id}")
+    print(f"Status: {task.status.value}")
+    if task.status == TaskStatus.COMPLETED:
+        output = task.metadata.get("output") or task.metadata.get("result")
+        if output:
+            print("\n" + str(output))
+        print(
+            colorize("\nCOMPLETED: Orchestration finished with runtime verification.", BOLD + GREEN)
+        )
+        return 0
+    if task.status == TaskStatus.WAITING_APPROVAL:
+        print(
+            colorize(
+                "\nAction approval is required. Review it with 'atlas approvals' before resuming the task.",
+                YELLOW,
+            )
+        )
+        return 0
+    print(
+        colorize(
+            "\nFAILED: The task did not complete. Review task events and provider configuration before retrying.",
+            RED,
+        )
+    )
+    return 1
 
 
 def run_plan(

@@ -95,6 +95,51 @@ async def test_openai_adapter_completion_and_tools():
 
 
 @pytest.mark.asyncio
+async def test_openai_adapter_reasoning_fallback():
+    """Verify OpenAIAdapter extracts thinking/reasoning when content is empty."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "id": "chatcmpl-reasoning-123",
+                "object": "chat.completion",
+                "model": "nvidia/nemotron-3.5-lightning:free",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": None,
+                            "reasoning": "Here is the reasoning plan and code solution.",
+                        },
+                        "finish_reason": "length",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 100,
+                    "completion_tokens": 50,
+                    "total_tokens": 150,
+                },
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    adapter = OpenAIAdapter(api_key="test-key", client=client)
+
+    req = ModelRequest(
+        request_id="req_oai_reasoning",
+        task_id="task_oai_reasoning",
+        model_name="nvidia/nemotron-3.5-lightning:free",
+        messages=[ModelMessage(role="user", content="Plan architecture")],
+    )
+
+    resp = await adapter.complete(req)
+    assert resp.content == "Here is the reasoning plan and code solution."
+    assert resp.raw_finish_reason == "length"
+
+
+@pytest.mark.asyncio
 async def test_openai_adapter_rate_limit_error():
     """Verify OpenAIAdapter normalizes 429 rate limit errors."""
 

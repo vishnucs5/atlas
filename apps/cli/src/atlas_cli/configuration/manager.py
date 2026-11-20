@@ -8,7 +8,7 @@ from typing import Any
 DEFAULT_CONFIG: dict[str, Any] = {
     "api_url": "http://127.0.0.1:8000",
     "api_key": "admin-key",
-    "default_model": "atlas:hermetic-default",
+    "default_model": "openrouter/free",
     "timeout_seconds": 30.0,
     "output_format": "text",
     "default_mode": "minimal",

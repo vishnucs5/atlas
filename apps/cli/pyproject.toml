@@ -27,6 +27,7 @@ classifiers = [
 ]
 keywords = ["agent", "cli", "coding-agent", "autonomous", "mcp", "developer-tools"]
 dependencies = [
+    "atlas-models",
     "cryptography>=50.0.2",
     "httpx>=0.27.0",
     "playwright>=1.40.0",
@@ -38,6 +39,9 @@ dependencies = [
     "pygments>=2.17.0",
     "rich>=13.0.0",
 ]
+
+[tool.uv.sources]
+atlas-models = { workspace = true }
 
 [project.urls]
 Homepage = "https://github.com/atlas-org/atlas"

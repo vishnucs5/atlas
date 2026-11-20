@@ -1026,3 +1026,28 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Workstream 6: CLI Integration & Default Experience**: Updated `apps/cli/src/atlas_cli/main.py` so standard interactive invocation (`atlas` or `atlas --tui`) launches the conversation-first interface by default.
 - [x] **Workstream 7: Comprehensive Verification**: Added 10/10 dedicated unit tests in `tests/unit/test_conversation_ui.py`, verified all 22 CLI unit tests pass, 0 ruff errors, and 0 mypy issues.
 
+# Workstream: Free Cloud Models Only — First Runtime Slice Implemented
+
+**Status (2026-11-20):** Sections 1–4 are specified. Runtime enforces exact free model IDs with no cross-provider fallback, supports OpenRouter Free, attested Gemini 2.5 Flash/Flash-Lite, and attested Cloudflare Workers AI. The CLI includes keyring credential operations, non-generation probes, and dynamic OpenRouter inventory refresh; cached exact `:free` IDs expire after one hour and their full live pricing metadata is rechecked before inference. Secure-file fallback and automated verification remain incomplete. No tests were added or run.
+
+## Gate 0: Reconcile Plan With Approved Architecture
+- [x] Define dynamic catalog discovery, source timestamps, all-zero pricing filters, promotion expiry, and the enabled-source coverage boundary.
+- [x] Define dynamic-router capability/limit metadata, a `PRESENT_UNVERIFIED` credential state, billing entitlement state, and `FORBIDDEN` separately from invalid credentials.
+- [x] Allow exactly `openrouter/free` as the dynamic meta-router exception; preserve exact ID checks for fixed models.
+- [x] Remove credential-fragment masking and impossible Python string zeroization guarantees. Use fixed `[configured]` presentation and never log credential fragments.
+- [x] Require explicit consent before plaintext credential-file fallback; fail closed if POSIX permissions or Windows owner-only DACL cannot be established.
+- [x] Use Google `x-goog-api-key` header, OpenRouter `GET /api/v1/key`, and require Cloudflare account ID plus least-privilege token permissions.
+- [x] Replace fixed quota assumptions with provider evidence and account-specific uncertainty; audit provider policy, model ID, privacy, and billing evidence before marking any provider `FREE_VERIFIED`.
+- [x] Add Sections 3–4 requirements: bounded retries, no silent fallback, unknown completion outcome, auxiliary-service quarantine, ActionFirewall separation, CLI/TUI behavior, and deterministic mocked transport tests.
+- [x] Record that OpenCode's own free inference cannot be called by third-party clients; use its changing catalog as a UX reference and include an offer only when ATLAS has a separately verified zero-cost route.
+- [x] Discover Groq's active model IDs without reviving shut-down Llama IDs; keep Groq entries blocked until current Free-tier billing and account entitlement are audited.
+
+## Gate 1: Implement and Verify
+- [x] Add validated catalogue contracts and exact-ID free-only routing; prevent provider/model fallback in strict mode.
+- [~] Add OpenRouter, Gemini, and Cloudflare free-tier runtime adapters; Cloudflare eligibility depends on required user account-plan attestation and is not independently proven by its metadata probe.
+- [~] Add environment-then-keyring credential lookup, hidden CLI entry, non-generation probes, and fixed-marker secret masking; secure-file consent fallback remains outstanding.
+- [x] Integrate free-only eligibility into the existing `ModelRouter`; preserve the existing `ActionFirewall` as the execution authorization boundary.
+- [x] Add OpenRouter dynamic inventory inspection, one-hour cache persistence, runtime registration of exact discovered `:free` IDs, and live zero-price preflight before every completion.
+- [ ] Add the deterministic verification matrix defined in the specification. Do not use live credentials or paid endpoints in tests.
+- [x] Update this plan and `docs/PROJECT_STATUS.md` with actual implementation status; the workstream remains partial pending the items above.
+

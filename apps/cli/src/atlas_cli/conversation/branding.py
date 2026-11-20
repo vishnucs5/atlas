@@ -167,7 +167,7 @@ class AegisBranding:
         self,
         repo_path: str,
         branch: str,
-        model: str = "atlas:hermetic-default",
+        model: str = "openrouter/free",
         mode: str = "Local",
         status: str = "Ready",
         width: int | None = None,
@@ -289,7 +289,7 @@ class AegisBranding:
         self,
         repo_path: str,
         branch: str,
-        model: str = "atlas:hermetic-default",
+        model: str = "openrouter/free",
         mode: str = "Local",
         status: str = "Ready",
         session_id: str | None = None,
@@ -375,7 +375,7 @@ class AegisBranding:
         self,
         repo_name: str,
         branch: str,
-        model: str = "atlas:hermetic-default",
+        model: str = "openrouter/free",
         width: int = 96,
     ) -> str:
         """Render 2-line persistent status footer adhering to Section 2.3."""

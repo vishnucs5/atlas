@@ -39,7 +39,7 @@ class ConversationHeader:
             from atlas_cli.configuration.manager import ConfigManager
 
             cfg = ConfigManager()
-            model = cfg.get("model", "atlas:hermetic-default")
+            model = cfg.get("default_model", "openrouter/free")
             provider = cfg.get("provider", "local")
             if provider == "anthropic":
                 return f"{model} (Claude-compatible)"
@@ -49,7 +49,7 @@ class ConversationHeader:
                 return f"{model} (Gemini-compatible)"
             return model
         except Exception:
-            return "atlas:hermetic-default"
+            return "openrouter/free"
 
     def get_execution_mode(self) -> str:
         """Determine whether execution is Local or Remote."""

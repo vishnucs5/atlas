@@ -32,12 +32,16 @@ class OpenAIAdapter(ModelAdapter):
         api_key: str | None = None,
         base_url: str = "https://api.openai.com/v1",
         client: httpx.AsyncClient | None = None,
-        timeout: float = 60.0,
+        timeout: float = 90.0,
+        cost_per_1k_input_tokens: float = 0.005,
+        cost_per_1k_output_tokens: float = 0.015,
     ) -> None:
         self._model_name = model_name
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
+        self._cost_per_1k_input_tokens = cost_per_1k_input_tokens
+        self._cost_per_1k_output_tokens = cost_per_1k_output_tokens
         self._client = client or httpx.AsyncClient(timeout=self._timeout)
 
     @property
@@ -54,8 +58,8 @@ class OpenAIAdapter(ModelAdapter):
             streaming=True,
             context_window=128000,
             max_output_tokens=4096,
-            cost_per_1k_input_tokens=0.005,
-            cost_per_1k_output_tokens=0.015,
+            cost_per_1k_input_tokens=self._cost_per_1k_input_tokens,
+            cost_per_1k_output_tokens=self._cost_per_1k_output_tokens,
         )
 
     def _format_messages(self, request: ModelRequest) -> list[dict[str, Any]]:
@@ -146,7 +150,7 @@ class OpenAIAdapter(ModelAdapter):
         except Exception as exc:
             err = ModelError(
                 error_type="UNKNOWN",
-                message=f"Network error communicating with OpenAI: {exc}",
+                message=f"Network error communicating with provider ({type(exc).__name__}).",
                 provider="openai",
                 retryable=True,
             )
@@ -155,12 +159,23 @@ class OpenAIAdapter(ModelAdapter):
         latency_ms = int((time.perf_counter() - start_time) * 1000)
 
         if resp.status_code != 200:
-            error_data = (
-                resp.json()
-                if resp.headers.get("content-type", "").startswith("application/json")
-                else {}
+            provider_detail = ""
+            try:
+                err_data = resp.json()
+                if isinstance(err_data, dict):
+                    err_obj = err_data.get("error")
+                    if isinstance(err_obj, dict):
+                        provider_detail = str(err_obj.get("message", ""))
+                    elif isinstance(err_obj, str):
+                        provider_detail = err_obj
+            except Exception:
+                provider_detail = resp.text[:200]
+
+            err_msg = (
+                f"Provider rejected request ({provider_detail})"
+                if provider_detail
+                else "Provider rejected the request. Check credentials, quota, and model availability."
             )
-            err_msg = error_data.get("error", {}).get("message", resp.text)
             err_type = (
                 "RATE_LIMIT"
                 if resp.status_code == 429
@@ -176,7 +191,7 @@ class OpenAIAdapter(ModelAdapter):
                 provider="openai",
                 status_code=resp.status_code,
                 retryable=resp.status_code in (429, 500, 502, 503, 504),
-                raw_error=error_data,
+                raw_error={"status": resp.status_code, "detail": provider_detail},
             )
             raise RuntimeError(f"Model Error: {err.error_type} - {err.message}")
 
@@ -184,6 +199,12 @@ class OpenAIAdapter(ModelAdapter):
         choice = data["choices"][0]
         msg = choice.get("message", {})
         raw_finish_reason = choice.get("finish_reason")
+
+        content = msg.get("content")
+        if not content and msg.get("reasoning"):
+            content = msg.get("reasoning")
+        elif not content and choice.get("text"):
+            content = choice.get("text")
 
         tool_calls = []
         for tc in msg.get("tool_calls", []):
@@ -205,13 +226,16 @@ class OpenAIAdapter(ModelAdapter):
         prompt_tokens = usage_data.get("prompt_tokens", 0)
         completion_tokens = usage_data.get("completion_tokens", 0)
         total_tokens = usage_data.get("total_tokens", prompt_tokens + completion_tokens)
-        cost_usd = (prompt_tokens * 0.005 + completion_tokens * 0.015) / 1000.0
+        cost_usd = (
+            prompt_tokens * self._cost_per_1k_input_tokens
+            + completion_tokens * self._cost_per_1k_output_tokens
+        ) / 1000.0
 
         return ModelResponse(
             response_id=data.get("id", f"resp_{int(time.time())}"),
             request_id=request.request_id,
             model_name=data.get("model", self._model_name),
-            content=msg.get("content"),
+            content=content,
             tool_calls=tool_calls,
             raw_finish_reason=raw_finish_reason,
             usage=TokenUsage(

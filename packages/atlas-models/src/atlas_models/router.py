@@ -19,6 +19,10 @@ from atlas_models.adapter import ModelAdapter
 logger = logging.getLogger("atlas.models.router")
 
 
+class PaidRoutingBlockedError(RuntimeError):
+    """Raised when strict free-only routing cannot prove an allowed route."""
+
+
 class CircuitState(StrEnum):
     """Finite states of a provider circuit breaker."""
 
@@ -111,10 +115,19 @@ class CostTracker:
 class ModelRouter:
     """Manages adapter registration, capability routing, circuit breaking, and failover."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        free_only: bool = False,
+        allowed_free_models: set[str] | None = None,
+        default_free_model: str = "openrouter/free",
+    ) -> None:
         self._adapters: dict[str, tuple[ModelAdapter, int]] = {}
         self._circuit_breakers: dict[str, CircuitBreaker] = {}
         self.cost_tracker = CostTracker()
+        self.free_only = free_only
+        self.allowed_free_models = set(allowed_free_models or ())
+        self.default_free_model = default_free_model
 
     def register_adapter(self, adapter: ModelAdapter, priority: int = 0) -> None:
         """Register an adapter with a preference priority (higher number = preferred)."""
@@ -158,6 +171,15 @@ class ModelRouter:
 
     async def complete(self, request: ModelRequest, fallback: bool = True) -> ModelResponse:
         """Execute a completion using the designated or optimal matching adapter with fallback."""
+        requested_model = request.model_name or self.default_free_model
+        if requested_model in {"default", "free", "auto"}:
+            requested_model = self.default_free_model
+        if self.free_only and requested_model not in self.allowed_free_models:
+            raise PaidRoutingBlockedError(
+                f"Model '{requested_model}' is not in the currently verified free-model catalogue."
+            )
+        if requested_model != request.model_name:
+            request = request.model_copy(update={"model_name": requested_model})
         candidates: list[ModelAdapter] = []
 
         # 1. Target specific model if requested
@@ -166,13 +188,17 @@ class ModelRouter:
             if exact:
                 candidates.append(exact)
 
-        # 2. Add other registered adapters sorted by priority as candidates
-        sorted_all = sorted(self._adapters.values(), key=lambda item: item[1], reverse=True)
-        for adapter, _ in sorted_all:
-            if adapter not in candidates:
-                candidates.append(adapter)
+        # Strict free routing never fails over to a different model/provider.
+        if not self.free_only:
+            sorted_all = sorted(self._adapters.values(), key=lambda item: item[1], reverse=True)
+            for adapter, _ in sorted_all:
+                if adapter not in candidates:
+                    candidates.append(adapter)
 
         if not candidates:
+            message = f"No configured adapter for allowed model '{requested_model}'."
+            if self.free_only:
+                raise PaidRoutingBlockedError(message)
             raise RuntimeError("No model adapters registered in ModelRouter")
 
         last_error: Exception | None = None
@@ -202,7 +228,7 @@ class ModelRouter:
                         "429" in err_str or "RATE_LIMIT" in err_str or "Rate limit" in err_str
                     )
                     if is_rate_limit and attempt < max_retries:
-                        backoff = 0.1 * (2**attempt)
+                        backoff = 1.0 * (2**attempt)
                         logger.warning(
                             f"Rate limit on {adapter.name}. Retrying in {backoff}s (attempt {attempt + 1}/{max_retries})"
                         )
@@ -213,12 +239,16 @@ class ModelRouter:
                     if breaker:
                         breaker.record_failure()
                     last_error = exc
-                    logger.warning(f"Adapter {adapter.name} failed: {exc}")
+                    logger.warning("Adapter %s failed (%s).", adapter.name, type(exc).__name__)
                     break  # Move to next candidate adapter
 
             if not fallback:
                 break
 
+        if self.free_only:
+            raise PaidRoutingBlockedError(
+                f"Free route '{requested_model}' failed: {last_error}"
+            ) from last_error
         raise RuntimeError(f"All model adapters failed. Last error: {last_error}")
 
     async def health_check_all(self) -> dict[str, ProviderHealth]:

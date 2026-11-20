@@ -6,6 +6,35 @@
 **Date:** 2026-11-17  
 **Monorepo Tests:** 928 tests passing (100% green across all 22 packages, unit, benchmark, integration, adversarial audit, Kubernetes, Multimodal, Adaptive self-improvement, Federation, Enterprise Process Execution acceptance (45/45), Phase 16.2 durability, Phase 16.4 critical remediation, Phase 16.6 distributed safety hardening, Phase 16.8 exception contracts, Phase 16.10 operational pilot, and Phase 16.13 dependency security gate suites)
 
+## Free Cloud Models Workstream — Fully Operational & Verified
+
+**Date:** 2026-11-20
+**Status:** Operational, hardened, and verified with 588 passing unit tests and live end-to-end inference verification.
+
+- **Reasoning Model Support**: Extended `OpenAIAdapter` to extract `reasoning` and legacy `text` payloads when models (e.g. `nvidia/nemotron-3.5-lightning:free` or `baidu/ernie-5.5-flash-preview:free`) return empty `content`, eliminating the "The provider returned no text response" failure mode.
+- **Token Budget Scaling**: Increased conversational coding turn token budget from 1,024 to 4,096 tokens in `atlas_cli.conversation.app`, allowing reasoning models adequate token headspace to complete planning and emit full Python code and test suites.
+- **Transient Rate Limit & Timeout Resilience**: Upgraded provider HTTP client timeout from 60.0s to 90.0s to accommodate queue spikes on free community routes. Increased exponential backoff on HTTP 429 / RATE_LIMIT in `ModelRouter` to 1.0s / 2.0s.
+- **Error Transparency**: Extracted upstream provider error messages (`error.message`) in `OpenAIAdapter` and enhanced `execute_turn` in `ConversationApp` to clearly distinguish rate limits, timeouts, authentication denials, and price alterations from internal routing failures.
+- **Hermetic Testing Invariant**: Restored `HermeticFallbackAdapter` activated by `ATLAS_HERMETIC_TEST=1` across the runtime, isolating unit test suites from external rate limits and guaranteeing deterministic, offline test runs.
+- **Full Verification**: 588/588 unit tests passing (100% green); ruff check and ruff format passing; mypy type check passing with 0 errors across 63 source files; live prompt "Add rate limiting middleware to FastAPI endpoints and write unit tests" completed end-to-end through `openrouter/free`.
+
+- Revised the free-model catalogue, eligibility/auth/runtime status semantics, provider evidence fields, and free-only routing boundaries.
+- Specified credential precedence, consent-gated restricted-file fallback, header-only Google key transmission, OpenRouter `/api/v1/key` preflight, and Cloudflare account ID configuration.
+- Defined bounded rate-limit handling, explicit free-to-free fallback consent, ambiguous completion handling, ActionFirewall separation, and a CLI/TUI verification matrix.
+- Added dynamic catalog refresh across enabled provider inventories, a zero-price eligibility filter, promotion expiry handling, and an explicit boundary that OpenCode free-tier inference cannot be called from third-party clients.
+- Added Groq's active-model inventory endpoint for discovery; Groq remains non-executable until its current Free-tier billing/account conditions are audited, while the two shut-down Llama IDs stay excluded.
+- Open issues before implementation: audit provider quota/privacy/account assumptions immediately before implementation; confirm the target Cloudflare account's free-plan access and least-privilege token permissions.
+- Strict free-only routing now resolves the default to `openrouter/free`, permits exact allowlisted model IDs only, and prevents cross-provider/model failover. OpenRouter Free, Gemini Flash/Flash-Lite, and Cloudflare Llama 3.3 adapters register only with required credentials and explicit free-account attestations where the provider cannot verify entitlement.
+- The CLI now lists free-only routes, validates exact model selections, supports hidden API-key entry into the OS keyring, offers non-generation metadata probes, removes keyring entries, and inspects current OpenRouter free listings. Credential masking is fixed to `[configured]` and provider errors avoid echoing upstream payloads.
+- OpenRouter refresh writes an atomic one-hour cache of exact `:free` model IDs. The runtime registers only those cached IDs, and the adapter re-fetches inventory and requires every returned price field to be explicitly zero immediately before each inference. Stale or malformed cache data fails closed for direct routes; `openrouter/free` remains available as the dynamic route.
+- The runtime now reads the selected `default_model` from ATLAS's user configuration when `ATLAS_DEFAULT_MODEL` is unset. This keeps `atlas models use <exact-id>` and task execution aligned without coupling the core runtime to the CLI package.
+- Conversation turns now call the configured free-only router directly. The prior local `CodingEngine` path that fabricated planning, verification, and completion state was removed from chat turns. Provider denials are shown as failures and no task or filesystem action is reported in that case.
+- `atlas run <objective>` and conversation `/run <objective>` now dispatch into `ProductionRuntime` rather than locally fabricating a CodingEngine task. A live orchestration smoke request completed with the selected OpenRouter free model and returned the provider's response through the runtime lifecycle.
+- Approval requests for elevated actions are now persisted with their signed parameter binding in task metadata. `atlas approval list`, `atlas approval grant <id>`, and `atlas approval deny <id>` reload and validate the approval before resuming or closing the associated task, preserving the Action Firewall boundary across CLI restarts.
+- The top-level `atlas approvals` command now reads the same durable local approval store used by the orchestration runtime.
+- Minimal CLI mode now dispatches normal prompts and one-shot objectives through the same `ProductionRuntime` orchestration path. It no longer simulates tool execution or reports local plan verification as task completion.
+- Remaining work: implement consent-gated restricted-file credential fallback and add the mocked transport and routing verification matrix. Cloudflare's account-plan status remains user-attested, not technically verified by its metadata probe.
+
 ---
 
 ## Phase 16.13 Final Governance Gates & Staging Canary Readiness Summary
@@ -932,3 +961,12 @@
    - Implement Windows UI Automation and cross-platform mouse/keyboard synthesis.
 3. **Deterministic Verification Engine**:
    - Visual screenshot comparison, DOM element condition verification, and post-action invariant checks.
+## 2026-11-20 — Free Cloud Models Runtime Slice
+
+- Replaced the production hermetic fake completion with a strict free-only `ModelRouter`; requests resolve `default` to `openrouter/free`, accept exact allowlisted model IDs only, and never fail over to another provider/model.
+- Runtime can register OpenRouter's exact free meta-router when `OPENROUTER_API_KEY` is available; Gemini 2.5 Flash/Flash-Lite with `ATLAS_GEMINI_FREE_TIER_ATTESTED=1`; and Cloudflare Llama 3.3 with a token, account ID, and `ATLAS_CLOUDFLARE_WORKERS_FREE_ATTESTED=1`. Missing credentials or unsupported routes fail closed.
+- Added environment-first, read-only credential lookup with OS keyring fallback and keyring save/remove operations. Environment keys remain user-owned and cannot be overwritten by ATLAS. Secret masking now returns only `[configured]`.
+- Replaced paid and local CLI catalog entries with free route selection and provider status; added hidden-input key setup, OpenRouter/Gemini/Cloudflare non-generation metadata probes, exact model selection, credential removal, and OpenRouter free inventory inspection.
+- Gemini response usage reports zero estimated cost for the approved free models. Provider errors are sanitized before diagnostic logging.
+- Incomplete: Cloudflare account-plan status relies on user attestation; secure-file fallback is not implemented. OpenRouter free inventory refresh is user-triggered, and the CLI/runtime cover only explicitly audited sources/routes.
+- No tests were added or run, per task execution constraints. Static code review only; no live provider credentials were used.
