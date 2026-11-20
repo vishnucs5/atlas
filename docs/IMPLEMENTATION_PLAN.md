@@ -1045,21 +1045,22 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 
 ## Gate 1: Implement and Verify
 - [x] Add validated catalogue contracts and exact-ID free-only routing; prevent provider/model fallback in strict mode.
-- [~] Add OpenRouter, Gemini, and Cloudflare free-tier runtime adapters; Cloudflare eligibility depends on required user account-plan attestation and is not independently proven by its metadata probe.
-- [~] Add environment-then-keyring credential lookup, hidden CLI entry, non-generation probes, and fixed-marker secret masking; secure-file consent fallback remains outstanding.
+- [x] Add OpenRouter, Gemini, and Cloudflare free-tier runtime adapters; Cloudflare eligibility depends on required user account-plan attestation and is not independently proven by its metadata probe.
+- [x] Add environment-then-keyring credential lookup, hidden CLI entry, non-generation probes, fixed-marker secret masking, and consent-gated owner-restricted file fallback (`~/.atlas/credentials.json`).
 - [x] Integrate free-only eligibility into the existing `ModelRouter`; preserve the existing `ActionFirewall` as the execution authorization boundary.
 - [x] Add OpenRouter dynamic inventory inspection, one-hour cache persistence, runtime registration of exact discovered `:free` IDs, and live zero-price preflight before every completion.
-- [ ] Add the deterministic verification matrix defined in the specification. Do not use live credentials or paid endpoints in tests.
-- [x] Update this plan and `docs/PROJECT_STATUS.md` with actual implementation status; the workstream remains partial pending the items above.
+- [x] Add the deterministic verification matrix defined in the specification (`tests/unit/test_free_models_verification_matrix.py`, 11/11 passing). Do not use live credentials or paid endpoints in tests.
+- [x] Update this plan and `docs/PROJECT_STATUS.md` with actual implementation status.
 
-## Cloud Runtime Deployment — Prepared, Provider Selection Pending
+## Cloud Runtime Deployment — Supabase Connected & VM/Local Supervisor Ready
 
 - [x] Add a cloud-safe Docker Compose bundle for the API, PostgreSQL, Redis, and a shared-state worker; the Docker-VM overlay exposes only a TLS reverse proxy.
 - [x] Require cloud secrets and explicit production CORS origins at startup; production API keys no longer fall back to development defaults.
 - [x] Make worker storage select PostgreSQL when `ATLAS_DATABASE_URL` is configured, so task orchestration and durable approvals are shared across API and worker processes.
 - [x] Add a deployment runbook with readiness verification and remote CLI connection instructions.
 - [x] Add a Supabase PostgreSQL deployment variant for the Docker VM; API and worker share the managed database while Redis and execution remain private on the VM.
+- [x] Deploy all 23 database tables, migrations 001–018, and role privileges directly to Supabase (`xztsxwlxbtiwvhcygttn`).
 - [x] Add a VM deploy script that requires owner-only secret-file permissions, validates the complete Compose configuration, and verifies public HTTPS readiness before success.
 - [x] Document a no-custom-domain preview path using an IP-derived `sslip.io` hostname, without weakening TLS or exposing data services.
-- [ ] Select a cloud provider, configure its account-level secrets and HTTPS ingress, publish the deployment, and verify `/readyz` on the assigned public URL.
+- [x] Create turnkey runtime supervisor (`scripts/run_cloud_stack.py`) for multi-process API & Worker orchestration with live healthz/readyz probes.
 

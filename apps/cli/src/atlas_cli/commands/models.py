@@ -212,15 +212,33 @@ def run_models_configure(provider_id: str | None = None) -> int:
                 break
     try:
         set_credential(provider_id, secret)
+        print(
+            "Credential saved to the OS keyring. Run 'atlas models test "
+            + provider_id
+            + "' to check connectivity."
+        )
     except CredentialStoreUnavailable as exc:
+        if sys.stdin.isatty():
+            try:
+                ans = (
+                    input(
+                        f"OS keyring unavailable. Persist {PROVIDER_ENV[provider_id]} to owner-restricted file (~/.atlas/credentials.json)? [y/N]: "
+                    )
+                    .strip()
+                    .lower()
+                )
+                if ans in ("y", "yes"):
+                    set_credential(provider_id, secret, consent_file_fallback=True)
+                    print(
+                        "Credential saved to ~/.atlas/credentials.json with owner-only permissions."
+                    )
+                    return 0
+            except (EOFError, KeyboardInterrupt):
+                pass
         print(str(exc), file=sys.stderr)
         return 2
-    del secret
-    print(
-        "Credential saved to the OS keyring. Run 'atlas models test "
-        + provider_id
-        + "' to check connectivity."
-    )
+    finally:
+        del secret
     return 0
 
 
