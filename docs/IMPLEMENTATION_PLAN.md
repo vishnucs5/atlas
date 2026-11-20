@@ -1025,6 +1025,7 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] **Workstream 5: On-Demand Diagnostic Inspector**: Built `apps/cli/src/atlas_cli/conversation/inspector.py` allowing power users to view the legacy 8-panel diagnostic dashboard via `/inspector` or `atlas --inspector`.
 - [x] **Workstream 6: CLI Integration & Default Experience**: Updated `apps/cli/src/atlas_cli/main.py` so standard interactive invocation (`atlas` or `atlas --tui`) launches the conversation-first interface by default.
 - [x] **Workstream 7: Comprehensive Verification**: Added 10/10 dedicated unit tests in `tests/unit/test_conversation_ui.py`, verified all 22 CLI unit tests pass, 0 ruff errors, and 0 mypy issues.
+- [x] **Workstream 8: GitHub CLI Showcase & Visual Documentation**: Updated root `README.md` and `apps/cli/README.md` embedding `docs/assets/images/atlas_cli_banner.png` and `docs/assets/images/atlas_terminal_ui.png`, detailing the conversation-first CLI experience, Aegis visual branding, slash command index, zero-cost cloud model ecosystem, Supabase cloud persistence, and 8-panel diagnostic inspector.
 
 # Workstream: Free Cloud Models Only — First Runtime Slice Implemented
 

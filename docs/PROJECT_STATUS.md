@@ -17,6 +17,7 @@
 - **Error Transparency**: Extracted upstream provider error messages (`error.message`) in `OpenAIAdapter` and enhanced `execute_turn` in `ConversationApp` to clearly distinguish rate limits, timeouts, authentication denials, and price alterations from internal routing failures.
 - **Hermetic Testing Invariant**: Restored `HermeticFallbackAdapter` activated by `ATLAS_HERMETIC_TEST=1` across the runtime, isolating unit test suites from external rate limits and guaranteeing deterministic, offline test runs.
 - **Full Verification**: 588/588 unit tests passing (100% green); ruff check and ruff format passing; mypy type check passing with 0 errors across 63 source files; live prompt "Add rate limiting middleware to FastAPI endpoints and write unit tests" completed end-to-end through `openrouter/free`.
+- **Aegis CLI GitHub Showcase & Visual Assets**: Updated root `README.md` and `apps/cli/README.md` with high-resolution visual assets (`docs/assets/images/atlas_cli_banner.png` and `docs/assets/images/atlas_terminal_ui.png`), showcasing the conversation-first REPL, Aegis brand identity, slash commands, free cloud model ecosystem, Supabase cloud persistence, and 8-panel diagnostic inspector.
 
 - Revised the free-model catalogue, eligibility/auth/runtime status semantics, provider evidence fields, and free-only routing boundaries.
 - Specified credential precedence, consent-gated restricted-file fallback, header-only Google key transmission, OpenRouter `/api/v1/key` preflight, and Cloudflare account ID configuration.

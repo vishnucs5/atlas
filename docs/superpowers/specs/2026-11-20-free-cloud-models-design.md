@@ -380,7 +380,9 @@ Every model completion is advisory data. It does not itself authorize or execute
 def assert_free_eligible(self, model_id: str, request: ModelRequest) -> ModelEntry:
     entry = self.catalogue.get_model(model_id)
     if not entry:
-        raise PaidRoutingBlockedError(f"Model '{model_id}' is not present in the verified free catalogue.")
+        raise PaidRoutingBlockedError(
+            f"Model '{model_id}' is not present in the verified free catalogue."
+        )
     if entry.eligibility_status != ModelEligibilityStatus.FREE_VERIFIED:
         raise PaidRoutingBlockedError(
             f"Model '{model_id}' is {entry.eligibility_status} and cannot be executed."
