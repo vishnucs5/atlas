@@ -16,3 +16,4 @@ artifacts/
 .env.production
 .env.cloud
 .env.supabase
+compliance_bundle_*.json
