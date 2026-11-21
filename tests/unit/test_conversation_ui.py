@@ -49,7 +49,7 @@ def test_conversation_header_and_welcome(tmp_path: Path) -> None:
 
     # 4. Header rendering
     rendered_hdr = header.render_header(session_id="sess_1234567890")
-    assert "ATLAS v0.16.8" in rendered_hdr
+    assert "ATLAS v0.17.0" in rendered_hdr
     assert str(tmp_path) in rendered_hdr
     assert branch in rendered_hdr
     assert "sess_1234567" in rendered_hdr

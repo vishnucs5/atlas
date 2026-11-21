@@ -35,7 +35,7 @@ def test_cli_entrypoint_help_and_version(capsys: pytest.CaptureFixture[str]) -> 
     res_ver = main(["--version"])
     assert res_ver == 0
     out_ver = capsys.readouterr().out
-    assert "ATLAS v0.16.8" in out_ver
+    assert "ATLAS v0.17.0" in out_ver
 
     # Test -v short flag
     res_v = main(["-v"])

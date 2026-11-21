@@ -61,7 +61,7 @@ def test_compact_emblem_and_header() -> None:
         session_id="sess_abcdef123456",
     )
     assert "ATLAS" in hdr_uni
-    assert "v0.16.8" in hdr_uni
+    assert "v0.17.0" in hdr_uni
     assert "feat/test" in hdr_uni
     assert "gpt-4o" in hdr_uni
     assert "[Local]" in hdr_uni
@@ -78,7 +78,7 @@ def test_compact_emblem_and_header() -> None:
         mode="Local",
         session_id="sess_abcdef123456",
     )
-    assert "[A] ATLAS v0.16.8" in hdr_asc
+    assert "[A] ATLAS v0.17.0" in hdr_asc
     assert hdr_asc.isascii()
 
 
@@ -117,7 +117,7 @@ def test_welcome_card_and_execution_tree() -> None:
         width=96,
     )
     plain_card = strip_ansi(card)
-    assert "ATLAS v0.16.8" in plain_card
+    assert "ATLAS v0.17.0" in plain_card
     assert "Welcome to ATLAS Autonomous Development Environment" in plain_card
     assert "atlas:hermetic-default" in plain_card
     assert "● Ready (Local)" in plain_card
