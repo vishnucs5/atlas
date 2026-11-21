@@ -11,6 +11,7 @@ members = [
     "atlas-cli",
     "atlas-code-intelligence",
     "atlas-coding",
+    "atlas-collaboration",
     "atlas-coordination",
     "atlas-core",
     "atlas-distributed",
@@ -243,6 +244,27 @@ requires-dist = [
     { name = "atlas-observability", editable = "packages/atlas-observability" },
     { name = "atlas-policy", editable = "packages/atlas-policy" },
     { name = "atlas-storage", editable = "packages/atlas-storage" },
+]
+
+[[package]]
+name = "atlas-collaboration"
+version = "0.17.0"
+source = { editable = "packages/atlas-collaboration" }
+dependencies = [
+    { name = "atlas-core" },
+    { name = "atlas-observability" },
+    { name = "atlas-policy" },
+    { name = "atlas-storage" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atlas-core", editable = "packages/atlas-core" },
+    { name = "atlas-observability", editable = "packages/atlas-observability" },
+    { name = "atlas-policy", editable = "packages/atlas-policy" },
+    { name = "atlas-storage", editable = "packages/atlas-storage" },
+    { name = "pydantic", specifier = ">=2.7.0" },
 ]
 
 [[package]]

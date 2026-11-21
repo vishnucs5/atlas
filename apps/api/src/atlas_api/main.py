@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from atlas_api.routes.approvals import router as approvals_router
 from atlas_api.routes.artifacts import router as artifacts_router
+from atlas_api.routes.collaboration import router as collaboration_router
 from atlas_api.routes.dashboard import router as dashboard_router
 from atlas_api.routes.distributed import router as distributed_router
 from atlas_api.routes.enterprise import router as enterprise_router
@@ -149,9 +150,16 @@ def create_app() -> FastAPI:
     app.include_router(marketplace_router)
     app.include_router(distributed_router)
     app.include_router(enterprise_router)
+    app.include_router(collaboration_router)
 
     # Embedded Operator Dashboard
     app.include_router(dashboard_router)
+
+    @app.get("/", include_in_schema=False)
+    async def root_redirect():
+        from fastapi.responses import RedirectResponse
+
+        return RedirectResponse(url="/dashboard")
 
     return app
 

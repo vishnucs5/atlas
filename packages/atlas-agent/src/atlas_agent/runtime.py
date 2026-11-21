@@ -137,6 +137,12 @@ class ProductionRuntime(AtlasRuntime):
         else:
             registry = DriverRegistry()
             registry.register("desktop", DesktopDriver(), is_default=True)
+            try:
+                from atlas_browser.driver import PlaywrightBrowserDriver
+
+                registry.register("browser", PlaywrightBrowserDriver())
+            except Exception:
+                pass
             self.driver = registry
 
         # Policy & Safety

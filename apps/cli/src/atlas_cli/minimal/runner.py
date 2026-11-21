@@ -277,6 +277,7 @@ def run_minimal(
     objective: str | None = None,
     json_output: bool = False,
     session_id: str | None = None,
+    client: AtlasClient | None = None,
 ) -> int:
     """Execute task in minimal headless mode or launch interactive minimal REPL."""
     # 1. Non-interactive input from stdin or argument
@@ -295,16 +296,36 @@ def run_minimal(
 
     # 2. If objective supplied -> single-shot execution
     if objective:
-        if json_output:
-            print(
-                "JSON output is unavailable for local orchestration; use 'atlas task inspect <id>'.",
-                file=sys.stderr,
-            )
-            return 2
-        from atlas_cli.commands.coding import run_coding_task
+        cli = client or AtlasClient()
+        is_complex = any(k in objective.lower() for k in ["dag", "multi-agent", "specialist"])
+        if is_complex:
+            result = cli.submit_multi_agent_dag(objective, execute_async=False)
+        else:
+            result = cli.submit_task(objective, wait=True)
 
-        return run_coding_task(prompt=objective, repo_root=os.getcwd())
+        if "error" in result:
+            if result.get("offline") or (
+                hasattr(cli, "is_server_online") and not cli.is_server_online()
+            ):
+                from atlas_cli.commands.coding import run_coding_task
+
+                return run_coding_task(prompt=objective, repo_root=os.getcwd())
+            print(colorize(f"FAILED: {result['error']}", RED), file=sys.stderr)
+            return 1
+
+        if json_output:
+            import json
+
+            print(json.dumps(result, indent=2))
+        else:
+            status = result.get("status", "COMPLETED")
+            task_id = result.get("task_id", "")
+            output = (
+                result.get("metadata", {}).get("output") or result.get("message") or "Completed"
+            )
+            print(f"[{colorize(status, GREEN)}] {task_id}: {output}")
+        return 0
 
     # 3. Interactive REPL mode
-    repl = MinimalREPL(session_id=session_id)
+    repl = MinimalREPL(client=client, session_id=session_id)
     return repl.run_loop()

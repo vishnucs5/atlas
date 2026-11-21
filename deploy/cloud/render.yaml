@@ -1,0 +1,71 @@
+# Render Blueprint for ATLAS Cloud Stack (API Service & Worker Daemon)
+# Connects to Supabase managed PostgreSQL backend
+services:
+  - type: web
+    name: atlas-api
+    runtime: docker
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /readyz
+    envVars:
+      - key: ATLAS_ENV
+        value: production
+      - key: ATLAS_DATABASE_URL
+        sync: false
+      - key: ATLAS_REDIS_URL
+        sync: false
+      - key: ATLAS_VAULT_ENCRYPTION_KEY
+        generateValue: true
+      - key: ATLAS_API_KEY_ADMIN
+        generateValue: true
+      - key: ATLAS_API_KEY_OPERATOR
+        generateValue: true
+      - key: ATLAS_API_KEY_WORKER
+        generateValue: true
+      - key: ATLAS_API_KEY_VIEWER
+        generateValue: true
+      - key: ATLAS_CORS_ORIGINS
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+  - type: worker
+    name: atlas-worker
+    runtime: docker
+    dockerfilePath: apps/worker/Dockerfile
+    dockerContext: .
+    plan: starter
+    envVars:
+      - key: ATLAS_ENV
+        value: production
+      - key: ATLAS_DATABASE_URL
+        fromService:
+          type: web
+          name: atlas-api
+          envVarKey: ATLAS_DATABASE_URL
+      - key: ATLAS_REDIS_URL
+        fromService:
+          type: web
+          name: atlas-api
+          envVarKey: ATLAS_REDIS_URL
+      - key: ATLAS_VAULT_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: atlas-api
+          envVarKey: ATLAS_VAULT_ENCRYPTION_KEY
+      - key: ATLAS_API_KEY_ADMIN
+        fromService:
+          type: web
+          name: atlas-api
+          envVarKey: ATLAS_API_KEY_ADMIN
+      - key: ATLAS_API_KEY_WORKER
+        fromService:
+          type: web
+          name: atlas-api
+          envVarKey: ATLAS_API_KEY_WORKER
+      - key: OPENROUTER_API_KEY
+        fromService:
+          type: web
+          name: atlas-api
+          envVarKey: OPENROUTER_API_KEY

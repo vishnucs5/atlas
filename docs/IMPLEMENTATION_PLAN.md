@@ -1064,3 +1064,64 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
 - [x] Document a no-custom-domain preview path using an IP-derived `sslip.io` hostname, without weakening TLS or exposing data services.
 - [x] Create turnkey runtime supervisor (`scripts/run_cloud_stack.py`) for multi-process API & Worker orchestration with live healthz/readyz probes.
 
+---
+
+## Phase 17: Human–AI Collaboration Ecosystem & Multi-Cloud Deployment (COMPLETE & VERIFIED)
+
+**Target:** Implement the Phase 17 Human–AI Collaboration engine (`packages/atlas-collaboration`), FastAPI collaborative endpoints, multi-cloud blueprints (Render, Fly.io, Railway), and web operator dashboard.  
+**Status:** **100% COMPLETE (610/610 Unit Tests Passing)**  
+**Completed Date:** 2026-11-21  
+
+### Task Breakdown & Progress
+
+- [x] **Task 1: Package Scaffolding & Core Architecture (`packages/atlas-collaboration`)**
+  - Scaffold `packages/atlas-collaboration` with workspace `pyproject.toml` (v0.17.0).
+  - Define collaboration domain models (`models.py`): `WorkspaceRole`, `Collaborator`, `TurnLease`, `CASArtifactRef`, `DecisionFactor`, `AgentDecisionLineage`, `DelegationEnvelope`, `SteeringEvent`, `ComplianceBundle`.
+  - Export public API in `packages/atlas-collaboration/src/atlas_collaboration/__init__.py`.
+
+- [x] **Task 2: Server-Authoritative Semantic Turn-Locking (`workspace.py`)**
+  - Implement `CollaborativeWorkspaceHub` with monotonic fencing tokens.
+  - Implement human preemptive priority override revoking active agent leases.
+  - Implement CAS artifact mutation validation with fencing token check (`FencingTokenInvalidError`).
+
+- [x] **Task 3: Causal Decision Lineage & Explainability (`explainability.py`)**
+  - Implement `CausalDecisionTracer` recording factor trees for every agent decision.
+  - Implement Merkle tree factor hash calculation for tamper evidence.
+  - Link CAS content hashes to decisions with immutable lineage storage.
+
+- [x] **Task 4: Dynamic Runtime Steering & Child Idempotency (`steering.py`)**
+  - Implement `SteeringController` supporting `pause`, `inject`, and `resume` workflows.
+  - Implement deterministic mathematical child idempotency derivation:
+    $$\text{key}_{\text{child}} = \text{SHA-256}(\text{key}_{\text{parent}} \,||\, \text{steering\_id} \,||\, \text{SHA-256}(\text{canonical\_json}(\text{params})))$$
+
+- [x] **Task 5: Verifiable Compliance Evidence Generator (`compliance.py`)**
+  - Implement `ComplianceEvidenceGenerator` producing signed compliance bundles for SOC 2, HIPAA, ISO 27001, and EU AI Act.
+  - Compute Merkle root of workspace decision tree and generate HMAC-SHA256 signature.
+
+- [x] **Task 6: Hermetic Policy Simulation Sandbox (`simulation.py`)**
+  - Implement `PolicySimulationEngine` for dry-run verification.
+  - Reject unmocked external connectors to prevent side effects during policy simulation.
+
+- [x] **Task 7: FastAPI Control Plane Collaboration Routes (`apps/api/src/atlas_api/routes/collaboration.py`)**
+  - Expose `POST /api/v1/collaboration/workspaces` (workspace creation).
+  - Expose `POST /api/v1/collaboration/workspaces/{id}/leases` (lease acquisition and preemption).
+  - Expose `POST /api/v1/collaboration/steering/pause` and `POST /api/v1/collaboration/steering/resume`.
+  - Expose `GET /api/v1/collaboration/compliance/bundle/{id}`.
+  - Mount router on FastAPI application in `apps/api/src/atlas_api/main.py`.
+
+- [x] **Task 8: Multi-Cloud Deployment Blueprints**
+  - Author `deploy/cloud/render.yaml` for Render API web service + Worker background daemon.
+  - Author `deploy/cloud/fly.toml` for Fly.io container deployment with health checks.
+  - Author `deploy/cloud/railway.json` for Railway platform deployment.
+  - Verified `scripts/run_cloud_stack.py` with unit tests (`tests/unit/test_cloud_stack_supervisor.py`).
+
+- [x] **Task 9: Interactive Web Control Plane & Dashboard**
+  - Host single-page operator dashboard at `/dashboard` with auto-redirect from `/`.
+  - Visual interface displaying Agent Marketplace, Skills registry, and interactive Task DAG.
+
+- [x] **Task 10: Headless & Interactive CLI Integration**
+  - Connect `run_minimal` to `AtlasClient.submit_task` with graceful fallback to `ProductionRuntime`.
+  - Register `PlaywrightBrowserDriver` in `ProductionRuntime` multi-driver routing.
+  - All 12 CLI tests verified passing in `tests/unit/test_cli_interfaces.py`.
+
+
