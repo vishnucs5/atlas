@@ -1124,4 +1124,25 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
   - Register `PlaywrightBrowserDriver` in `ProductionRuntime` multi-driver routing.
   - All 12 CLI tests verified passing in `tests/unit/test_cli_interfaces.py`.
 
+- [x] **Task 11: Enterprise Database Migrations 019 & 020 (Option 1)**
+  - Authored `migrations/019_collaborative_workspaces.sql`: schemas for collaborative workspaces, members, semantic turn leases with monotonic fencing tokens, and governance delegations.
+  - Authored `migrations/020_decision_lineage_and_compliance.sql`: schemas for causal decision lineage, steering intervention audit events, and compliance proof bundles.
+  - Implemented `CollaborationStorage` in `packages/atlas-collaboration/src/atlas_collaboration/storage.py` supporting SQLite WAL and PostgreSQL persistence.
+  - Verified with `tests/unit/test_phase17_migrations_and_storage.py` (5/5 PASS).
+
+- [x] **Task 12: CLI Collaboration Commands & Slash Palette (Option 1)**
+  - Implemented `atlas workspace [create|list|inspect|lease]`.
+  - Implemented `atlas steering [pause|resume]`.
+  - Implemented `atlas compliance [export|verify]`.
+  - Added slash commands `/workspace`, `/steering`, `/compliance` in prompt composer, floating autocomplete, and dispatcher.
+  - Verified with `tests/unit/test_cli_collaboration.py` (6/6 PASS).
+
+- [x] **Task 13: Web Operator Dashboard Collaboration & Compliance Hub (Option 2)**
+  - Added Phase 17 Collaboration & Compliance Hub tab to the embedded operator dashboard (`apps/api/src/atlas_api/routes/dashboard.py`).
+  - Implemented live dual-custody turn-lock monitor showing active turn holder (Human vs Agent), fencing tokens, and instant preemptive priority override button.
+  - Implemented in-flight workflow steering controller with parameter injection and mathematical child idempotency key derivation.
+  - Implemented one-click export for HMAC-SHA256 signed regulatory compliance bundles (SOC 2, HIPAA, ISO 27001, EU AI Act).
+  - Verified with `tests/unit/test_production_api.py::test_operator_dashboard_html`.
+
+
 

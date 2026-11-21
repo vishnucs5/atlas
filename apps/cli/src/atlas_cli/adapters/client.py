@@ -159,3 +159,111 @@ class AtlasClient:
         """List connected execution workers."""
         code, data = self._request("/api/v1/workers")
         return data if code == 200 and isinstance(data, list) else []
+
+    # -------------------------------------------------------------------------
+    # Collaboration & Governance APIs (Phase 17)
+    # -------------------------------------------------------------------------
+
+    def create_workspace(
+        self,
+        name: str,
+        tenant_id: str = "default_tenant",
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Create a collaborative workspace."""
+        payload = {"name": name, "tenant_id": tenant_id, "metadata": metadata or {}}
+        code, data = self._request("/api/v1/collaboration/workspaces", method="POST", data=payload)
+        return (
+            data
+            if code in (200, 201)
+            else {"error": data.get("detail") or "Failed to create workspace"}
+        )
+
+    def list_workspaces(self, tenant_id: str | None = None) -> list[dict[str, Any]]:
+        """List active collaborative workspaces."""
+        code, data = self._request("/api/v1/collaboration/workspaces")
+        return data if code == 200 and isinstance(data, list) else []
+
+    def get_workspace(self, workspace_id: str) -> dict[str, Any] | None:
+        """Fetch workspace details."""
+        code, data = self._request(f"/api/v1/collaboration/workspaces/{workspace_id}")
+        return data if code == 200 else None
+
+    def acquire_lease(
+        self,
+        workspace_id: str,
+        identity: str,
+        role: str = "OWNER",
+        force: bool = False,
+        duration_seconds: float = 300.0,
+    ) -> dict[str, Any]:
+        """Acquire or preempt a turn lease for a workspace."""
+        payload = {
+            "identity": identity,
+            "role": role,
+            "force": force,
+            "duration_seconds": duration_seconds,
+        }
+        code, data = self._request(
+            f"/api/v1/collaboration/workspaces/{workspace_id}/leases",
+            method="POST",
+            data=payload,
+        )
+        return (
+            data
+            if code in (200, 201)
+            else {"error": data.get("detail") or "Failed to acquire turn lease"}
+        )
+
+    def pause_steering(
+        self,
+        workspace_id: str,
+        reason: str,
+        operator_id: str = "operator",
+    ) -> dict[str, Any]:
+        """Pause a workspace for active human steering."""
+        payload = {
+            "workspace_id": workspace_id,
+            "reason": reason,
+            "operator_id": operator_id,
+        }
+        code, data = self._request(
+            "/api/v1/collaboration/steering/pause", method="POST", data=payload
+        )
+        return (
+            data
+            if code in (200, 201)
+            else {"error": data.get("detail") or "Failed to pause for steering"}
+        )
+
+    def resume_steering(
+        self,
+        workspace_id: str,
+        modified_parameters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Resume execution of a steered workspace."""
+        payload = {
+            "workspace_id": workspace_id,
+            "modified_parameters": modified_parameters or {},
+        }
+        code, data = self._request(
+            "/api/v1/collaboration/steering/resume", method="POST", data=payload
+        )
+        return (
+            data
+            if code in (200, 201)
+            else {"error": data.get("detail") or "Failed to resume steering"}
+        )
+
+    def get_compliance_bundle(
+        self,
+        workspace_id: str,
+        frameworks: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Retrieve signed compliance bundle for a workspace."""
+        code, data = self._request(f"/api/v1/collaboration/compliance/bundle/{workspace_id}")
+        return (
+            data
+            if code == 200
+            else {"error": data.get("detail") or "Failed to retrieve compliance bundle"}
+        )

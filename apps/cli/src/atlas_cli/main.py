@@ -21,6 +21,16 @@ from atlas_cli.commands.coding import (
     run_review,
     run_test,
 )
+from atlas_cli.commands.collaboration import (
+    run_compliance_export,
+    run_compliance_verify,
+    run_steering_pause,
+    run_steering_resume,
+    run_workspace_create,
+    run_workspace_inspect,
+    run_workspace_lease,
+    run_workspace_list,
+)
 from atlas_cli.commands.doctor import run_doctor
 from atlas_cli.commands.environment import run_environment_test_browser
 from atlas_cli.commands.governance import (
@@ -409,6 +419,81 @@ def create_parser() -> argparse.ArgumentParser:
         "--reason", "-r", type=str, default=None, help="Denial justification"
     )
 
+    # Command: atlas workspace (Phase 17)
+    ws_parser = subparsers.add_parser(
+        "workspace",
+        help="Human-AI collaborative workspace operations",
+    )
+    ws_sub = ws_parser.add_subparsers(dest="workspace_command", help="Workspace subcommands")
+    ws_create = ws_sub.add_parser("create", help="Create a collaborative workspace")
+    ws_create.add_argument("name", type=str, help="Workspace display name")
+    ws_create.add_argument("--tenant", "-t", type=str, default="default_tenant", help="Tenant ID")
+
+    ws_list = ws_sub.add_parser("list", help="List collaborative workspaces")
+    ws_list.add_argument("--tenant", "-t", type=str, default=None, help="Filter by tenant ID")
+
+    ws_ins = ws_sub.add_parser("inspect", help="Inspect workspace and active turn lease")
+    ws_ins.add_argument("workspace_id", type=str, help="Workspace ID to inspect")
+
+    ws_lease = ws_sub.add_parser("lease", help="Acquire or preempt a semantic turn lease")
+    ws_lease.add_argument("workspace_id", type=str, help="Target workspace ID")
+    ws_lease.add_argument("--identity", "-i", type=str, required=True, help="Collaborator identity")
+    ws_lease.add_argument(
+        "--role",
+        "-r",
+        type=str,
+        default="OWNER",
+        choices=["OWNER", "EDITOR", "REVIEWER", "AUTONOMOUS_WORKER"],
+        help="Holder role",
+    )
+    ws_lease.add_argument(
+        "--force", "-f", action="store_true", help="Force preemption of active agent lease"
+    )
+    ws_lease.add_argument(
+        "--duration", "-d", type=float, default=300.0, help="Lease timeout in seconds"
+    )
+
+    # Command: atlas steering (Phase 17)
+    steer_parser = subparsers.add_parser(
+        "steering",
+        help="Active runtime human steering and parameter injection",
+    )
+    steer_sub = steer_parser.add_subparsers(dest="steering_command", help="Steering subcommands")
+    st_pause = steer_sub.add_parser("pause", help="Pause workspace execution for steering")
+    st_pause.add_argument("workspace_id", type=str, help="Target workspace ID")
+    st_pause.add_argument(
+        "--reason", "-r", type=str, required=True, help="Justification for steering intervention"
+    )
+    st_pause.add_argument(
+        "--operator", "-o", type=str, default="operator", help="Operator identity"
+    )
+
+    st_resume = steer_sub.add_parser("resume", help="Resume execution with child idempotency key")
+    st_resume.add_argument("workspace_id", type=str, help="Target workspace ID")
+    st_resume.add_argument(
+        "--params", "-p", type=str, default=None, help="Modified parameters as JSON string"
+    )
+
+    # Command: atlas compliance (Phase 17)
+    comp_parser = subparsers.add_parser(
+        "compliance",
+        help="Cryptographically signed compliance bundle generation and verification",
+    )
+    comp_sub = comp_parser.add_subparsers(dest="compliance_command", help="Compliance subcommands")
+    comp_export = comp_sub.add_parser("export", help="Export HMAC-signed compliance proof bundle")
+    comp_export.add_argument("workspace_id", type=str, help="Target workspace ID")
+    comp_export.add_argument("--output", "-o", type=str, default=None, help="Destination JSON path")
+    comp_export.add_argument(
+        "--frameworks",
+        "-f",
+        type=str,
+        default="SOC2,EU_AI_ACT,ISO27001,HIPAA",
+        help="Comma-separated regulatory frameworks",
+    )
+
+    comp_verify = comp_sub.add_parser("verify", help="Verify cryptographic proof of bundle")
+    comp_verify.add_argument("bundle_path", type=str, help="Path to exported bundle JSON")
+
     return parser
 
 
@@ -461,6 +546,9 @@ def main(argv: list[str] | None = None) -> int:
         "server",
         "workers",
         "logs",
+        "workspace",
+        "steering",
+        "compliance",
     }
 
     # Support piped input when no arguments are provided
@@ -699,6 +787,55 @@ def main(argv: list[str] | None = None) -> int:
             return run_approval_grant(request_id=args.request_id, reason=args.reason)
         if args.approval_command == "deny":
             return run_approval_deny(request_id=args.request_id, reason=args.reason)
+
+    # Phase 17 Collaboration & Governance
+    if args.command == "workspace":
+        if getattr(args, "workspace_command", None) is None:
+            parser.print_help()
+            return 0
+        if args.workspace_command == "create":
+            return run_workspace_create(name=args.name, tenant_id=args.tenant)
+        if args.workspace_command == "list":
+            return run_workspace_list(tenant_id=args.tenant)
+        if args.workspace_command == "inspect":
+            return run_workspace_inspect(workspace_id=args.workspace_id)
+        if args.workspace_command == "lease":
+            return run_workspace_lease(
+                workspace_id=args.workspace_id,
+                identity=args.identity,
+                role=args.role,
+                force=args.force,
+                duration=args.duration,
+            )
+
+    if args.command == "steering":
+        if getattr(args, "steering_command", None) is None:
+            parser.print_help()
+            return 0
+        if args.steering_command == "pause":
+            return run_steering_pause(
+                workspace_id=args.workspace_id,
+                reason=args.reason,
+                operator_id=args.operator,
+            )
+        if args.steering_command == "resume":
+            return run_steering_resume(
+                workspace_id=args.workspace_id,
+                params_json=args.params,
+            )
+
+    if args.command == "compliance":
+        if getattr(args, "compliance_command", None) is None:
+            parser.print_help()
+            return 0
+        if args.compliance_command == "export":
+            return run_compliance_export(
+                workspace_id=args.workspace_id,
+                output_path=args.output,
+                frameworks=args.frameworks,
+            )
+        if args.compliance_command == "verify":
+            return run_compliance_verify(bundle_path=args.bundle_path)
 
     parser.print_help()
     return 1

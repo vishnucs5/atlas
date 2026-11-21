@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import sys
+import time
 from typing import Any
 
 from prompt_toolkit.completion import Completer, Completion
@@ -37,6 +38,9 @@ SLASH_COMMANDS = {
     "/approvals": "Review and decide pending authorization requests",
     "/agents": "List the 11 autonomous specialist agents and roles",
     "/sessions": "List and switch recent conversation sessions",
+    "/workspace": "Manage collaborative workspaces and semantic turn leases",
+    "/steering": "Intervene in-flight to pause or resume execution with parameter injection",
+    "/compliance": "Export and verify HMAC-signed regulatory compliance evidence",
     "/inspector": "Open the 8-panel advanced diagnostic inspector",
     "/compact": "Compact session event history to optimize context",
     "/clear": "Clear screen buffer without losing conversation history",
@@ -56,6 +60,9 @@ class SlashCompleter(Completer):
         ("/review", "Perform Action Firewall and git diff review"),
         ("/status", "Inspect workspace, git porcelain, and health"),
         ("/approvals", "Review and decide pending authorization requests"),
+        ("/workspace", "Manage collaborative workspaces and turn leases"),
+        ("/steering", "Intervene in-flight to pause or resume tasks"),
+        ("/compliance", "Export signed regulatory compliance evidence"),
         ("/exit", "Exit ATLAS conversation mode"),
     ]
 
@@ -366,6 +373,57 @@ class SlashCommandDispatcher:
             from atlas_cli.commands.coding import run_test
 
             run_test()
+            return True
+
+        if cmd == "/workspace":
+            from atlas_cli.commands.collaboration import (
+                run_workspace_create,
+                run_workspace_inspect,
+                run_workspace_lease,
+                run_workspace_list,
+            )
+
+            parts = arg.strip().split(maxsplit=2)
+            sub = parts[0] if parts else "list"
+            if sub == "create":
+                name = parts[1] if len(parts) > 1 else f"Workspace {int(time.time())}"
+                run_workspace_create(name=name)
+            elif sub == "inspect" and len(parts) > 1:
+                run_workspace_inspect(workspace_id=parts[1])
+            elif sub == "lease" and len(parts) > 2:
+                run_workspace_lease(workspace_id=parts[1], identity=parts[2])
+            else:
+                run_workspace_list()
+            return True
+
+        if cmd == "/steering":
+            from atlas_cli.commands.collaboration import (
+                run_steering_pause,
+                run_steering_resume,
+            )
+
+            parts = arg.strip().split(maxsplit=2)
+            sub = parts[0] if parts else ""
+            if sub == "pause" and len(parts) > 2:
+                run_steering_pause(workspace_id=parts[1], reason=parts[2])
+            elif sub == "resume" and len(parts) > 1:
+                run_steering_resume(workspace_id=parts[1])
+            else:
+                print(
+                    colorize(
+                        "Usage: /steering pause <workspace_id> <reason> | /steering resume <workspace_id>",
+                        YELLOW,
+                    )
+                )
+            return True
+
+        if cmd == "/compliance":
+            from atlas_cli.commands.collaboration import run_compliance_export
+
+            if not arg.strip():
+                print(colorize("Usage: /compliance <workspace_id>", YELLOW))
+            else:
+                run_compliance_export(workspace_id=arg.strip())
             return True
 
         print(colorize(f"Unknown command: '{cmd}'. Type /help for available commands.", RED))

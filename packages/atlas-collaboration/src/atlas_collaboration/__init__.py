@@ -23,6 +23,7 @@ from atlas_collaboration.steering import (
     SteeringController,
     WorkflowNotPausedError,
 )
+from atlas_collaboration.storage import CollaborationStorage
 from atlas_collaboration.workspace import (
     CollaborativeWorkspaceHub,
     FencingTokenInvalidError,
@@ -33,6 +34,7 @@ __all__ = [
     "AgentDecisionLineage",
     "CASArtifactRef",
     "CausalDecisionTracer",
+    "CollaborationStorage",
     "CollaborativeSession",
     "CollaborativeWorkspaceHub",
     "Collaborator",

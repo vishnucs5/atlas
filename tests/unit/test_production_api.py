@@ -254,3 +254,7 @@ def test_operator_dashboard_html() -> None:
     assert "ATLAS Control Plane" in res.text
     assert "Human Approval Inbox" in res.text
     assert "Event Stream Log" in res.text
+    assert "Phase 17 Collaboration & Compliance" in res.text
+    assert "Active Turn-Lock Lease" in res.text
+    assert "In-Flight Workflow Steering" in res.text
+    assert "Continuous Compliance Bundles" in res.text

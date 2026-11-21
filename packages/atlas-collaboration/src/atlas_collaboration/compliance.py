@@ -77,17 +77,21 @@ class ComplianceEvidenceGenerator:
 
     def verify_bundle(self, bundle: ComplianceBundle) -> bool:
         """Verify the integrity and HMAC signature of a compliance bundle."""
-        # 1. Verify Merkle root matches record contents
-        recomputed_root = self.calculate_bundle_merkle_root(bundle.records)
-        if recomputed_root != bundle.root_merkle_hash:
-            return False
+        target_root = bundle.root_merkle_hash or bundle.decision_merkle_root
+        sig = bundle.signature or bundle.hmac_signature
+
+        # 1. Verify Merkle root matches record contents if records present
+        if bundle.records:
+            recomputed_root = self.calculate_bundle_merkle_root(bundle.records)
+            if recomputed_root != target_root:
+                return False
 
         # 2. Verify HMAC signature
-        expected_payload = f"{bundle.bundle_id}:{bundle.tenant_id}:{bundle.framework}:{bundle.root_merkle_hash}:{bundle.generated_at}:{bundle.record_count}"
+        expected_payload = f"{bundle.bundle_id}:{bundle.tenant_id}:{bundle.framework}:{target_root}:{bundle.generated_at}:{bundle.record_count}"
         expected_sig = hmac.new(
             self.signing_secret.encode("utf-8"),
             expected_payload.encode("utf-8"),
             hashlib.sha256,
         ).hexdigest()
 
-        return hmac.compare_digest(expected_sig, bundle.signature)
+        return hmac.compare_digest(expected_sig, sig)

@@ -32,12 +32,22 @@ class TurnLease(BaseModel):
     """Server-authoritative semantic turn-locking lease."""
 
     lease_id: str
+    workspace_id: str = ""
     holder_identity: str
+    holder_role: WorkspaceRole = WorkspaceRole.EDITOR
     acquired_at: float = Field(default_factory=time.time)
     expires_at: float
     fencing_token: int
     is_human: bool = False
     preempted: bool = False
+
+    @property
+    def is_active(self) -> bool:
+        return not self.preempted and time.time() <= self.expires_at
+
+    def is_expired(self, at_time: float | None = None) -> bool:
+        t = at_time or time.time()
+        return self.preempted or t > self.expires_at
 
 
 class CASArtifactRef(BaseModel):
@@ -77,6 +87,7 @@ class AgentDecisionLineage(BaseModel):
     policy_checks_passed: list[str] = Field(default_factory=list)
     merkle_root_hash: str = ""
     cas_ref: CASArtifactRef | None = None
+    cas_artifact_uri: str | None = None
     timestamp: float = Field(default_factory=time.time)
 
     def calculate_merkle_root(self) -> str:
@@ -125,8 +136,9 @@ class SteeringEvent(BaseModel):
     """Immutable audit record of a human intervention on a paused workflow."""
 
     steering_id: str
-    process_instance_id: str
-    task_instance_id: str
+    workspace_id: str = ""
+    process_instance_id: str = ""
+    task_instance_id: str = ""
     operator_id: str
     parent_operation_key: str
     child_operation_key: str
@@ -158,9 +170,14 @@ class ComplianceBundle(BaseModel):
 
     bundle_id: str
     tenant_id: str
-    framework: str  # SOC2, HIPAA, ISO27001, EU_AI_ACT
-    root_merkle_hash: str
+    workspace_id: str = ""
+    framework: str = "SOC2"  # SOC2, HIPAA, ISO27001, EU_AI_ACT
+    frameworks: list[str] = Field(default_factory=list)
+    root_merkle_hash: str = ""
+    decision_merkle_root: str = ""
     generated_at: float = Field(default_factory=time.time)
-    record_count: int
-    signature: str
+    record_count: int = 0
+    total_decisions: int = 0
+    signature: str = ""
+    hmac_signature: str = ""
     records: list[dict[str, Any]] = Field(default_factory=list)
