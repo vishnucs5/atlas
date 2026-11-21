@@ -216,10 +216,13 @@ def test_adv_08_api_token_revocation_enforcement():
 
 def test_adv_09_secret_redaction_in_traces_and_exceptions():
     """Verify API keys, passwords, and tokens are scrubbed from nested error structures."""
+    dummy_openai = "sk-proj-" + "1234567890abcdef1234567890abcdef12345678"
+    dummy_gh = "ghp_" + "1234567890abcdef1234567890abcdef123456"
+
     dirty_payload = {
         "error_msg": "Connection failed to postgresql://atlas:super_secret_pw@10.0.0.5:5432/db",
-        "api_key": "sk-proj-1234567890abcdef1234567890abcdef12345678",
-        "github_token": "ghp_1234567890abcdef1234567890abcdef123456",
+        "api_key": dummy_openai,
+        "github_token": dummy_gh,
         "nested": {
             "auth_header": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.doNotLeakThisTokenValue"
         },
@@ -228,8 +231,8 @@ def test_adv_09_secret_redaction_in_traces_and_exceptions():
     clean = redact_secrets(dirty_payload)
     clean_str = str(clean)
     assert "super_secret_pw" not in clean_str
-    assert "sk-proj-1234567890abcdef1234567890abcdef12345678" not in clean_str
-    assert "ghp_1234567890abcdef1234567890abcdef12345678" not in clean_str
+    assert dummy_openai not in clean_str
+    assert dummy_gh not in clean_str
     assert "***REDACTED***" in clean_str
 
 

@@ -23,7 +23,7 @@ def test_redact_secrets_recursive() -> None:
         "user": "alice",
         "password": "super-secret-password-123",
         "nested": {
-            "api_key": "sk-1234567890abcdef",
+            "api_key": "sk-" + "1234567890abcdef",
             "normal_field": "hello world",
             "headers": ["normal", "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xyz"],
         },

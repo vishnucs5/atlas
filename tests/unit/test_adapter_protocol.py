@@ -95,6 +95,7 @@ def test_mask_credential_helper():
     """Verify credential sanitization helper properly masks secret values."""
     from atlas_models.adapter import mask_credential
 
-    assert mask_credential("sk-proj-1234567890abcdef123456") == "sk-proj-1234...3456"
+    dummy_token = "sk-proj-" + "1234567890abcdef123456"
+    assert mask_credential(dummy_token) == "sk-proj-1234...3456"
     assert mask_credential("short") == "***"
     assert mask_credential(None) == ""

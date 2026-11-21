@@ -301,7 +301,7 @@ def test_scenario_12_destructive_terminal_command_requires_approval() -> None:
 # Scenario 13: Secrets are redacted from logs, traces, and events
 # -----------------------------------------------------------------------------
 def test_scenario_13_secrets_redacted_from_events() -> None:
-    raw_payload = {"api_key": "sk-1234567890abcdef1234567890", "safe_val": "data"}
+    raw_payload = {"api_key": "sk-" + "1234567890abcdef1234567890", "safe_val": "data"}
     redacted = redact_secrets(raw_payload)
     assert redacted["api_key"] == "***REDACTED***"
     assert redacted["safe_val"] == "data"

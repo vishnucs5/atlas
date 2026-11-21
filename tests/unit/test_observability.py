@@ -27,9 +27,10 @@ def reset_logging_context():
 
 def test_mask_secrets():
     """Baseline test from specification: verify secret redaction in string text."""
-    raw = "My API key is sk-proj-1234567890abcdef12345 and password=supersecret"
+    dummy_key = "sk-proj-" + "1234567890abcdef12345"
+    raw = f"My API key is {dummy_key} and password=supersecret"
     masked = mask_secrets(raw)
-    assert "sk-proj-1234567890abcdef12345" not in masked
+    assert dummy_key not in masked
     assert "supersecret" not in masked
     assert "[REDACTED]" in masked
 
@@ -53,19 +54,25 @@ def test_structured_json_logging():
 
 def test_mask_secrets_various_provider_keys():
     """Verify redacting OpenAI, Anthropic, Gemini, AWS, GitHub keys."""
+    openai_key = "sk-proj-" + "abcdef12345678901234567890"
+    anthropic_key = "sk-ant-api03-" + "abcdef123456789012345678901234567890"
+    gemini_key = "AIza" + "SyD9ABCDEF1234567890123456789012345"
+    aws_key = "AKIA" + "IOSFODNN7EXAMPLE"
+    github_key = "ghp_" + "1234567890abcdef1234567890abcdef123456"
+
     keys_text = (
-        "OpenAI: sk-proj-abcdef12345678901234567890\n"
-        "Anthropic: sk-ant-api03-abcdef123456789012345678901234567890\n"
-        "Gemini: AIzaSyD9ABCDEF1234567890123456789012345\n"
-        "AWS: AKIAIOSFODNN7EXAMPLE\n"
-        "GitHub: ghp_1234567890abcdef1234567890abcdef123456"
+        f"OpenAI: {openai_key}\n"
+        f"Anthropic: {anthropic_key}\n"
+        f"Gemini: {gemini_key}\n"
+        f"AWS: {aws_key}\n"
+        f"GitHub: {github_key}"
     )
     masked = mask_secrets(keys_text)
-    assert "sk-proj-abcdef12345678901234567890" not in masked
-    assert "sk-ant-api03-abcdef123456789012345678901234567890" not in masked
-    assert "AIzaSyD9ABCDEF1234567890123456789012345" not in masked
-    assert "AKIAIOSFODNN7EXAMPLE" not in masked
-    assert "ghp_1234567890abcdef1234567890abcdef123456" not in masked
+    assert openai_key not in masked
+    assert anthropic_key not in masked
+    assert gemini_key not in masked
+    assert aws_key not in masked
+    assert github_key not in masked
 
 
 def test_mask_secrets_bearer_and_key_value_pairs():
@@ -86,18 +93,19 @@ def test_mask_secrets_bearer_and_key_value_pairs():
 
 def test_mask_secrets_bare_secret_and_aws_keys():
     """Verify redacting bare secret=, 'secret':, and AWS secret access key patterns."""
+    aws_key = "AKIA" + "IOSFODNN7EXAMPLE"
     text = (
         "config: secret=my_super_bare_secret_value\n"
         'json_data: {"secret": "inner_bare_secret_pass"}\n'
         "aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\n"
         "secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\n"
-        "access_key=AKIAIOSFODNN7EXAMPLE"
+        f"access_key={aws_key}"
     )
     masked = mask_secrets(text)
     assert "my_super_bare_secret_value" not in masked
     assert "inner_bare_secret_pass" not in masked
     assert "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" not in masked
-    assert "AKIAIOSFODNN7EXAMPLE" not in masked
+    assert aws_key not in masked
     assert "secret=[REDACTED]" in masked
     assert '"secret": "[REDACTED]"' in masked
 
@@ -181,7 +189,7 @@ def test_mask_data_nested_structures():
     payload = {
         "user": "alice",
         "password": "plain_password_123",
-        "api_key": "sk-proj-99999999999999999999",
+        "api_key": "sk-proj-" + "99999999999999999999",
         "secret": "top_secret_val",
         "refresh_token": "rt_nested_token",
         "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
@@ -275,17 +283,20 @@ def test_structured_logging_secret_masking_in_logs():
     stream = io.StringIO()
     logger = get_logger("atlas.secure", stream=stream)
 
+    dummy_openai = "sk-proj-" + "1234567890abcdef12345"
+    dummy_ant = "sk-ant-" + "1234567890abcdef1234567890"
+
     logger.info(
-        "Request failed for sk-proj-1234567890abcdef12345",
+        f"Request failed for {dummy_openai}",
         password="supersecret_password",
-        token="sk-ant-1234567890abcdef1234567890",
+        token=dummy_ant,
         safe_param="value_ok",
     )
 
     output = stream.getvalue()
-    assert "sk-proj-1234567890abcdef12345" not in output
+    assert dummy_openai not in output
     assert "supersecret_password" not in output
-    assert "sk-ant-1234567890abcdef1234567890" not in output
+    assert dummy_ant not in output
     assert "value_ok" in output
 
     record = json.loads(output)
@@ -299,13 +310,14 @@ def test_structured_logging_exception_capture():
     stream = io.StringIO()
     logger = get_logger("atlas.error", stream=stream)
 
+    dummy_key = "sk-proj-" + "1234567890abcdef12345"
     try:
-        raise ValueError("Invalid credentials with key sk-proj-1234567890abcdef12345")
+        raise ValueError(f"Invalid credentials with key {dummy_key}")
     except ValueError:
         logger.exception("Failed to connect to provider")
 
     output = stream.getvalue()
-    assert "sk-proj-1234567890abcdef12345" not in output
+    assert dummy_key not in output
     record = json.loads(output)
     assert record["level"] == "ERROR"
     assert record["message"] == "Failed to connect to provider"

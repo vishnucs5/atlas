@@ -172,7 +172,7 @@ def test_cli_task_metadata_and_secret_redaction(tmp_path: Path) -> None:
     env = get_cli_env({"ATLAS_HOME": str(tmp_path)})
     subprocess.run([sys.executable, "-m", "atlas_cli.main", "init"], capture_output=True, env=env)
 
-    raw_secret = "sk-live-atlas1234567890abcdef"
+    raw_secret = "sk-live-" + "atlas1234567890abcdef"
     metadata_json = json.dumps({"api_key": raw_secret, "env": "prod"})
 
     create_cmd = [

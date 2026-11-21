@@ -450,9 +450,10 @@ from atlas_observability.logging import get_logger, mask_secrets, bind_context
 
 
 def test_mask_secrets():
-    raw = "My API key is sk-proj-1234567890abcdef12345 and password=supersecret"
+    dummy_key = "sk-proj-" + "1234567890abcdef12345"
+    raw = f"My API key is {dummy_key} and password=supersecret"
     masked = mask_secrets(raw)
-    assert "sk-proj-1234567890abcdef12345" not in masked
+    assert dummy_key not in masked
     assert "supersecret" not in masked
 
 

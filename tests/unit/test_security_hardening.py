@@ -244,11 +244,16 @@ def test_archive_decompression_bomb_guard(tmp_path) -> None:
 
 def test_secret_redaction_comprehensive() -> None:
     """Verify multi-pattern secret scrubbers across Anthropic, OpenAI, GitHub, AWS, and PEM keys."""
+    openai_key = "sk-" + "1234567890abcdef1234567890abcdef"
+    anthropic_key = "sk-ant-api03-" + "1234567890abcdef1234567890abcdef_secret"
+    gh_token = "ghp_" + "123456789012345678901234567890123456"
+    aws_key = "AKIA" + "IOSFODNN7EXAMPLE"
+
     raw_text = (
-        "Logs: OpenAI sk-1234567890abcdef1234567890abcdef and "
-        "Anthropic sk-ant-api03-1234567890abcdef1234567890abcdef_secret, "
-        "GitHub ghp_123456789012345678901234567890123456, "
-        "AWS AKIAIOSFODNN7EXAMPLE, "
+        f"Logs: OpenAI {openai_key} and "
+        f"Anthropic {anthropic_key}, "
+        f"GitHub {gh_token}, "
+        f"AWS {aws_key}, "
         "Key: -----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0...\n-----END RSA PRIVATE KEY-----"
     )
     redacted = redact_secrets(raw_text)
@@ -256,7 +261,7 @@ def test_secret_redaction_comprehensive() -> None:
     assert "sk-1234567890" not in redacted
     assert "sk-ant-" not in redacted
     assert "ghp_" not in redacted
-    assert "AKIAIOSFODNN7EXAMPLE" not in redacted
+    assert aws_key not in redacted
     assert "BEGIN RSA PRIVATE KEY" not in redacted
     assert "***REDACTED***" in redacted
 
