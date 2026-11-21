@@ -43,7 +43,7 @@ def render_banner() -> str:
    ██╔══██║   ██║   ██║     ██╔══██║╚════██║
    ██║  ██║   ██║   ███████╗██║  ██║███████║
    ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝
-{RESET}{DIM}   Autonomous Task & Lifecycle Automation System — v0.16.8{RESET}
+{RESET}{DIM}   Autonomous Task & Lifecycle Automation System — v0.17.0{RESET}
 """
     return art if supports_color() else "ATLAS - Autonomous Task & Lifecycle Automation System\n"
 

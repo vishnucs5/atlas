@@ -1148,6 +1148,22 @@ This document tracks the phased implementation roadmap for ATLAS (Autonomous Tas
   - Implemented end-to-end acceptance suite in `tests/acceptance/test_phase17_acceptance.py` verifying scenarios COL-01 through COL-20 (20/20 PASS).
   - Authored `docs/PHASE_17_ACCEPTANCE_REPORT.md` certifying full compliance with Phase 17 specifications, zero regressions, and zero-dependency core invariants.
 
+- [x] **Task 15: Phase 16.13 Staging Canary Ingress & Chaos Validation**
+  - Implemented and executed 10-element staging canary test harness in `tests/integration/test_phase16_13_staging_canary.py` (10/10 PASS).
+  - Verified non-destructive synthetic workloads, worker crash recovery without duplicates, query latency resilience, duplicate webhook burst suppression, and stale fencing token rejection.
+  - Authored `docs/PHASE_16_13_STAGING_CANARY_REPORT.md` certifying staging canary exit criteria satisfied.
+
+- [x] **Task 16: ATLAS v0.17.0 Production Release Packaging & Security Certification**
+  - Bumped version to `0.17.0` across CLI package manifests, headers, branding, and tools.
+  - Built self-contained wheel and sdist (`dist/atlas_cli-0.17.0-py3-none-any.whl`, `dist/atlas_cli-0.17.0.tar.gz`).
+  - Regenerated CycloneDX v1.5 SBOM (`dist/atlas-cli-sbom.json`) with 79 verifiable components.
+  - Verified 0 vulnerabilities via live `pip-audit 2.10.1` scan over 41 locked dependencies.
+  - Authored official release notes in `docs/RELEASE_NOTES_v0.17.0.md`.
+
+- [x] **Task 17: Phase 18 Architecture Proposal & RFC**
+  - Authored `docs/PHASE_18_ARCHITECTURE_PROPOSAL.md` defining Autonomous Multi-Organization Federation, decentralized SLA task contracts, zero-trust cross-cloud agent mesh, Byzantine failure containment, and blinded Merkle lineages.
+
+
 
 
 

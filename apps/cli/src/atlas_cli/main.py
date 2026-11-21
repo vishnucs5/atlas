@@ -575,7 +575,7 @@ def main(argv: list[str] | None = None) -> int:
             obj = " ".join(args_list[1:]) if len(args_list) > 1 else None
             return run_minimal(objective=obj)
         if first in ("--version", "-v"):
-            print("ATLAS v0.16.8 (Autonomous Task & Lifecycle Automation System)")
+            print("ATLAS v0.17.0 (Autonomous Task & Lifecycle Automation System)")
             return 0
         if not first.startswith("-") and first not in known_commands:
             # Direct prompt execution only for natural language sentences (contains spaces)
@@ -593,7 +593,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_coding_task(args.prompt)
 
     if args.version:
-        print("ATLAS v0.16.8")
+        print("ATLAS v0.17.0")
         return 0
 
     if args.tui:

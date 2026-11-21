@@ -10,7 +10,7 @@ from atlas_coding.git import GitPorcelain
 
 from atlas_cli.adapters.client import AtlasClient
 
-VERSION = "0.16.8"
+VERSION = "0.17.0"
 
 
 class ConversationHeader:

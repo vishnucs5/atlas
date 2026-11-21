@@ -1,6 +1,6 @@
 {
-  "audit_id": "dep-audit-1794984892",
-  "generated_at": "2026-11-18T06:54:52.525973+00:00",
+  "audit_id": "dep-audit-1795270363",
+  "generated_at": "2026-11-21T14:12:43.476617+00:00",
   "scanner": "pip-audit",
   "scanner_version": "2.10.1",
   "vulnerability_database": "PyPI / OSV Advisory Database",
@@ -8,7 +8,7 @@
   "evaluation": {
     "status": "PASS",
     "threshold": "MODERATE",
-    "total_packages_scanned": 26,
+    "total_packages_scanned": 41,
     "violations_count": 0,
     "exempted_count": 0,
     "ignored_low_severity_count": 0,
@@ -31,6 +31,11 @@
       {
         "name": "anyio",
         "version": "4.16.0",
+        "vulns": []
+      },
+      {
+        "name": "backports-tarfile",
+        "version": "1.2.0",
         "vulns": []
       },
       {
@@ -79,6 +84,51 @@
         "vulns": []
       },
       {
+        "name": "importlib-metadata",
+        "version": "10.2.0",
+        "vulns": []
+      },
+      {
+        "name": "jaraco-classes",
+        "version": "3.4.0",
+        "vulns": []
+      },
+      {
+        "name": "jaraco-context",
+        "version": "6.1.2",
+        "vulns": []
+      },
+      {
+        "name": "jaraco-functools",
+        "version": "4.6.0",
+        "vulns": []
+      },
+      {
+        "name": "keyring",
+        "version": "25.7.0",
+        "vulns": []
+      },
+      {
+        "name": "lazy-importer",
+        "version": "0.1.0",
+        "vulns": []
+      },
+      {
+        "name": "markdown-it-py",
+        "version": "4.3.0",
+        "vulns": []
+      },
+      {
+        "name": "mdurl",
+        "version": "0.1.2",
+        "vulns": []
+      },
+      {
+        "name": "more-itertools",
+        "version": "11.2.1",
+        "vulns": []
+      },
+      {
         "name": "opentelemetry-api",
         "version": "1.45.2",
         "vulns": []
@@ -86,6 +136,11 @@
       {
         "name": "playwright",
         "version": "1.65.1",
+        "vulns": []
+      },
+      {
+        "name": "prompt-toolkit",
+        "version": "3.0.53",
         "vulns": []
       },
       {
@@ -129,6 +184,16 @@
         "vulns": []
       },
       {
+        "name": "pywin32-ctypes",
+        "version": "0.2.3",
+        "vulns": []
+      },
+      {
+        "name": "rich",
+        "version": "15.0.0",
+        "vulns": []
+      },
+      {
         "name": "starlette",
         "version": "1.10.0",
         "vulns": []
@@ -146,6 +211,16 @@
       {
         "name": "tzdata",
         "version": "2026.6",
+        "vulns": []
+      },
+      {
+        "name": "wcwidth",
+        "version": "0.9.4",
+        "vulns": []
+      },
+      {
+        "name": "zipp",
+        "version": "4.1.2",
         "vulns": []
       }
     ],

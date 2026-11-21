@@ -20,7 +20,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-VERSION = "0.16.8"
+VERSION = "0.17.0"
 
 # -----------------------------------------------------------------------------
 # 1. Color Palette (TrueColor / Hex)

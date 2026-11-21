@@ -177,7 +177,7 @@ requires-dist = [
 
 [[package]]
 name = "atlas-cli"
-version = "0.16.8"
+version = "0.17.0"
 source = { editable = "apps/cli" }
 dependencies = [
     { name = "atlas-models" },

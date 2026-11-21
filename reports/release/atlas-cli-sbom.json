@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:c9c40662-a7a8-45b7-b312-73c8c281de8b",
+  "serialNumber": "urn:uuid:5228a4c5-d1d0-4a32-b8d8-4f48a1d64105",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-18T06:50:06Z",
+    "timestamp": "2026-11-21T14:12:12Z",
     "tools": [
       {
         "vendor": "ATLAS Engineering",
@@ -153,7 +153,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "ba1c6630e2913fac12b522815960523e704a6c656f8b78c5631b5e750b75e319"
+          "content": "53703d0563dab1cb7ad875aa294c2aa9fb8e865b2730eb779a8c7dfd2c4b6b07"
         }
       ]
     },
@@ -178,7 +178,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "acd74fe976e9fc0ac023cc21a5b413b132b9a5d37f3ea6cc1430a37ba35451b1"
+          "content": "276452e9deb18fbd7a9c07a99ebf8e7bf9efb4cf5bf6c7215c5094e107bff046"
         }
       ]
     },
@@ -209,12 +209,12 @@
     },
     {
       "type": "application",
-      "bom-ref": "pkg:generic/atlas/atlas-cli@0.16.8",
+      "bom-ref": "pkg:generic/atlas/atlas-cli@0.17.0",
       "name": "atlas-cli",
-      "version": "0.16.8",
+      "version": "0.17.0",
       "description": "ATLAS CLI \u2014 Native, Autonomous Developer Environment and Enterprise Coding Agent",
       "scope": "required",
-      "purl": "pkg:generic/atlas/atlas-cli@0.16.8",
+      "purl": "pkg:generic/atlas/atlas-cli@0.17.0",
       "supplier": {
         "name": "ATLAS Engineering"
       },
@@ -228,7 +228,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "42ebc84f4b582b0df4fce761787961abb67b42280b38e84cd4988289eefb97c0"
+          "content": "a23920df7c61e79191e9f69194785a9578b399eb480c9b961d6a40862fd20d13"
         }
       ]
     },
@@ -284,6 +284,31 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:generic/atlas/atlas-collaboration@0.17.0",
+      "name": "atlas-collaboration",
+      "version": "0.17.0",
+      "description": "ATLAS Phase 17 - Human-AI Collaboration, Explainability & Governance Ecosystem",
+      "scope": "required",
+      "purl": "pkg:generic/atlas/atlas-collaboration@0.17.0",
+      "supplier": {
+        "name": "ATLAS Engineering"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7633f84c9e0ef83c6c84897e2d869d1250d471283856b3e55eab10bac4cb11da"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:generic/atlas/atlas-coordination@0.1.0",
       "name": "atlas-coordination",
       "version": "0.1.0",
@@ -303,7 +328,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "e2bfc5d68fdc4634ed6718ffefb7cb3e36fd1e1a9125f90b54f53ceb05ed0348"
+          "content": "43c9a7c4619dfed94fd2f675effb1f08572b464ddd25a818a7a1da4d98bff032"
         }
       ]
     },
@@ -453,7 +478,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "400160f6ba2513bea5d71f2c152b79565219befd7e0d4425934a4dd77df0a964"
+          "content": "7044b7ab34934023c11825dcc8d23c90cad1fe3a795a4b3658bc30e4c602f37a"
         }
       ]
     },
@@ -478,7 +503,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "6f14f704bb907a5049d91de96e32d927e1ab2aaf68495fc8805006517216b1ea"
+          "content": "a60b70463f31b9cdf6a6f098e79f62e6945a90bbaeb69b4b3940082032b4af55"
         }
       ]
     },
@@ -729,6 +754,25 @@
         {
           "alg": "SHA-256",
           "content": "392077e5957e6047a3c59cd97870cfebb037724d76d7a4242bf154abdb6b88a4"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/backports-tarfile@1.2.0",
+      "name": "backports-tarfile",
+      "version": "1.2.0",
+      "description": "Backport of CPython tarfile module",
+      "scope": "required",
+      "purl": "pkg:pypi/backports-tarfile@1.2.0",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "77e284d754527b01fb1e6fa8a1afe577858ebe4e9dad8919e34c862cb399bc34"
+        },
+        {
+          "alg": "SHA256",
+          "content": "d75e02c268746e1b8144c278978b6e98e85de6ad16f8e4b0844a154557eca991"
         }
       ]
     },
@@ -1906,6 +1950,32 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:pypi/importlib-metadata@10.2.0",
+      "name": "importlib-metadata",
+      "version": "10.2.0",
+      "description": "Read metadata from Python packages",
+      "scope": "required",
+      "purl": "pkg:pypi/importlib-metadata@10.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "c7a4bf1c7479601f6b8e437cfc14f4f77028ba62a8f34ae95cd93d9774dfba51"
+        },
+        {
+          "alg": "SHA256",
+          "content": "9413a2029fd9ca5669d27f1386071bbfe3c7ebca0545692ec975088241fe1d79"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:pypi/iniconfig@2.3.1",
       "name": "iniconfig",
       "version": "2.3.1",
@@ -1927,6 +1997,212 @@
         {
           "alg": "SHA256",
           "content": "67f4b9c50da0dedf52af349e7749a80a9057a5031199791b906c3bb3ae878960"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/jaraco-classes@3.4.0",
+      "name": "jaraco-classes",
+      "version": "3.4.0",
+      "description": "Utility functions for Python class constructs",
+      "scope": "required",
+      "purl": "pkg:pypi/jaraco-classes@3.4.0",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "f662826b6bed8cace05e7ff873ce0f9283b5c924470fe664fff1c2f00f581790"
+        },
+        {
+          "alg": "SHA256",
+          "content": "47a024b51d0239c0dd8c8540c6c7f484be3b8fcf0b2d85c13825780d3b3f3acd"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/jaraco-context@6.1.2",
+      "name": "jaraco-context",
+      "version": "6.1.2",
+      "description": "Useful decorators and context managers",
+      "scope": "required",
+      "purl": "pkg:pypi/jaraco-context@6.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "bf8150b79a2d5d91ae48629d8b427a8f7ba0e1097dd6202a9059f29a36379535"
+        },
+        {
+          "alg": "SHA256",
+          "content": "f1a6c9d391e661cc5b8d39861ff077a7dc24dc23833ccee564b234b81c82dfe3"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/jaraco-functools@4.6.0",
+      "name": "jaraco-functools",
+      "version": "4.6.0",
+      "description": "Functools like those found in stdlib",
+      "scope": "required",
+      "purl": "pkg:pypi/jaraco-functools@4.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "99e3dc0060c5cbe8fcd1cdb36258e2a65ca40f1566b2033b12abb1bb44dd3c30"
+        },
+        {
+          "alg": "SHA256",
+          "content": "880c577ec9720b3a052d5bc611fb9f2269b3d87902ef42440df443b88e443280"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/jeepney@0.9.0",
+      "name": "jeepney",
+      "version": "0.9.0",
+      "description": "Python package jeepney",
+      "scope": "required",
+      "purl": "pkg:pypi/jeepney@0.9.0",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "97e5714520c16fc0a45695e5365a2e11b81ea79bba796e26f9f1d178cb182683"
+        },
+        {
+          "alg": "SHA256",
+          "content": "cf0e9e845622b81e4a28df94c40345400256ec608d0e55bb8a3feaa9163f5732"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/keyring@25.7.0",
+      "name": "keyring",
+      "version": "25.7.0",
+      "description": "Store and access your passwords safely.",
+      "scope": "required",
+      "purl": "pkg:pypi/keyring@25.7.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "be4a0b195f149690c166e850609a477c532ddbfbaed96a404d4e43f8d5e2689f"
+        },
+        {
+          "alg": "SHA256",
+          "content": "fe01bd85eb3f8fb3dd0405defdeac9a5b4f6f0439edbb3149577f244a2e8245b"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/lazy-importer@0.1.0",
+      "name": "lazy-importer",
+      "version": "0.1.0",
+      "description": "A context manager for portable, opt-in lazy imports",
+      "scope": "required",
+      "purl": "pkg:pypi/lazy-importer@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "bd93fab7bef18e842eea02b839410954d37889140dc64ca4d9680aec6880c739"
+        },
+        {
+          "alg": "SHA256",
+          "content": "b2e296716ce015c0cd80e57b940e52727c5b934b34b8656d5ce06bdd0ee5fbdd"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/markdown-it-py@4.3.0",
+      "name": "markdown-it-py",
+      "version": "4.3.0",
+      "description": "Python port of markdown-it. Markdown parsing, done right!",
+      "scope": "required",
+      "purl": "pkg:pypi/markdown-it-py@4.3.0",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "7aa1511a46c39138de78d9eba92ce47e63124d8003fc98b3a351909e04239efa"
+        },
+        {
+          "alg": "SHA256",
+          "content": "91a58fa5b72c71a40cf7177250fd767480d7a2bb3ac426ccfb76fb90305fdaaa"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/mdurl@0.1.2",
+      "name": "mdurl",
+      "version": "0.1.2",
+      "description": "Markdown URL utilities",
+      "scope": "required",
+      "purl": "pkg:pypi/mdurl@0.1.2",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"
+        },
+        {
+          "alg": "SHA256",
+          "content": "bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/more-itertools@11.2.1",
+      "name": "more-itertools",
+      "version": "11.2.1",
+      "description": "More routines for operating on iterables, beyond itertools",
+      "scope": "required",
+      "purl": "pkg:pypi/more-itertools@11.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "35a7377edd1dd6608dcb2cdf534ded55ea32d49448875ad042cd3f879fb1ded0"
+        },
+        {
+          "alg": "SHA256",
+          "content": "cbf08fd0af284dc69718b9b76a8e6203df624d70209ea511e4219d350c856f63"
         }
       ]
     },
@@ -2085,6 +2361,25 @@
         {
           "alg": "SHA256",
           "content": "d1eaa46ebb595891b860ab086b4d09c8588af65ebd4361b8e8f4bb8920b90ba8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/prompt-toolkit@3.0.53",
+      "name": "prompt-toolkit",
+      "version": "3.0.53",
+      "description": "Library for building powerful interactive command lines in Python",
+      "scope": "required",
+      "purl": "pkg:pypi/prompt-toolkit@3.0.53",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "01c0891d7f9237d5e339f7d3e42cdae80b7534abb1c7c0e3352efba6231492f2"
+        },
+        {
+          "alg": "SHA256",
+          "content": "9ec8a0ad96d5c56148b3f914aa79c1564c3fde5d2e6b876e7bc327e353cf8fa6"
         }
       ]
     },
@@ -3134,6 +3429,32 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:pypi/pywin32-ctypes@0.2.3",
+      "name": "pywin32-ctypes",
+      "version": "0.2.3",
+      "description": "A (partial) reimplementation of pywin32 using ctypes/cffi",
+      "scope": "required",
+      "purl": "pkg:pypi/pywin32-ctypes@0.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8"
+        },
+        {
+          "alg": "SHA256",
+          "content": "d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:pypi/pyyaml@6.0.3",
       "name": "pyyaml",
       "version": "6.0.3",
@@ -3344,6 +3665,51 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:pypi/rich@15.0.0",
+      "name": "rich",
+      "version": "15.0.0",
+      "description": "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal",
+      "scope": "required",
+      "purl": "pkg:pypi/rich@15.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb"
+        },
+        {
+          "alg": "SHA256",
+          "content": "edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/secretstorage@3.5.0",
+      "name": "secretstorage",
+      "version": "3.5.0",
+      "description": "Python package secretstorage",
+      "scope": "required",
+      "purl": "pkg:pypi/secretstorage@3.5.0",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "0ce65888c0725fcb2c5bc0fdb8e5438eece02c523557ea40ce0703c266248137"
+        },
+        {
+          "alg": "SHA256",
+          "content": "f04b8e4689cbce351744d5537bf6b1329c6fc68f91fa666f60a380edddcd11be"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:pypi/starlette@1.10.0",
       "name": "starlette",
       "version": "1.10.0",
@@ -3445,6 +3811,159 @@
           "content": "85d2cd9c09f81f0bb29db27759fc83af4f1e620efb814f8c5bf8b4cc4feece6d"
         }
       ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/wcwidth@0.9.4",
+      "name": "wcwidth",
+      "version": "0.9.4",
+      "description": "Measures the displayed width of unicode strings in a terminal",
+      "scope": "required",
+      "purl": "pkg:pypi/wcwidth@0.9.4",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "b7969c9aa258d536df54c8ac8af5cad0c74a6268c9972e1fb60a5f29feffb66d"
+        },
+        {
+          "alg": "SHA256",
+          "content": "f279f32c8e206a9092fa350e53ca0c2bd8072e45b1c9fd31bb6d476b59b591c4"
+        },
+        {
+          "alg": "SHA256",
+          "content": "a1526cd25c6420e5153bb7d764c7509e692215ee3ad9b725db1ad665d47eae09"
+        },
+        {
+          "alg": "SHA256",
+          "content": "093469e01d881bff3db93ff3f56c364dc87c441ea01f9f41c22de0c0bdf5c6ef"
+        },
+        {
+          "alg": "SHA256",
+          "content": "b185c8b927b23af2721be1783499d1cfa5c028b098b0858951b4ae224477f1c2"
+        },
+        {
+          "alg": "SHA256",
+          "content": "17619066f95c10f44d7ae08ee456602456bc66cc9d5e91966ec73d799acebc5f"
+        },
+        {
+          "alg": "SHA256",
+          "content": "b52f265a694dda6b3ad9050c8bd89158ad519109ef7c5eb110b906cc49f25763"
+        },
+        {
+          "alg": "SHA256",
+          "content": "d8905f1390d828d745fdd1904374c90386d902d3cfa9ee88e9875099f75a4e17"
+        },
+        {
+          "alg": "SHA256",
+          "content": "4831662c396dd4c59a016ec53c0ac96738006d653a00482777d9a2e2ea323d62"
+        },
+        {
+          "alg": "SHA256",
+          "content": "f28d77153303450ee13ebbe888297e75cf532c754555b6cabafc9bdda16c421c"
+        },
+        {
+          "alg": "SHA256",
+          "content": "2b58fc8cf2de1bf9cdb68b8beaa5be198742414a7c8cd97aa51ec039783ffa49"
+        },
+        {
+          "alg": "SHA256",
+          "content": "87e4101789415a6cf55ec4c53eceeb4782c2654c88692941cb588f19dca1959f"
+        },
+        {
+          "alg": "SHA256",
+          "content": "ab1e5190fb82476e75fbf963e9d59b4fb1c1e1f4ced82069a0c989016aa959f7"
+        },
+        {
+          "alg": "SHA256",
+          "content": "8f892713ab5795d3abae181e9c02db0eb24de4084f9ee080535369d3d98d7bb5"
+        },
+        {
+          "alg": "SHA256",
+          "content": "befbf46467100e43fd8c8cc0c031a0105f13f5418c3be95fdcf0c47214487967"
+        },
+        {
+          "alg": "SHA256",
+          "content": "9c4b0dd04cca520792100f6110d10be262c94b285a281d1759c551f159214633"
+        },
+        {
+          "alg": "SHA256",
+          "content": "14410eb73178cc492aa9bf22f7c12e3bf930e5470b7220cf6f530efbfa2e03f3"
+        },
+        {
+          "alg": "SHA256",
+          "content": "c36954849aafae1092d6f9de9548c5280c1d6841637a27ca288b2241c802c4ab"
+        },
+        {
+          "alg": "SHA256",
+          "content": "79e09e9824c88f5e275ca99e921685567a5c5c1bb6165c16e27ddd1adab33a95"
+        },
+        {
+          "alg": "SHA256",
+          "content": "a8c9ce14c6b4a499e61de6de7e9e456de11be8bc991554e2ab2ed4feb40b9664"
+        },
+        {
+          "alg": "SHA256",
+          "content": "d68f09093c9bec9226a52edc47487042ed4f64c5df91d06f00419495071c0279"
+        },
+        {
+          "alg": "SHA256",
+          "content": "d76b7c715c5ca0103b28915f699f1020ae21f06f1d22cdd85a7a97f7b1536eed"
+        },
+        {
+          "alg": "SHA256",
+          "content": "29c0685f5f5f8815b88308fdcbe2cd12a92996a21a5b1e18352d165174ef7a6d"
+        },
+        {
+          "alg": "SHA256",
+          "content": "e05458491759aa42b7b85f36345b3e6df082d6d2d9bf616299668fd598e0209d"
+        },
+        {
+          "alg": "SHA256",
+          "content": "9e5090d253f5df99659cddfd3ed90dd21f6ff51989b0421331a63fb2681cbe27"
+        },
+        {
+          "alg": "SHA256",
+          "content": "12786620375dc83fabf4b2b2aa52416fef2bc6094522ea29c8a53c75b0dfe9b6"
+        },
+        {
+          "alg": "SHA256",
+          "content": "2cca7b5d0b9d0ae49068d3ce806e965326a987f555b62eaa322223396e10d01b"
+        },
+        {
+          "alg": "SHA256",
+          "content": "901eace6d2dd25ebb917d0ce5db18e5c537e1504c905cf32f0d006c12098b05d"
+        },
+        {
+          "alg": "SHA256",
+          "content": "fd8d57d3cdfe570e3265c8fab1885c24e34ef40889c0759c0c304a19e9835954"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/zipp@4.1.2",
+      "name": "zipp",
+      "version": "4.1.2",
+      "description": "Backport of pathlib-compatible object wrapper for zip files",
+      "scope": "required",
+      "purl": "pkg:pypi/zipp@4.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "b30cb6cd253122169c47de245ca24a86bac2a5d3802ba15bf7ba6414eb9e144d"
+        },
+        {
+          "alg": "SHA256",
+          "content": "cf474b90b07ea932637e17c6b9479de2b2882900b0d311bdaf4f5c000a15a97f"
+        }
+      ]
     }
   ],
   "dependencies": [
@@ -3518,16 +4037,19 @@
       ]
     },
     {
-      "ref": "pkg:generic/atlas/atlas-cli@0.16.8",
+      "ref": "pkg:generic/atlas/atlas-cli@0.17.0",
       "dependsOn": [
+        "pkg:generic/atlas/atlas-models",
         "pkg:pypi/cryptography",
         "pkg:pypi/httpx",
         "pkg:pypi/playwright",
+        "pkg:pypi/prompt-toolkit",
         "pkg:pypi/psutil",
         "pkg:pypi/psycopg",
         "pkg:pypi/psycopg-pool",
         "pkg:pypi/pydantic",
-        "pkg:pypi/pygments"
+        "pkg:pypi/pygments",
+        "pkg:pypi/rich"
       ]
     },
     {
@@ -3546,6 +4068,16 @@
         "pkg:generic/atlas/atlas-observability",
         "pkg:generic/atlas/atlas-policy",
         "pkg:generic/atlas/atlas-storage"
+      ]
+    },
+    {
+      "ref": "pkg:generic/atlas/atlas-collaboration@0.17.0",
+      "dependsOn": [
+        "pkg:generic/atlas/atlas-core",
+        "pkg:generic/atlas/atlas-observability",
+        "pkg:generic/atlas/atlas-policy",
+        "pkg:generic/atlas/atlas-storage",
+        "pkg:pypi/pydantic"
       ]
     },
     {
@@ -3626,6 +4158,7 @@
         "pkg:generic/atlas/atlas-core",
         "pkg:generic/atlas/atlas-observability",
         "pkg:pypi/httpx",
+        "pkg:pypi/keyring",
         "pkg:pypi/pydantic"
       ]
     },
@@ -3728,6 +4261,10 @@
       ]
     },
     {
+      "ref": "pkg:pypi/backports-tarfile@1.2.0",
+      "dependsOn": []
+    },
+    {
       "ref": "pkg:pypi/certifi@2026.10.23",
       "dependsOn": []
     },
@@ -3800,7 +4337,66 @@
       "dependsOn": []
     },
     {
+      "ref": "pkg:pypi/importlib-metadata@10.2.0",
+      "dependsOn": [
+        "pkg:pypi/lazy-importer",
+        "pkg:pypi/zipp"
+      ]
+    },
+    {
       "ref": "pkg:pypi/iniconfig@2.3.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/jaraco-classes@3.4.0",
+      "dependsOn": [
+        "pkg:pypi/more-itertools"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/jaraco-context@6.1.2",
+      "dependsOn": [
+        "pkg:pypi/backports-tarfile"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/jaraco-functools@4.6.0",
+      "dependsOn": [
+        "pkg:pypi/more-itertools"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/jeepney@0.9.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/keyring@25.7.0",
+      "dependsOn": [
+        "pkg:pypi/importlib-metadata",
+        "pkg:pypi/jaraco-classes",
+        "pkg:pypi/jaraco-context",
+        "pkg:pypi/jaraco-functools",
+        "pkg:pypi/jeepney",
+        "pkg:pypi/pywin32-ctypes",
+        "pkg:pypi/secretstorage"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/lazy-importer@0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/markdown-it-py@4.3.0",
+      "dependsOn": [
+        "pkg:pypi/mdurl"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/mdurl@0.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/more-itertools@11.2.1",
       "dependsOn": []
     },
     {
@@ -3826,6 +4422,12 @@
     {
       "ref": "pkg:pypi/pluggy@1.7.0",
       "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/prompt-toolkit@3.0.53",
+      "dependsOn": [
+        "pkg:pypi/wcwidth"
+      ]
     },
     {
       "ref": "pkg:pypi/psutil@7.2.2",
@@ -3889,8 +4491,26 @@
       ]
     },
     {
+      "ref": "pkg:pypi/pywin32-ctypes@0.2.3",
+      "dependsOn": []
+    },
+    {
       "ref": "pkg:pypi/pyyaml@6.0.3",
       "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/rich@15.0.0",
+      "dependsOn": [
+        "pkg:pypi/markdown-it-py",
+        "pkg:pypi/pygments"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/secretstorage@3.5.0",
+      "dependsOn": [
+        "pkg:pypi/cryptography",
+        "pkg:pypi/jeepney"
+      ]
     },
     {
       "ref": "pkg:pypi/starlette@1.10.0",
@@ -3911,6 +4531,14 @@
     },
     {
       "ref": "pkg:pypi/tzdata@2026.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/wcwidth@0.9.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/zipp@4.1.2",
       "dependsOn": []
     }
   ]

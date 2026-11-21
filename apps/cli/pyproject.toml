@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "atlas-cli"
-version = "0.16.8"
+version = "0.17.0"
 description = "ATLAS CLI — Native, Autonomous Developer Environment and Enterprise Coding Agent"
 readme = "README.md"
 requires-python = ">=3.11"

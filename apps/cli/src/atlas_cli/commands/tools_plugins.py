@@ -105,10 +105,10 @@ def run_plugins_list() -> int:
     else:
         # Fallback default display
         rows = [
-            ["atlas-browser-pack", "0.16.8", "ATLAS Core", render_badge("INSTALLED", "success")],
+            ["atlas-browser-pack", "0.17.0", "ATLAS Core", render_badge("INSTALLED", "success")],
             [
                 "enterprise-governance",
-                "0.16.8",
+                "0.17.0",
                 "ATLAS Enterprise",
                 render_badge("INSTALLED", "success"),
             ],
